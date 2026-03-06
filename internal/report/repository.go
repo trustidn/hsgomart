@@ -103,15 +103,71 @@ type SalesTransactionRow struct {
 	Cashier     string  `json:"cashier"`
 }
 
-// GetSalesTransactions returns each transaction in the date range for the tenant.
-func GetSalesTransactions(db *gorm.DB, tenantID string, fromDate, toDate time.Time) ([]SalesTransactionRow, error) {
+// GetSalesTransactions returns paginated transactions. Use limit=0 for no limit (export).
+func GetSalesTransactions(db *gorm.DB, tenantID string, fromDate, toDate time.Time, limit, offset int) ([]SalesTransactionRow, error) {
 	var rows []SalesTransactionRow
-	err := db.Table("transactions").
+	q := db.Table("transactions").
 		Select("transactions.id as id, to_char(transactions.created_at, 'YYYY-MM-DD HH24:MI') as created_at, transactions.total_amount as total_amount, COALESCE(users.email, users.name, '') as cashier").
 		Joins("LEFT JOIN users ON users.id = transactions.user_id AND users.tenant_id = transactions.tenant_id").
 		Where("transactions.tenant_id = ? AND transactions.status = ?", tenantID, "completed").
 		Where("transactions.created_at >= ? AND transactions.created_at <= ?", fromDate, toDate).
-		Order("transactions.created_at DESC").
+		Order("transactions.created_at DESC")
+	if limit > 0 {
+		q = q.Limit(limit).Offset(offset)
+	}
+	err := q.Scan(&rows).Error
+	return rows, err
+}
+
+// CountSalesTransactions returns total count of transactions in the date range.
+func CountSalesTransactions(db *gorm.DB, tenantID string, fromDate, toDate time.Time) (int64, error) {
+	var count int64
+	err := db.Table("transactions").
+		Where("tenant_id = ? AND status = ?", tenantID, "completed").
+		Where("created_at >= ? AND created_at <= ?", fromDate, toDate).
+		Count(&count).Error
+	return count, err
+}
+
+// PaymentRow holds payment method aggregates.
+type PaymentRow struct {
+	Method       string  `json:"method"`
+	Transactions int     `json:"transactions"`
+	Revenue      float64 `json:"revenue"`
+}
+
+// GetPaymentsReport returns per payment-method count and revenue for the tenant in the date range.
+func GetPaymentsReport(db *gorm.DB, tenantID string, fromDate, toDate time.Time) ([]PaymentRow, error) {
+	var rows []PaymentRow
+	err := db.Table("payments").
+		Select("payments.method as method, COUNT(DISTINCT payments.transaction_id) as transactions, COALESCE(SUM(payments.amount), 0) as revenue").
+		Joins("INNER JOIN transactions ON transactions.id = payments.transaction_id").
+		Where("transactions.tenant_id = ? AND transactions.status = ?", tenantID, "completed").
+		Where("transactions.created_at >= ? AND transactions.created_at <= ?", fromDate, toDate).
+		Group("payments.method").
+		Order("revenue DESC").
+		Scan(&rows).Error
+	return rows, err
+}
+
+// SalesHourlyRow holds one hour of sales for a given date.
+type SalesHourlyRow struct {
+	Hour       int     `json:"hour"`
+	Transactions int   `json:"transactions"`
+	Revenue    float64 `json:"revenue"`
+}
+
+// GetSalesHourly returns hourly breakdown for the tenant on the given date (YYYY-MM-DD).
+func GetSalesHourly(db *gorm.DB, tenantID string, date time.Time) ([]SalesHourlyRow, error) {
+	start := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
+	end := start.Add(24*time.Hour - time.Second)
+	var rows []SalesHourlyRow
+	err := db.Table("transactions").
+		Select("EXTRACT(HOUR FROM created_at)::int as hour, COUNT(*) as transactions, COALESCE(SUM(total_amount), 0) as revenue").
+		Where("tenant_id = ? AND status = ?", tenantID, "completed").
+		Where("created_at >= ? AND created_at <= ?", start, end).
+		Group("EXTRACT(HOUR FROM created_at)").
+		Order("hour").
 		Scan(&rows).Error
 	return rows, err
 }

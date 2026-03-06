@@ -34,9 +34,24 @@ func (s *Service) SalesDaily(tenantID string, fromDate, toDate time.Time) ([]Sal
 	return GetSalesDaily(s.db, tenantID, fromDate, toDate)
 }
 
-// SalesTransactions returns each transaction in the date range for the tenant.
-func (s *Service) SalesTransactions(tenantID string, fromDate, toDate time.Time) ([]SalesTransactionRow, error) {
-	return GetSalesTransactions(s.db, tenantID, fromDate, toDate)
+// SalesTransactions returns paginated transactions. Limit 0 = all (for export).
+func (s *Service) SalesTransactions(tenantID string, fromDate, toDate time.Time, limit, offset int) ([]SalesTransactionRow, error) {
+	return GetSalesTransactions(s.db, tenantID, fromDate, toDate, limit, offset)
+}
+
+// CountSalesTransactions returns total count of transactions in the date range.
+func (s *Service) CountSalesTransactions(tenantID string, fromDate, toDate time.Time) (int64, error) {
+	return CountSalesTransactions(s.db, tenantID, fromDate, toDate)
+}
+
+// PaymentsReport returns payment method report for the tenant in the date range.
+func (s *Service) PaymentsReport(tenantID string, fromDate, toDate time.Time) ([]PaymentRow, error) {
+	return GetPaymentsReport(s.db, tenantID, fromDate, toDate)
+}
+
+// SalesHourly returns hourly sales for the tenant on the given date.
+func (s *Service) SalesHourly(tenantID string, date time.Time) ([]SalesHourlyRow, error) {
+	return GetSalesHourly(s.db, tenantID, date)
 }
 
 // ProfitReport returns profit summary and product rows for the tenant in the date range.

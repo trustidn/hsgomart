@@ -2,6 +2,7 @@ package report
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -88,7 +89,7 @@ func (h *Handler) SalesDaily(c *gin.Context) {
 	c.JSON(http.StatusOK, rows)
 }
 
-// SalesTransactions handles GET /api/reports/sales/transactions?from=&to=
+// SalesTransactions handles GET /api/reports/sales/transactions?from=&to=&page=1&limit=20 (limit=0 = all)
 func (h *Handler) SalesTransactions(c *gin.Context) {
 	tenantID, ok := utils.GetTenantID(c)
 	if !ok {
@@ -100,9 +101,78 @@ func (h *Handler) SalesTransactions(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format, use YYYY-MM-DD for from and to"})
 		return
 	}
-	rows, err := h.service.SalesTransactions(tenantID, from, to)
+	page, _ := strconv.Atoi(c.Query("page"))
+	if page < 1 {
+		page = 1
+	}
+	limit := 20
+	if q := c.Query("limit"); q != "" {
+		if v, _ := strconv.Atoi(q); v >= 0 {
+			limit = v
+		}
+	}
+	offset := 0
+	if limit > 0 {
+		offset = (page - 1) * limit
+	}
+	total, err := h.service.CountSalesTransactions(tenantID, from, to)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to count transactions"})
+		return
+	}
+	rows, err := h.service.SalesTransactions(tenantID, from, to, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get sales transactions"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"total": total,
+		"page":  page,
+		"limit": limit,
+		"rows":  rows,
+	})
+}
+
+// SalesHourly handles GET /api/reports/sales/hourly?date=YYYY-MM-DD
+func (h *Handler) SalesHourly(c *gin.Context) {
+	tenantID, ok := utils.GetTenantID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context required"})
+		return
+	}
+	dateStr := c.Query("date")
+	if dateStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "date required (YYYY-MM-DD)"})
+		return
+	}
+	date, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format, use YYYY-MM-DD"})
+		return
+	}
+	rows, err := h.service.SalesHourly(tenantID, date)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get hourly sales"})
+		return
+	}
+	c.JSON(http.StatusOK, rows)
+}
+
+// PaymentsReport handles GET /api/reports/payments?from=&to=
+func (h *Handler) PaymentsReport(c *gin.Context) {
+	tenantID, ok := utils.GetTenantID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context required"})
+		return
+	}
+	from, to, err := parseDateRange(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format, use YYYY-MM-DD for from and to"})
+		return
+	}
+	rows, err := h.service.PaymentsReport(tenantID, from, to)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get payments report"})
 		return
 	}
 	c.JSON(http.StatusOK, rows)

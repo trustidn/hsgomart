@@ -55,6 +55,35 @@
 
       <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden mb-6">
         <div class="p-3 border-b border-gray-200 flex items-center justify-between">
+          <span class="font-medium text-gray-800">Payment Methods</span>
+          <div class="flex gap-2">
+            <button type="button" class="px-2 py-1.5 bg-green-600 text-white rounded text-xs hover:bg-green-700" @click="exportCardExcel(['Method', 'Transactions', 'Revenue'], paymentsTableRows, 'payment-methods')">Export Excel</button>
+            <button type="button" class="px-2 py-1.5 bg-red-600 text-white rounded text-xs hover:bg-red-700" @click="exportCardPdf('Payment Methods', ['Method', 'Transactions', 'Revenue'], paymentsTableRows, 'payment-methods')">Export PDF</button>
+          </div>
+        </div>
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Transactions</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            <tr v-for="(row, i) in paymentsReport" :key="i" class="hover:bg-gray-50">
+              <td class="px-4 py-2 text-sm text-gray-800">{{ row.method }}</td>
+              <td class="px-4 py-2 text-sm text-right">{{ row.transactions }}</td>
+              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.revenue) }}</td>
+            </tr>
+            <tr v-if="!paymentsReport?.length">
+              <td colspan="3" class="px-4 py-4 text-sm text-gray-500 text-center">No data for this period.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden mb-6">
+        <div class="p-3 border-b border-gray-200 flex items-center justify-between flex-wrap gap-2">
           <span class="font-medium text-gray-800">Ringkasan per Hari</span>
           <div class="flex gap-2">
             <button type="button" class="px-2 py-1.5 bg-green-600 text-white rounded text-xs hover:bg-green-700" @click="exportCardExcel(salesDailyHeaders, salesDailyRows, 'ringkasan-per-hari')">Export Excel</button>
@@ -82,12 +111,51 @@
         </table>
       </div>
 
+      <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden mb-6">
+        <div class="p-3 border-b border-gray-200 flex items-center justify-between flex-wrap gap-2">
+          <span class="font-medium text-gray-800">Penjualan per Jam</span>
+          <div class="flex items-center gap-2">
+            <label class="text-sm text-gray-600">Tanggal:</label>
+            <input v-model="hourlyDate" type="date" class="px-2 py-1.5 border rounded text-sm" @change="loadSalesHourly" />
+          </div>
+        </div>
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Hour</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Transactions</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            <tr v-for="row in salesHourly" :key="row.hour" class="hover:bg-gray-50">
+              <td class="px-4 py-2 text-sm text-gray-800">{{ row.hour }}:00</td>
+              <td class="px-4 py-2 text-sm text-right">{{ row.transactions }}</td>
+              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.revenue) }}</td>
+            </tr>
+            <tr v-if="hourlyDate && !salesHourly?.length">
+              <td colspan="3" class="px-4 py-4 text-sm text-gray-500 text-center">No data for this date.</td>
+            </tr>
+            <tr v-if="!hourlyDate">
+              <td colspan="3" class="px-4 py-4 text-sm text-gray-500 text-center">Pilih tanggal untuk melihat penjualan per jam.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-        <div class="p-3 border-b border-gray-200 flex items-center justify-between">
+        <div class="p-3 border-b border-gray-200 flex items-center justify-between flex-wrap gap-2">
           <span class="font-medium text-gray-800">Detail Transaksi</span>
-          <div class="flex gap-2">
-            <button type="button" class="px-2 py-1.5 bg-green-600 text-white rounded text-xs hover:bg-green-700" @click="exportCardExcel(salesTransactionsHeaders, salesTransactionsRows, 'detail-transaksi')">Export Excel</button>
-            <button type="button" class="px-2 py-1.5 bg-red-600 text-white rounded text-xs hover:bg-red-700" @click="exportCardPdf('Detail Transaksi', salesTransactionsHeaders, salesTransactionsRows, 'detail-transaksi')">Export PDF</button>
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-gray-500">Showing {{ salesTransactionsShowing.from }}–{{ salesTransactionsShowing.to }} of {{ salesTransactionsShowing.total }} transactions</span>
+            <div class="flex gap-1">
+              <button type="button" class="px-2 py-1 border rounded text-sm disabled:opacity-50" :disabled="salesTransactionsPage <= 1" @click="loadSalesTransactionsPage(salesTransactionsPage - 1)">Prev</button>
+              <button type="button" class="px-2 py-1 border rounded text-sm disabled:opacity-50" :disabled="salesTransactionsPage >= Math.ceil((salesTransactionsTotal || 0) / TRANSACTION_PAGE_SIZE)" @click="loadSalesTransactionsPage(salesTransactionsPage + 1)">Next</button>
+            </div>
+            <div class="flex gap-2">
+              <button type="button" class="px-2 py-1.5 bg-green-600 text-white rounded text-xs hover:bg-green-700" @click="exportDetailTransaksiExcel">Export Excel</button>
+              <button type="button" class="px-2 py-1.5 bg-red-600 text-white rounded text-xs hover:bg-red-700" @click="exportDetailTransaksiPdf">Export PDF</button>
+            </div>
           </div>
         </div>
         <table class="min-w-full divide-y divide-gray-200">
@@ -269,6 +337,8 @@ import {
   getSalesSummary,
   getSalesDaily,
   getSalesTransactions,
+  getSalesHourly,
+  getPaymentsReport,
   getProfitReport,
   getTopProducts,
   getInventoryReport,
@@ -300,9 +370,15 @@ const activeTab = ref('sales')
 const loading = ref(false)
 const error = ref(null)
 
+const TRANSACTION_PAGE_SIZE = 20
 const salesSummary = ref(null)
 const salesDaily = ref([])
 const salesTransactions = ref([])
+const salesTransactionsTotal = ref(0)
+const salesTransactionsPage = ref(1)
+const salesHourly = ref([])
+const hourlyDate = ref('')
+const paymentsReport = ref([])
 const profitSummary = ref(null)
 const profitRows = ref([])
 const topProducts = ref([])
@@ -345,6 +421,15 @@ const salesDailyRows = computed(() => (salesDaily.value || []).map((r) => [r.dat
 
 const salesTransactionsHeaders = ['Date & Time', 'Transaction ID', 'Cashier', 'Amount']
 const salesTransactionsRows = computed(() => (salesTransactions.value || []).map((r) => [r.created_at, r.id, r.cashier || '—', formatPrice(r.total_amount)]))
+const salesTransactionsShowing = computed(() => {
+  const total = salesTransactionsTotal.value
+  const page = salesTransactionsPage.value
+  const limit = TRANSACTION_PAGE_SIZE
+  if (total === 0) return { from: 0, to: 0, total: 0 }
+  const from = (page - 1) * limit + 1
+  const to = Math.min(page * limit, total)
+  return { from, to, total }
+})
 
 const profitTableHeaders = ['Product', 'Quantity', 'Revenue', 'Cost', 'Profit']
 const profitTableRows = computed(() => (profitRows.value || []).map((r) => [r.product_name, r.quantity_sold, formatPrice(r.revenue), formatPrice(r.cost), formatPrice(r.profit)]))
@@ -356,6 +441,8 @@ const inventoryTableRows = computed(() => (inventoryRows.value || []).map((r) =>
 
 const cashiersTableRows = computed(() => (cashiersRows.value || []).map((r) => [r.cashier, r.transactions, formatPrice(r.revenue)]))
 
+const paymentsTableRows = computed(() => (paymentsReport.value || []).map((r) => [r.method, r.transactions, formatPrice(r.revenue)]))
+
 function setDateFilter(value) {
   dateFilter.value = value
   const now = new Date()
@@ -366,14 +453,53 @@ function setDateFilter(value) {
 }
 
 async function loadSales() {
-  const [summary, daily, transactions] = await Promise.all([
-    getSalesSummary(dateRange.value),
-    getSalesDaily(dateRange.value),
-    getSalesTransactions(dateRange.value),
+  const range = dateRange.value
+  if (!hourlyDate.value && range.to) hourlyDate.value = range.to
+  const [summary, daily, payments, transactionsResp] = await Promise.all([
+    getSalesSummary(range),
+    getSalesDaily(range),
+    getPaymentsReport(range),
+    getSalesTransactions({ ...range, page: salesTransactionsPage.value, limit: TRANSACTION_PAGE_SIZE }),
   ])
   salesSummary.value = summary
   salesDaily.value = Array.isArray(daily) ? daily : []
-  salesTransactions.value = Array.isArray(transactions) ? transactions : []
+  paymentsReport.value = Array.isArray(payments) ? payments : []
+  salesTransactionsTotal.value = transactionsResp?.total ?? 0
+  salesTransactions.value = Array.isArray(transactionsResp?.rows) ? transactionsResp.rows : []
+  if (hourlyDate.value) await loadSalesHourly()
+}
+
+async function loadSalesHourly() {
+  if (!hourlyDate.value) return
+  try {
+    const data = await getSalesHourly(hourlyDate.value)
+    salesHourly.value = Array.isArray(data) ? data : []
+  } catch {
+    salesHourly.value = []
+  }
+}
+
+async function loadSalesTransactionsPage(page) {
+  if (page < 1) return
+  const totalPages = Math.ceil(salesTransactionsTotal.value / TRANSACTION_PAGE_SIZE)
+  if (totalPages > 0 && page > totalPages) return
+  salesTransactionsPage.value = page
+  const resp = await getSalesTransactions({
+    ...dateRange.value,
+    page: salesTransactionsPage.value,
+    limit: TRANSACTION_PAGE_SIZE,
+  })
+  salesTransactions.value = Array.isArray(resp?.rows) ? resp.rows : []
+}
+
+async function fetchAllTransactionsForExport() {
+  const resp = await getSalesTransactions({
+    ...dateRange.value,
+    page: 1,
+    limit: 0,
+  })
+  const rows = Array.isArray(resp?.rows) ? resp.rows : []
+  return rows.map((r) => [r.created_at, r.id, r.cashier || '—', formatPrice(r.total_amount)])
 }
 
 async function loadProfit() {
@@ -414,7 +540,10 @@ async function loadTab() {
 }
 
 watch(activeTab, loadTab)
-watch(dateRange, loadTab, { deep: true })
+watch(dateRange, () => {
+  salesTransactionsPage.value = 1
+  loadTab()
+}, { deep: true })
 
 onMounted(() => {
   if (dateFilter.value === 'custom' && !customFrom.value) setDateFilter('custom')
@@ -451,6 +580,16 @@ function exportCardPdf(title, headers, rows, slug) {
     doc.text('No data to export.', 14, 25)
   }
   doc.save(`report-${slug}-${dateRangeLabel.value.replace(/\s/g, '-')}.pdf`)
+}
+
+async function exportDetailTransaksiExcel() {
+  const rows = await fetchAllTransactionsForExport()
+  exportCardExcel(salesTransactionsHeaders, rows, 'detail-transaksi')
+}
+
+async function exportDetailTransaksiPdf() {
+  const rows = await fetchAllTransactionsForExport()
+  exportCardPdf('Detail Transaksi', salesTransactionsHeaders, rows, 'detail-transaksi')
 }
 </script>
 
