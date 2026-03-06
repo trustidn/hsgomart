@@ -6,6 +6,7 @@ import (
 	"github.com/trustidn/hsmart-saas/internal/inventory"
 	"github.com/trustidn/hsmart-saas/internal/pos"
 	"github.com/trustidn/hsmart-saas/internal/product"
+	"github.com/trustidn/hsmart-saas/internal/report"
 	"github.com/trustidn/hsmart-saas/internal/subscription"
 	"github.com/trustidn/hsmart-saas/internal/user"
 	"github.com/trustidn/hsmart-saas/pkg/config"
@@ -55,5 +56,11 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg config.Config) {
 		posSvc := pos.NewService(db)
 		posHandler := pos.NewHandler(posSvc)
 		apiGroup.POST("/pos/checkout", posHandler.Checkout)
+
+		reportSvc := report.NewService(db)
+		reportHandler := report.NewHandler(reportSvc)
+		apiGroup.GET("/reports/sales", reportHandler.SalesSummary)
+		apiGroup.GET("/reports/products", reportHandler.TopProducts)
+		apiGroup.GET("/reports/inventory", reportHandler.InventorySummary)
 	}
 }
