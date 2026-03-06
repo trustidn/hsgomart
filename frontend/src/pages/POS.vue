@@ -11,6 +11,7 @@
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500"
           @keydown.enter.prevent="onBarcodeEnter"
         />
+        <p class="text-xs text-gray-500 mt-0.5">Scan or type barcode (min 8 chars, auto-detected after 200ms)</p>
         <p v-if="barcodeError" class="text-sm text-red-600 mt-1">{{ barcodeError }}</p>
       </div>
     </div>
@@ -169,17 +170,33 @@
       </div>
     </div>
 
-    <!-- Success message -->
+    <!-- Receipt modal (after checkout) -->
     <div
-      v-if="showSuccessMessage"
-      class="fixed inset-0 z-10 flex items-center justify-center bg-black/50"
-      @click.self="showSuccessMessage = false"
+      v-if="showReceiptModal"
+      class="fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4"
+      @click.self="closeReceipt"
     >
-      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-center">
-        <p class="text-lg font-semibold text-green-700 mb-2">Checkout successful</p>
-        <button type="button" class="px-4 py-2 bg-slate-600 text-white rounded-md hover:bg-slate-700" @click="showSuccessMessage = false">
-          OK
-        </button>
+      <div class="bg-white rounded-lg shadow-xl max-w-sm w-full max-h-[90vh] overflow-auto">
+        <div class="p-4">
+          <Receipt
+            v-if="receiptData"
+            :store-name="receiptData.storeName"
+            :date="receiptData.date"
+            :transaction-id="receiptData.transactionId"
+            :items="receiptData.items"
+            :total="receiptData.total"
+            :paid-amount="receiptData.paidAmount"
+            :change="receiptData.change"
+          />
+        </div>
+        <div class="p-4 border-t border-gray-200 flex gap-2 justify-end">
+          <button type="button" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50" @click="printReceipt">
+            Print Receipt
+          </button>
+          <button type="button" class="px-4 py-2 bg-slate-600 text-white rounded-md hover:bg-slate-700" @click="closeReceipt">
+            Done
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -189,6 +206,10 @@
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { getProducts, getProductByBarcode } from '../api/products'
 import { checkout as checkoutApi } from '../api/pos'
+import Receipt from '../components/Receipt.vue'
+
+const SCAN_DEBOUNCE_MS = 200
+const MIN_BARCODE_LENGTH = 8
 
 const products = ref([])
 const barcodeInput = ref('')
@@ -205,7 +226,9 @@ const showCheckoutModal = ref(false)
 const checkoutForm = ref({ payment_method: 'cash', paid_amount: 0 })
 const checkoutError = ref('')
 const checkoutSubmitting = ref(false)
-const showSuccessMessage = ref(false)
+const showReceiptModal = ref(false)
+const receiptData = ref(null)
+let scanDebounceTimer = null
 
 function productId(p) {
   return p?.id ?? p?.ID ?? ''
@@ -244,20 +267,30 @@ const totalAmount = computed(() => {
   return cartItems.value.reduce((sum, i) => sum + i.price * i.quantity, 0)
 })
 
-function playBeep() {
+function webAudioBeep(freq = 800, duration = 0.1) {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)()
     const osc = ctx.createOscillator()
     const gain = ctx.createGain()
     osc.connect(gain)
     gain.connect(ctx.destination)
-    osc.frequency.value = 800
+    osc.frequency.value = freq
     osc.type = 'sine'
     gain.gain.setValueAtTime(0.15, ctx.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1)
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration)
     osc.start(ctx.currentTime)
-    osc.stop(ctx.currentTime + 0.1)
+    osc.stop(ctx.currentTime + duration)
   } catch (_) {}
+}
+
+function playBeep() {
+  const audio = new Audio('/beep.mp3')
+  audio.play().catch(() => webAudioBeep(800))
+}
+
+function playErrorBeep() {
+  const audio = new Audio('/beep-error.mp3')
+  audio.play().catch(() => webAudioBeep(400, 0.2))
 }
 
 function addToCart(p) {
@@ -276,22 +309,39 @@ function addToCart(p) {
   playBeep()
 }
 
-async function onBarcodeEnter() {
-  const barcode = (barcodeInput.value || '').trim()
-  if (!barcode) return
+async function lookupAndAddBarcode(barcode) {
+  const code = (barcode || '').trim()
+  if (!code) return
   barcodeError.value = ''
   try {
-    const product = await getProductByBarcode(barcode)
+    const product = await getProductByBarcode(code)
     addToCart(product)
     barcodeInput.value = ''
+    nextTick(() => barcodeInputRef.value?.focus())
   } catch (err) {
     if (err.response?.status === 404) {
       barcodeError.value = 'Product not found'
+      playErrorBeep()
     } else {
       barcodeError.value = err.response?.data?.error ?? 'Failed to find product.'
+      playErrorBeep()
     }
   }
 }
+
+async function onBarcodeEnter() {
+  await lookupAndAddBarcode(barcodeInput.value)
+}
+
+watch(barcodeInput, (val) => {
+  if (scanDebounceTimer) clearTimeout(scanDebounceTimer)
+  const trimmed = (val || '').trim()
+  if (trimmed.length < MIN_BARCODE_LENGTH) return
+  scanDebounceTimer = setTimeout(() => {
+    scanDebounceTimer = null
+    lookupAndAddBarcode(trimmed)
+  }, SCAN_DEBOUNCE_MS)
+})
 
 function changeQuantity(productId, delta) {
   const item = cartItems.value.find((i) => i.product_id === productId)
@@ -316,19 +366,38 @@ async function submitCheckout() {
   checkoutError.value = ''
   checkoutSubmitting.value = true
   try {
-    await checkoutApi({
+    const result = await checkoutApi({
       items: cartItems.value.map((i) => ({ product_id: i.product_id, quantity: i.quantity })),
       payment_method: checkoutForm.value.payment_method,
       paid_amount: checkoutForm.value.paid_amount,
     })
     showCheckoutModal.value = false
-    cartItems.value = []
-    showSuccessMessage.value = true
+    receiptData.value = {
+      storeName: 'HSMart',
+      date: new Date(),
+      transactionId: result?.transaction_id ?? '',
+      items: cartItems.value.map((i) => ({ ...i })),
+      total: result?.total ?? totalAmount.value,
+      paidAmount: checkoutForm.value.paid_amount,
+      change: result?.change ?? 0,
+    }
+    showReceiptModal.value = true
   } catch (err) {
     checkoutError.value = err.response?.data?.error ?? 'Checkout failed. Please try again.'
   } finally {
     checkoutSubmitting.value = false
   }
+}
+
+function printReceipt() {
+  window.print()
+}
+
+function closeReceipt() {
+  showReceiptModal.value = false
+  receiptData.value = null
+  cartItems.value = []
+  nextTick(() => barcodeInputRef.value?.focus())
 }
 
 onMounted(async () => {
