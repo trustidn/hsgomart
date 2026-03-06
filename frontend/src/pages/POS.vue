@@ -15,6 +15,14 @@
         <p v-if="barcodeError" class="text-sm text-red-600 mt-1">{{ barcodeError }}</p>
       </div>
     </div>
+    <p class="text-xs text-gray-500 mb-3">
+      <span class="font-medium text-gray-600">Shortcuts:</span>
+      <kbd class="px-1.5 py-0.5 rounded bg-gray-100 border border-gray-300 font-mono text-xs">F1</kbd> Cash
+      <span class="mx-1.5 text-gray-400">·</span>
+      <kbd class="px-1.5 py-0.5 rounded bg-gray-100 border border-gray-300 font-mono text-xs">F2</kbd> Card
+      <span class="mx-1.5 text-gray-400">·</span>
+      <kbd class="px-1.5 py-0.5 rounded bg-gray-100 border border-gray-300 font-mono text-xs">Esc</kbd> Clear cart
+    </p>
 
     <div class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-4">
       <!-- LEFT: Product search list -->
@@ -35,7 +43,7 @@
               v-for="p in filteredProducts"
               :key="productId(p)"
               class="border border-gray-200 rounded-lg p-3 hover:bg-slate-50 cursor-pointer transition-colors"
-              @click="addToCart(p)"
+              @click="addToCartWithStockCheck(p)"
             >
               <div class="font-medium text-gray-800 truncate">{{ productName(p) }}</div>
               <div class="text-sm text-gray-500 truncate">{{ productSku(p) || '—' }}</div>
@@ -62,7 +70,7 @@
               <tr v-for="item in cartItems" :key="item.product_id" class="border-b border-gray-100 align-top">
                 <td class="py-2 pr-2">
                   <div class="font-medium text-gray-800">{{ item.name }}</div>
-                  <div class="flex items-center gap-1 mt-1">
+                  <div class="flex flex-wrap items-center gap-1 mt-1">
                     <button
                       type="button"
                       class="w-6 h-6 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 flex items-center justify-center text-xs font-medium"
@@ -72,13 +80,9 @@
                       −
                     </button>
                     <span class="min-w-[1.5rem] text-center">{{ item.quantity }}</span>
-                    <button
-                      type="button"
-                      class="w-6 h-6 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 flex items-center justify-center text-xs font-medium"
-                      @click="changeQuantity(item.product_id, 1)"
-                    >
-                      +
-                    </button>
+                    <button type="button" class="px-1.5 py-0.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 text-xs" @click="changeQuantity(item.product_id, 1)">+1</button>
+                    <button type="button" class="px-1.5 py-0.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 text-xs" @click="changeQuantity(item.product_id, 5)">+5</button>
+                    <button type="button" class="px-1.5 py-0.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 text-xs" @click="changeQuantity(item.product_id, 10)">+10</button>
                     <button
                       type="button"
                       class="text-red-600 hover:underline text-xs ml-1"
@@ -203,8 +207,9 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { getProducts, getProductByBarcode } from '../api/products'
+import { getProductStock } from '../api/inventory'
 import { checkout as checkoutApi } from '../api/pos'
 import Receipt from '../components/Receipt.vue'
 
@@ -263,9 +268,9 @@ function filterProducts() {
 
 watch(searchQuery, filterProducts)
 
-const totalAmount = computed(() => {
-  return cartItems.value.reduce((sum, i) => sum + i.price * i.quantity, 0)
-})
+const totalAmount = computed(() =>
+  cartItems.value.reduce((sum, item) => sum + item.price * item.quantity, 0)
+)
 
 function webAudioBeep(freq = 800, duration = 0.1) {
   try {
@@ -309,15 +314,45 @@ function addToCart(p) {
   playBeep()
 }
 
+/** Returns true if product was added, false if blocked by stock or error. */
+async function addToCartWithStockCheck(p) {
+  const id = productId(p)
+  barcodeError.value = ''
+  try {
+    const res = await getProductStock(id)
+    const stock = res?.stock ?? 0
+    if (stock <= 0) {
+      barcodeError.value = 'Insufficient stock'
+      playErrorBeep()
+      return false
+    }
+    const existing = cartItems.value.find((i) => i.product_id === id)
+    const nextQty = existing ? existing.quantity + 1 : 1
+    if (nextQty > stock) {
+      barcodeError.value = 'Insufficient stock'
+      playErrorBeep()
+      return false
+    }
+    addToCart(p)
+    return true
+  } catch (err) {
+    barcodeError.value = err.response?.data?.error ?? 'Failed to check stock.'
+    playErrorBeep()
+    return false
+  }
+}
+
 async function lookupAndAddBarcode(barcode) {
   const code = (barcode || '').trim()
-  if (!code) return
+  if (!code || code.length < MIN_BARCODE_LENGTH) return
   barcodeError.value = ''
   try {
     const product = await getProductByBarcode(code)
-    addToCart(product)
-    barcodeInput.value = ''
-    nextTick(() => barcodeInputRef.value?.focus())
+    const added = await addToCartWithStockCheck(product)
+    if (added) {
+      barcodeInput.value = ''
+      nextTick(() => barcodeInputRef.value?.focus())
+    }
   } catch (err) {
     if (err.response?.status === 404) {
       barcodeError.value = 'Product not found'
@@ -329,17 +364,20 @@ async function lookupAndAddBarcode(barcode) {
   }
 }
 
+
 async function onBarcodeEnter() {
-  await lookupAndAddBarcode(barcodeInput.value)
+  const barcode = (barcodeInput.value || '').trim()
+  if (barcode.length < MIN_BARCODE_LENGTH) return
+  await lookupAndAddBarcode(barcode)
 }
 
 watch(barcodeInput, (val) => {
   if (scanDebounceTimer) clearTimeout(scanDebounceTimer)
-  const trimmed = (val || '').trim()
-  if (trimmed.length < MIN_BARCODE_LENGTH) return
+  const barcode = (val || '').trim()
+  if (barcode.length < MIN_BARCODE_LENGTH) return
   scanDebounceTimer = setTimeout(() => {
     scanDebounceTimer = null
-    lookupAndAddBarcode(trimmed)
+    lookupAndAddBarcode(barcode)
   }, SCAN_DEBOUNCE_MS)
 })
 
@@ -400,7 +438,29 @@ function closeReceipt() {
   nextTick(() => barcodeInputRef.value?.focus())
 }
 
+function confirmClearCart() {
+  if (!cartItems.value.length) return
+  if (window.confirm('Clear cart?')) {
+    cartItems.value = []
+    barcodeError.value = ''
+  }
+}
+
+function handleKeyShortcuts(e) {
+  if (showCheckoutModal.value || showReceiptModal.value) return
+  if (e.key === 'F1') {
+    e.preventDefault()
+    if (cartItems.value.length) openCheckoutModal('cash')
+  } else if (e.key === 'F2') {
+    e.preventDefault()
+    if (cartItems.value.length) openCheckoutModal('card')
+  } else if (e.key === 'Escape') {
+    confirmClearCart()
+  }
+}
+
 onMounted(async () => {
+  window.addEventListener('keydown', handleKeyShortcuts)
   productsLoading.value = true
   productsError.value = null
   try {
@@ -414,5 +474,9 @@ onMounted(async () => {
   }
   await nextTick()
   barcodeInputRef.value?.focus()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyShortcuts)
 })
 </script>
