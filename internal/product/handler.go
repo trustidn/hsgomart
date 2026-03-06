@@ -106,23 +106,67 @@ func (h *Handler) DeleteCategory(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// productResponse for GET /api/products list (id, name, sku, sell_price, status)
+// productResponse for GET /api/products list and GET /api/products/:id (includes category_id, cost_price, barcode for edit).
 type productResponse struct {
-	ID        string  `json:"id"`
-	Name      string  `json:"name"`
-	SKU       string  `json:"sku"`
-	SellPrice float64 `json:"sell_price"`
-	Status    string  `json:"status"`
+	ID         string   `json:"id"`
+	Name       string   `json:"name"`
+	SKU        string   `json:"sku"`
+	CategoryID *string  `json:"category_id,omitempty"`
+	CostPrice  float64  `json:"cost_price"`
+	SellPrice  float64  `json:"sell_price"`
+	Status     string   `json:"status"`
+	Barcode    string   `json:"barcode,omitempty"`
 }
 
 func toProductResponse(p *Product) productResponse {
+	return toProductResponseWithBarcode(p, "")
+}
+
+func toProductResponseWithBarcode(p *Product, barcode string) productResponse {
 	return productResponse{
+		ID:         p.ID,
+		Name:       p.Name,
+		SKU:        p.SKU,
+		CategoryID: p.CategoryID,
+		CostPrice:  p.CostPrice,
+		SellPrice:  p.SellPrice,
+		Status:     p.Status,
+		Barcode:    barcode,
+	}
+}
+
+// ProductByBarcodeResponse for GET /api/products/barcode/:barcode
+type ProductByBarcodeResponse struct {
+	ID        string  `json:"id"`
+	Name      string  `json:"name"`
+	SellPrice float64 `json:"sell_price"`
+}
+
+func (h *Handler) GetProductByBarcode(c *gin.Context) {
+	tenantID, ok := utils.GetTenantID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context required"})
+		return
+	}
+	barcode := c.Param("barcode")
+	if barcode == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "barcode required"})
+		return
+	}
+	p, err := h.service.FindProductByBarcode(tenantID, barcode)
+	if err != nil {
+		if err == ErrProductNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get product"})
+		return
+	}
+	c.JSON(http.StatusOK, ProductByBarcodeResponse{
 		ID:        p.ID,
 		Name:      p.Name,
-		SKU:       p.SKU,
 		SellPrice: p.SellPrice,
-		Status:    p.Status,
-	}
+	})
 }
 
 func (h *Handler) ListProducts(c *gin.Context) {
@@ -197,8 +241,73 @@ func (h *Handler) GetProduct(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get product"})
 		return
 	}
+	barcodes, _ := h.service.GetProductBarcodes(tenantID, productID)
+	firstBarcode := ""
+	if len(barcodes) > 0 {
+		firstBarcode = barcodes[0]
+	}
+	c.JSON(http.StatusOK, toProductResponseWithBarcode(p, firstBarcode))
+}
 
+func (h *Handler) UpdateProduct(c *gin.Context) {
+	tenantID, ok := utils.GetTenantID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context required"})
+		return
+	}
+	productID := c.Param("id")
+	if productID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "product id required"})
+		return
+	}
+	var in UpdateProductInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	catID := in.CategoryID
+	if in.CategoryID != nil && *in.CategoryID == "" {
+		catID = nil
+	}
+	p, err := h.service.UpdateProduct(tenantID, productID, UpdateProductInput{
+		Name:       in.Name,
+		SKU:        in.SKU,
+		CategoryID: catID,
+		CostPrice:  in.CostPrice,
+		SellPrice:  in.SellPrice,
+		Status:     in.Status,
+	})
+	if err != nil {
+		if err == ErrProductNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update product"})
+		return
+	}
 	c.JSON(http.StatusOK, toProductResponse(p))
+}
+
+func (h *Handler) DeleteProduct(c *gin.Context) {
+	tenantID, ok := utils.GetTenantID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context required"})
+		return
+	}
+	productID := c.Param("id")
+	if productID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "product id required"})
+		return
+	}
+	if err := h.service.DeleteProduct(tenantID, productID); err != nil {
+		if err == ErrProductNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete product"})
+		return
+	}
+	c.Status(http.StatusNoContent)
 }
 
 func (h *Handler) AddBarcode(c *gin.Context) {

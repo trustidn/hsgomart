@@ -103,6 +103,17 @@ func (s *Service) ListProducts(tenantID string) ([]Product, error) {
 	return ListProductsByTenant(s.db, tenantID)
 }
 
+func (s *Service) FindProductByBarcode(tenantID, barcode string) (*Product, error) {
+	p, err := FindProductByBarcode(s.db, tenantID, barcode)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrProductNotFound
+		}
+		return nil, err
+	}
+	return p, nil
+}
+
 func (s *Service) GetProduct(tenantID, productID string) (*Product, error) {
 	p, err := FindProductByID(s.db, tenantID, productID)
 	if err != nil {
@@ -112,6 +123,57 @@ func (s *Service) GetProduct(tenantID, productID string) (*Product, error) {
 		return nil, err
 	}
 	return p, nil
+}
+
+// GetProductBarcodes returns barcodes for a product (tenant-scoped: product must belong to tenant).
+func (s *Service) GetProductBarcodes(tenantID, productID string) ([]string, error) {
+	if _, err := FindProductByID(s.db, tenantID, productID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrProductNotFound
+		}
+		return nil, err
+	}
+	list, err := ListBarcodesByProductID(s.db, productID)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]string, 0, len(list))
+	for i := range list {
+		out = append(out, list[i].Barcode)
+	}
+	return out, nil
+}
+
+func (s *Service) UpdateProduct(tenantID, productID string, in UpdateProductInput) (*Product, error) {
+	updates := map[string]interface{}{
+		"name":       in.Name,
+		"sku":        in.SKU,
+		"cost_price": in.CostPrice,
+		"sell_price": in.SellPrice,
+		"status":     in.Status,
+	}
+	if in.CategoryID != nil {
+		updates["category_id"] = *in.CategoryID
+	} else {
+		updates["category_id"] = nil
+	}
+	if err := UpdateProduct(s.db, tenantID, productID, updates); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrProductNotFound
+		}
+		return nil, err
+	}
+	return FindProductByID(s.db, tenantID, productID)
+}
+
+func (s *Service) DeleteProduct(tenantID, productID string) error {
+	if err := DeleteProduct(s.db, tenantID, productID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrProductNotFound
+		}
+		return err
+	}
+	return nil
 }
 
 func (s *Service) AddBarcode(tenantID, productID string, barcode string) (*ProductBarcode, error) {
@@ -145,6 +207,15 @@ type CreateProductInput struct {
 	CostPrice  float64  `json:"cost_price"`
 	SellPrice  float64  `json:"sell_price" binding:"required"`
 	Status     string   `json:"status"`
+}
+
+type UpdateProductInput struct {
+	Name       string  `json:"name" binding:"required"`
+	SKU        string  `json:"sku"`
+	CategoryID *string `json:"category_id"`
+	CostPrice  float64 `json:"cost_price"`
+	SellPrice  float64 `json:"sell_price" binding:"required"`
+	Status     string  `json:"status"`
 }
 
 type CreateCategoryInput struct {

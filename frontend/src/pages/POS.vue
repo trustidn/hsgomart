@@ -1,6 +1,19 @@
 <template>
   <div class="h-full flex flex-col">
-    <h1 class="text-2xl font-semibold text-gray-800 mb-4 shrink-0">POS</h1>
+    <div class="flex items-center gap-4 mb-4 shrink-0">
+      <h1 class="text-2xl font-semibold text-gray-800">POS</h1>
+      <div class="flex-1 max-w-xs">
+        <input
+          ref="barcodeInputRef"
+          v-model="barcodeInput"
+          type="text"
+          placeholder="Scan barcode..."
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500"
+          @keydown.enter.prevent="onBarcodeEnter"
+        />
+        <p v-if="barcodeError" class="text-sm text-red-600 mt-1">{{ barcodeError }}</p>
+      </div>
+    </div>
 
     <div class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-4">
       <!-- LEFT: Product search list -->
@@ -173,11 +186,14 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { getProducts } from '../api/products'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
+import { getProducts, getProductByBarcode } from '../api/products'
 import { checkout as checkoutApi } from '../api/pos'
 
 const products = ref([])
+const barcodeInput = ref('')
+const barcodeInputRef = ref(null)
+const barcodeError = ref('')
 const filteredProducts = ref([])
 const productsLoading = ref(true)
 const productsError = ref(null)
@@ -228,6 +244,22 @@ const totalAmount = computed(() => {
   return cartItems.value.reduce((sum, i) => sum + i.price * i.quantity, 0)
 })
 
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)()
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.frequency.value = 800
+    osc.type = 'sine'
+    gain.gain.setValueAtTime(0.15, ctx.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1)
+    osc.start(ctx.currentTime)
+    osc.stop(ctx.currentTime + 0.1)
+  } catch (_) {}
+}
+
 function addToCart(p) {
   const id = productId(p)
   const existing = cartItems.value.find((i) => i.product_id === id)
@@ -240,6 +272,24 @@ function addToCart(p) {
       price: productPrice(p),
       quantity: 1,
     })
+  }
+  playBeep()
+}
+
+async function onBarcodeEnter() {
+  const barcode = (barcodeInput.value || '').trim()
+  if (!barcode) return
+  barcodeError.value = ''
+  try {
+    const product = await getProductByBarcode(barcode)
+    addToCart(product)
+    barcodeInput.value = ''
+  } catch (err) {
+    if (err.response?.status === 404) {
+      barcodeError.value = 'Product not found'
+    } else {
+      barcodeError.value = err.response?.data?.error ?? 'Failed to find product.'
+    }
   }
 }
 
@@ -293,5 +343,7 @@ onMounted(async () => {
   } finally {
     productsLoading.value = false
   }
+  await nextTick()
+  barcodeInputRef.value?.focus()
 })
 </script>

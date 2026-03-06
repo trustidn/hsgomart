@@ -67,6 +67,37 @@ func AddBarcodeToProduct(db *gorm.DB, pb *ProductBarcode) error {
 	return db.Create(pb).Error
 }
 
+// ListBarcodesByProductID returns all barcodes for a product (product_id only; caller ensures tenant).
+func ListBarcodesByProductID(db *gorm.DB, productID string) ([]ProductBarcode, error) {
+	var list []ProductBarcode
+	err := db.Where("product_id = ?", productID).Find(&list).Error
+	return list, err
+}
+
+// UpdateProduct updates a product by tenant_id and id (updates only non-zero/non-empty as needed).
+func UpdateProduct(db *gorm.DB, tenantID, productID string, updates map[string]interface{}) error {
+	res := db.Model(&Product{}).Where("tenant_id = ? AND id = ?", tenantID, productID).Updates(updates)
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+// DeleteProduct deletes a product by tenant_id and id.
+func DeleteProduct(db *gorm.DB, tenantID, productID string) error {
+	res := db.Where("tenant_id = ? AND id = ?", tenantID, productID).Delete(&Product{})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
 // FindProductByBarcode returns the product that has this barcode, scoped by tenant_id.
 func FindProductByBarcode(db *gorm.DB, tenantID, barcode string) (*Product, error) {
 	var p Product
