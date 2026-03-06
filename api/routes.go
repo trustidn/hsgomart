@@ -3,6 +3,8 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/trustidn/hsmart-saas/internal/auth"
+	"github.com/trustidn/hsmart-saas/internal/inventory"
+	"github.com/trustidn/hsmart-saas/internal/product"
 	"github.com/trustidn/hsmart-saas/internal/user"
 	"github.com/trustidn/hsmart-saas/pkg/config"
 	"github.com/trustidn/hsmart-saas/pkg/middleware"
@@ -31,5 +33,20 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg config.Config) {
 		apiGroup.POST("/users", userHandler.Create)
 		apiGroup.PUT("/users/:id", userHandler.Update)
 		apiGroup.DELETE("/users/:id", userHandler.Delete)
+
+		productSvc := product.NewService(db)
+		productHandler := product.NewHandler(productSvc)
+		apiGroup.GET("/categories", productHandler.ListCategories)
+		apiGroup.POST("/categories", productHandler.CreateCategory)
+		apiGroup.GET("/products", productHandler.ListProducts)
+		apiGroup.POST("/products", productHandler.CreateProduct)
+		apiGroup.GET("/products/:id", productHandler.GetProduct)
+		apiGroup.POST("/products/:id/barcodes", productHandler.AddBarcode)
+
+		inventorySvc := inventory.NewService(db)
+		inventoryHandler := inventory.NewHandler(inventorySvc)
+		apiGroup.GET("/inventory", inventoryHandler.List)
+		apiGroup.GET("/products/:id/stock", inventoryHandler.GetStock)
+		apiGroup.POST("/products/:id/adjust-stock", inventoryHandler.AdjustStock)
 	}
 }

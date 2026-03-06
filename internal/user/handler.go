@@ -17,18 +17,20 @@ func NewHandler(service *Service) *Handler {
 
 // userResponse omits password_hash and tenant_id for API response
 type userResponse struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Role  string `json:"role"`
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Email  string `json:"email"`
+	Role   string `json:"role"`
+	Status string `json:"status"`
 }
 
 func toResponse(u *User) userResponse {
 	return userResponse{
-		ID:    u.ID,
-		Name:  u.Name,
-		Email: u.Email,
-		Role:  u.Role,
+		ID:     u.ID,
+		Name:   u.Name,
+		Email:  u.Email,
+		Role:   u.Role,
+		Status: u.Status,
 	}
 }
 
