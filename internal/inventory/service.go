@@ -138,3 +138,8 @@ func (s *Service) ListInventoryByTenant(tenantID string) ([]Inventory, error) {
 func (s *Service) ListMovements(tenantID, productID string) ([]StockMovement, error) {
 	return ListMovements(s.db, tenantID, productID)
 }
+
+// ListMovementRows returns movements with product name for the tenant.
+func (s *Service) ListMovementRows(tenantID, productID string) ([]MovementRow, error) {
+	return ListMovementRows(s.db, tenantID, productID)
+}

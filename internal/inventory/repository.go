@@ -1,6 +1,8 @@
 package inventory
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 )
 
@@ -72,5 +74,28 @@ func ListMovements(db *gorm.DB, tenantID, productID string) ([]StockMovement, er
 		q = q.Where("product_id = ?", productID)
 	}
 	err := q.Order("created_at DESC").Find(&list).Error
+	return list, err
+}
+
+// MovementRow holds a movement with product name for listing (used by ListMovementRows).
+type MovementRow struct {
+	ProductName string
+	Type        string
+	Quantity    int
+	Reference   string
+	CreatedAt   time.Time
+}
+
+// ListMovementRows returns movements with product name for the tenant (productID empty = all).
+func ListMovementRows(db *gorm.DB, tenantID, productID string) ([]MovementRow, error) {
+	var list []MovementRow
+	q := db.Table("stock_movements").
+		Select("products.name as product_name, stock_movements.type as type, stock_movements.quantity as quantity, stock_movements.reference as reference, stock_movements.created_at as created_at").
+		Joins("LEFT JOIN products ON products.id = stock_movements.product_id").
+		Where("stock_movements.tenant_id = ?", tenantID)
+	if productID != "" {
+		q = q.Where("stock_movements.product_id = ?", productID)
+	}
+	err := q.Order("stock_movements.created_at DESC").Scan(&list).Error
 	return list, err
 }

@@ -52,6 +52,7 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg config.Config) {
 		inventorySvc := inventory.NewService(db)
 		inventoryHandler := inventory.NewHandler(inventorySvc)
 		apiGroup.GET("/inventory", inventoryHandler.List)
+		apiGroup.GET("/inventory/movements", inventoryHandler.ListMovements)
 		apiGroup.GET("/products/:id/stock", inventoryHandler.GetStock)
 		apiGroup.POST("/products/:id/adjust-stock", inventoryHandler.AdjustStock)
 

@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/trustidn/hsmart-saas/pkg/utils"
@@ -13,6 +14,45 @@ type Handler struct {
 
 func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
+}
+
+// MovementResponse for GET /api/inventory/movements.
+type MovementResponse struct {
+	ProductName string `json:"product_name"`
+	Type        string `json:"type"`
+	Quantity    int    `json:"quantity"`
+	Reference   string `json:"reference"`
+	CreatedAt   string `json:"created_at"`
+}
+
+// ListMovements handles GET /api/inventory/movements (optional query: product_id).
+func (h *Handler) ListMovements(c *gin.Context) {
+	tenantID, ok := utils.GetTenantID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context required"})
+		return
+	}
+	productID := c.Query("product_id")
+	rows, err := h.service.ListMovementRows(tenantID, productID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list movements"})
+		return
+	}
+	res := make([]MovementResponse, 0, len(rows))
+	for _, r := range rows {
+		createdAt := ""
+		if !r.CreatedAt.IsZero() {
+			createdAt = r.CreatedAt.Format(time.RFC3339)
+		}
+		res = append(res, MovementResponse{
+			ProductName: r.ProductName,
+			Type:        r.Type,
+			Quantity:    r.Quantity,
+			Reference:   r.Reference,
+			CreatedAt:   createdAt,
+		})
+	}
+	c.JSON(http.StatusOK, res)
 }
 
 // List returns all inventory rows for the tenant (product_id and stock per product).

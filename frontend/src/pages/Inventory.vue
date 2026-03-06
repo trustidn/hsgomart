@@ -5,12 +5,14 @@
     <p v-if="loading" class="text-gray-600">Loading inventory...</p>
     <p v-else-if="error" class="text-red-600">{{ error }}</p>
 
-    <div v-else class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+    <div v-else class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden divide-y divide-gray-200">
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
             <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product Name</th>
             <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Stock</th>
+            <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Inventory Value</th>
+            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
             <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
           </tr>
         </thead>
@@ -18,7 +20,26 @@
           <tr v-for="(row, i) in inventory" :key="row.product_id || i" class="hover:bg-gray-50">
             <td class="px-4 py-2 text-sm text-gray-800">{{ row.product_name }}</td>
             <td class="px-4 py-2 text-sm text-gray-600 text-right">{{ row.stock }}</td>
-            <td class="px-4 py-2 text-right">
+            <td class="px-4 py-2 text-sm text-gray-600 text-right">{{ formatCurrency(inventoryValue(row)) }}</td>
+            <td class="px-4 py-2">
+              <span v-if="(row.stock ?? 0) < 10" class="text-red-600 font-semibold">LOW STOCK</span>
+              <span v-else class="text-green-600">OK</span>
+            </td>
+            <td class="px-4 py-2 text-right space-x-2">
+              <button
+                type="button"
+                class="text-sm px-2 py-1 border border-gray-300 rounded hover:bg-gray-100"
+                @click="quickAdjust(row, 10)"
+              >
+                +10
+              </button>
+              <button
+                type="button"
+                class="text-sm px-2 py-1 border border-gray-300 rounded hover:bg-gray-100"
+                @click="quickAdjust(row, -10)"
+              >
+                -10
+              </button>
               <button
                 type="button"
                 class="text-sm text-slate-600 hover:text-slate-800 font-medium"
@@ -29,7 +50,7 @@
             </td>
           </tr>
           <tr v-if="!inventory?.length">
-            <td colspan="3" class="px-4 py-4 text-sm text-gray-500 text-center">No inventory data.</td>
+            <td colspan="5" class="px-4 py-4 text-sm text-gray-500 text-center">No inventory data.</td>
           </tr>
         </tbody>
       </table>
@@ -112,6 +133,16 @@ const adjustForm = ref({ quantity: 0, type: 'adjustment', reference: '' })
 const adjustSaving = ref(false)
 const adjustError = ref('')
 
+function formatCurrency(value) {
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value ?? 0)
+}
+
+function inventoryValue(row) {
+  const stock = row?.stock ?? 0
+  const cost = row?.cost_price ?? 0
+  return stock * cost
+}
+
 async function loadData() {
   loading.value = true
   error.value = null
@@ -133,6 +164,22 @@ function openAdjustModal(row) {
   adjustForm.value = { quantity: 0, type: 'adjustment', reference: '' }
   adjustError.value = ''
   showAdjustModal.value = true
+}
+
+async function quickAdjust(row, delta) {
+  const productId = row.product_id ?? row.product_Id ?? ''
+  if (!productId) return
+  const quantity = delta > 0 ? delta : -delta
+  try {
+    await adjustStock(productId, {
+      quantity: delta > 0 ? quantity : -quantity,
+      type: 'adjustment',
+      reference: 'quick adjust',
+    })
+    await loadData()
+  } catch (err) {
+    error.value = err.response?.data?.error ?? 'Failed to adjust stock.'
+  }
 }
 
 async function handleAdjustStock() {

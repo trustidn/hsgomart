@@ -1,10 +1,18 @@
 import client from './client'
 
 /**
- * GET /api/reports/inventory - list with product_name, stock (and product_id for adjust)
+ * GET /api/reports/inventory - list with product_id, product_name, stock, cost_price
  */
 export async function getInventory() {
   const { data } = await client.get('/api/reports/inventory')
+  return data
+}
+
+/**
+ * GET /api/inventory/movements - stock movement history (optional product_id query)
+ */
+export async function getMovements(params) {
+  const { data } = await client.get('/api/inventory/movements', { params })
   return data
 }
 

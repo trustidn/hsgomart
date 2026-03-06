@@ -106,11 +106,12 @@ func (h *Handler) TopProducts(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-// InventorySummaryResponse for API (product_id for adjust-stock, product_name, stock).
+// InventorySummaryResponse for API (product_id, product_name, stock, cost_price for value).
 type InventorySummaryResponse struct {
-	ProductID   string `json:"product_id"`
-	ProductName string `json:"product_name"`
-	Stock       int    `json:"stock"`
+	ProductID   string  `json:"product_id"`
+	ProductName string  `json:"product_name"`
+	Stock       int     `json:"stock"`
+	CostPrice   float64 `json:"cost_price"`
 }
 
 // InventorySummary handles GET /api/reports/inventory
@@ -133,6 +134,7 @@ func (h *Handler) InventorySummary(c *gin.Context) {
 			ProductID:   r.ProductID,
 			ProductName: r.ProductName,
 			Stock:       r.Stock,
+			CostPrice:   r.CostPrice,
 		})
 	}
 	c.JSON(http.StatusOK, res)
