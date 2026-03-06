@@ -22,6 +22,7 @@ type TransactionItem struct {
 	Price         float64 `gorm:"type:numeric;not null"`
 	Quantity      int     `gorm:"not null"`
 	Subtotal      float64 `gorm:"type:numeric;not null"`
+	Cogs          float64 `gorm:"type:numeric;default:0"` // cost of goods sold (FIFO batch cost)
 }
 
 func (TransactionItem) TableName() string {

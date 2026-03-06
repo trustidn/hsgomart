@@ -57,6 +57,7 @@ const navItems = [
   { path: '/inventory', label: 'Inventory' },
   { path: '/inventory-history', label: 'Inventory History' },
   { path: '/categories', label: 'Categories' },
+  { path: '/purchases', label: 'Purchases' },
   { path: '/pos', label: 'POS' },
   { path: '/reports', label: 'Reports' },
 ]

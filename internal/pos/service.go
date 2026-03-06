@@ -5,6 +5,7 @@ import (
 
 	"github.com/trustidn/hsmart-saas/internal/inventory"
 	"github.com/trustidn/hsmart-saas/internal/product"
+	"github.com/trustidn/hsmart-saas/internal/purchase"
 	"gorm.io/gorm"
 )
 
@@ -78,18 +79,25 @@ func (s *Service) Checkout(tenantID, userID string, in CheckoutInput) (*Checkout
 			return nil, ErrInsufficientStock
 		}
 
-		// 3. Calculate subtotal
+		// 3. FIFO: deduct from batches and compute COGS
+		cogs, err := deductBatchesFIFO(tx, it.ProductID, it.Quantity)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+
+		// 4. Calculate subtotal (revenue)
 		price := p.SellPrice
 		subtotal := price * float64(it.Quantity)
 		totalAmount += subtotal
 
-		// 4. Decrease inventory
+		// 5. Decrease inventory stock
 		if err := inventory.DecreaseStock(tx, tenantID, it.ProductID, it.Quantity); err != nil {
 			tx.Rollback()
 			return nil, err
 		}
 
-		// 5. Create stock movement (type = sale)
+		// 6. Create stock movement (type = sale)
 		m := &inventory.StockMovement{
 			TenantID:  tenantID,
 			ProductID: it.ProductID,
@@ -107,6 +115,7 @@ func (s *Service) Checkout(tenantID, userID string, in CheckoutInput) (*Checkout
 			Price:     price,
 			Quantity:  it.Quantity,
 			Subtotal:  subtotal,
+			Cogs:      cogs,
 		})
 	}
 
@@ -156,4 +165,33 @@ func (s *Service) Checkout(tenantID, userID string, in CheckoutInput) (*Checkout
 		Total:         totalAmount,
 		Change:        change,
 	}, nil
+}
+
+// deductBatchesFIFO deducts quantity from oldest batches first, updates remaining_quantity, returns total COGS.
+func deductBatchesFIFO(tx *gorm.DB, productID string, quantity int) (float64, error) {
+	batches, err := purchase.FindAvailableBatches(tx, productID)
+	if err != nil {
+		return 0, err
+	}
+	var cogs float64
+	remaining := quantity
+	for _, b := range batches {
+		if remaining <= 0 {
+			break
+		}
+		deduct := b.RemainingQuantity
+		if deduct > remaining {
+			deduct = remaining
+		}
+		cogs += b.CostPrice * float64(deduct)
+		newRemaining := b.RemainingQuantity - deduct
+		if err := purchase.UpdateBatchRemaining(tx, b.ID, newRemaining); err != nil {
+			return 0, err
+		}
+		remaining -= deduct
+	}
+	if remaining > 0 {
+		return 0, ErrInsufficientStock
+	}
+	return cogs, nil
 }

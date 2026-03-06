@@ -19,6 +19,8 @@ const routes = [
       { path: 'inventory', name: 'Inventory', component: () => import('../pages/Inventory.vue') },
       { path: 'inventory-history', name: 'InventoryHistory', component: () => import('../pages/InventoryHistory.vue') },
       { path: 'categories', name: 'Categories', component: () => import('../pages/Categories.vue') },
+      { path: 'purchases', name: 'Purchases', component: () => import('../pages/Purchases.vue') },
+      { path: 'purchases/:id', name: 'PurchaseDetail', component: () => import('../pages/Purchases.vue') },
       { path: 'pos', name: 'POS', component: () => import('../pages/POS.vue') },
       { path: 'reports', name: 'Reports', component: () => import('../pages/Reports.vue') },
     ],

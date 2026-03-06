@@ -189,9 +189,10 @@ type ProfitSummary struct {
 }
 
 // GetProfitReport returns product-level profit and summary for the tenant in the date range.
+// Cost uses transaction_items.cogs (FIFO batch cost) when present; falls back to product cost for legacy rows.
 func GetProfitReport(db *gorm.DB, tenantID string, fromDate, toDate time.Time) (summary ProfitSummary, rows []ProfitRow, err error) {
 	err = db.Table("transaction_items").
-		Select("products.name as product_name, SUM(transaction_items.quantity) as quantity_sold, SUM(transaction_items.subtotal) as revenue, SUM(products.cost_price * transaction_items.quantity) as cost").
+		Select("products.name as product_name, SUM(transaction_items.quantity) as quantity_sold, SUM(transaction_items.subtotal) as revenue, SUM(COALESCE(NULLIF(transaction_items.cogs, 0), products.cost_price * transaction_items.quantity)) as cost").
 		Joins("INNER JOIN transactions ON transactions.id = transaction_items.transaction_id").
 		Joins("INNER JOIN products ON products.id = transaction_items.product_id").
 		Where("transactions.tenant_id = ? AND transactions.status = ?", tenantID, "completed").
