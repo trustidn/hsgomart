@@ -3,10 +3,10 @@ package product
 import "time"
 
 type Category struct {
-	ID        string    `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
-	TenantID  string    `gorm:"type:uuid;not null;index"`
-	Name      string    `gorm:"type:varchar(255)"`
-	CreatedAt time.Time `gorm:"autoCreateTime"`
+	ID        string    `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	TenantID  string    `gorm:"type:uuid;not null;index" json:"tenant_id,omitempty"`
+	Name      string    `gorm:"type:varchar(255)" json:"name"`
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at,omitempty"`
 }
 
 func (Category) TableName() string {
