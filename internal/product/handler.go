@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/trustidn/hsmart-saas/internal/subscription"
 	"github.com/trustidn/hsmart-saas/pkg/utils"
 )
 
@@ -107,6 +108,14 @@ func (h *Handler) CreateProduct(c *gin.Context) {
 
 	p, err := h.service.CreateProduct(tenantID, in)
 	if err != nil {
+		if err == subscription.ErrPlanLimitReached {
+			c.JSON(http.StatusPaymentRequired, gin.H{"error": "plan limit reached"})
+			return
+		}
+		if err == subscription.ErrSubscriptionRequired || err == subscription.ErrSubscriptionExpired {
+			c.JSON(http.StatusPaymentRequired, gin.H{"error": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create product"})
 		return
 	}

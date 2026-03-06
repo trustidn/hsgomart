@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/trustidn/hsmart-saas/internal/subscription"
 	"github.com/trustidn/hsmart-saas/pkg/utils"
 )
 
@@ -71,6 +72,14 @@ func (h *Handler) Create(c *gin.Context) {
 	if err != nil {
 		if err == ErrEmailExists {
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
+		if err == subscription.ErrPlanLimitReached {
+			c.JSON(http.StatusPaymentRequired, gin.H{"error": "plan limit reached"})
+			return
+		}
+		if err == subscription.ErrSubscriptionRequired || err == subscription.ErrSubscriptionExpired {
+			c.JSON(http.StatusPaymentRequired, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})

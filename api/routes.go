@@ -6,6 +6,7 @@ import (
 	"github.com/trustidn/hsmart-saas/internal/inventory"
 	"github.com/trustidn/hsmart-saas/internal/pos"
 	"github.com/trustidn/hsmart-saas/internal/product"
+	"github.com/trustidn/hsmart-saas/internal/subscription"
 	"github.com/trustidn/hsmart-saas/internal/user"
 	"github.com/trustidn/hsmart-saas/pkg/config"
 	"github.com/trustidn/hsmart-saas/pkg/middleware"
@@ -24,18 +25,19 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg config.Config) {
 		authGroup.GET("/profile", middleware.Auth(authSvc), authHandler.Profile)
 	}
 
-	// Protected API: require Auth then Tenant. All handlers use tenant_id from context for isolation.
+	// Protected API: require Auth, Tenant, and valid Subscription (active/trial).
+	subscriptionSvc := subscription.NewService(db)
 	apiGroup := r.Group("/api")
-	apiGroup.Use(middleware.Auth(authSvc), middleware.Tenant())
+	apiGroup.Use(middleware.Auth(authSvc), middleware.Tenant(), middleware.Subscription(subscriptionSvc))
 	{
-		userSvc := user.NewService(db)
+		userSvc := user.NewService(db, subscriptionSvc)
 		userHandler := user.NewHandler(userSvc)
 		apiGroup.GET("/users", userHandler.List)
 		apiGroup.POST("/users", userHandler.Create)
 		apiGroup.PUT("/users/:id", userHandler.Update)
 		apiGroup.DELETE("/users/:id", userHandler.Delete)
 
-		productSvc := product.NewService(db)
+		productSvc := product.NewService(db, subscriptionSvc)
 		productHandler := product.NewHandler(productSvc)
 		apiGroup.GET("/categories", productHandler.ListCategories)
 		apiGroup.POST("/categories", productHandler.CreateCategory)

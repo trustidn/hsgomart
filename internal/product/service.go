@@ -3,20 +3,27 @@ package product
 import (
 	"errors"
 
+	"github.com/trustidn/hsmart-saas/internal/subscription"
 	"gorm.io/gorm"
 )
 
 var (
 	ErrProductNotFound = errors.New("product not found")
-	ErrBarcodeExists  = errors.New("barcode already registered")
+	ErrBarcodeExists   = errors.New("barcode already registered")
 )
 
-type Service struct {
-	db *gorm.DB
+// PlanLimitChecker is used to enforce plan max_products (e.g. subscription.Service).
+type PlanLimitChecker interface {
+	CheckSubscription(tenantID string) (*subscription.SubscriptionWithPlan, error)
 }
 
-func NewService(db *gorm.DB) *Service {
-	return &Service{db: db}
+type Service struct {
+	db               *gorm.DB
+	planLimitChecker PlanLimitChecker
+}
+
+func NewService(db *gorm.DB, planLimitChecker PlanLimitChecker) *Service {
+	return &Service{db: db, planLimitChecker: planLimitChecker}
 }
 
 func (s *Service) CreateCategory(tenantID string, name string) (*Category, error) {
@@ -35,6 +42,18 @@ func (s *Service) ListCategories(tenantID string) ([]Category, error) {
 }
 
 func (s *Service) CreateProduct(tenantID string, in CreateProductInput) (*Product, error) {
+	if s.planLimitChecker != nil {
+		subWithPlan, err := s.planLimitChecker.CheckSubscription(tenantID)
+		if err != nil {
+			return nil, err
+		}
+		var count int64
+		s.db.Model(&Product{}).Where("tenant_id = ?", tenantID).Count(&count)
+		if int(count) >= subWithPlan.Plan.MaxProducts {
+			return nil, subscription.ErrPlanLimitReached
+		}
+	}
+
 	p := &Product{
 		TenantID:  tenantID,
 		Name:      in.Name,

@@ -3,6 +3,7 @@ package user
 import (
 	"errors"
 
+	"github.com/trustidn/hsmart-saas/internal/subscription"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -14,12 +15,18 @@ var (
 
 const bcryptCost = 10
 
-type Service struct {
-	db *gorm.DB
+// PlanLimitChecker is used to enforce plan max_users (e.g. subscription.Service).
+type PlanLimitChecker interface {
+	CheckSubscription(tenantID string) (*subscription.SubscriptionWithPlan, error)
 }
 
-func NewService(db *gorm.DB) *Service {
-	return &Service{db: db}
+type Service struct {
+	db               *gorm.DB
+	planLimitChecker PlanLimitChecker
+}
+
+func NewService(db *gorm.DB, planLimitChecker PlanLimitChecker) *Service {
+	return &Service{db: db, planLimitChecker: planLimitChecker}
 }
 
 type CreateUserInput struct {
@@ -37,6 +44,18 @@ type UpdateUserInput struct {
 }
 
 func (s *Service) CreateUser(tenantID string, in CreateUserInput) (*User, error) {
+	if s.planLimitChecker != nil {
+		subWithPlan, err := s.planLimitChecker.CheckSubscription(tenantID)
+		if err != nil {
+			return nil, err
+		}
+		var count int64
+		s.db.Model(&User{}).Where("tenant_id = ?", tenantID).Count(&count)
+		if int(count) >= subWithPlan.Plan.MaxUsers {
+			return nil, subscription.ErrPlanLimitReached
+		}
+	}
+
 	var existing User
 	if err := s.db.Where("tenant_id = ? AND email = ?", tenantID, in.Email).First(&existing).Error; err == nil {
 		return nil, ErrEmailExists
