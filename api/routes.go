@@ -42,6 +42,8 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg config.Config) {
 		productHandler := product.NewHandler(productSvc)
 		apiGroup.GET("/categories", productHandler.ListCategories)
 		apiGroup.POST("/categories", productHandler.CreateCategory)
+		apiGroup.PUT("/categories/:id", productHandler.UpdateCategory)
+		apiGroup.DELETE("/categories/:id", productHandler.DeleteCategory)
 		apiGroup.GET("/products", productHandler.ListProducts)
 		apiGroup.POST("/products", productHandler.CreateProduct)
 		apiGroup.GET("/products/:id", productHandler.GetProduct)

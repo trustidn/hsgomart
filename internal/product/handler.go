@@ -54,6 +54,58 @@ func (h *Handler) CreateCategory(c *gin.Context) {
 	c.JSON(http.StatusCreated, cat)
 }
 
+func (h *Handler) UpdateCategory(c *gin.Context) {
+	tenantID, ok := utils.GetTenantID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context required"})
+		return
+	}
+	categoryID := c.Param("id")
+	if categoryID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "category id required"})
+		return
+	}
+	var in struct {
+		Name string `json:"name" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	cat, err := h.service.UpdateCategory(tenantID, categoryID, in.Name)
+	if err != nil {
+		if err == ErrCategoryNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "category not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update category"})
+		return
+	}
+	c.JSON(http.StatusOK, cat)
+}
+
+func (h *Handler) DeleteCategory(c *gin.Context) {
+	tenantID, ok := utils.GetTenantID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context required"})
+		return
+	}
+	categoryID := c.Param("id")
+	if categoryID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "category id required"})
+		return
+	}
+	if err := h.service.DeleteCategory(tenantID, categoryID); err != nil {
+		if err == ErrCategoryNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "category not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete category"})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
 // productResponse for GET /api/products list (id, name, sku, sell_price, status)
 type productResponse struct {
 	ID        string  `json:"id"`

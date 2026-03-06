@@ -16,6 +16,30 @@ func ListCategoriesByTenant(db *gorm.DB, tenantID string) ([]Category, error) {
 	return list, err
 }
 
+// UpdateCategory updates a category by tenant_id and id.
+func UpdateCategory(db *gorm.DB, tenantID, categoryID string, updates map[string]interface{}) error {
+	res := db.Model(&Category{}).Where("tenant_id = ? AND id = ?", tenantID, categoryID).Updates(updates)
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+// DeleteCategory deletes a category by tenant_id and id.
+func DeleteCategory(db *gorm.DB, tenantID, categoryID string) error {
+	res := db.Where("tenant_id = ? AND id = ?", tenantID, categoryID).Delete(&Category{})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
 // CreateProduct inserts a product. Caller must set TenantID.
 func CreateProduct(db *gorm.DB, p *Product) error {
 	return db.Create(p).Error

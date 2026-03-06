@@ -55,6 +55,7 @@ const navItems = [
   { path: '/dashboard', label: 'Dashboard' },
   { path: '/products', label: 'Products' },
   { path: '/inventory', label: 'Inventory' },
+  { path: '/categories', label: 'Categories' },
   { path: '/pos', label: 'POS' },
   { path: '/reports', label: 'Reports' },
 ]

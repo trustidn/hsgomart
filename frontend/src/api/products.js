@@ -20,6 +20,15 @@ export async function createCategory(payload) {
   return data
 }
 
+export async function updateCategory(id, payload) {
+  const { data } = await client.put(`/api/categories/${id}`, payload)
+  return data
+}
+
+export async function deleteCategory(id) {
+  await client.delete(`/api/categories/${id}`)
+}
+
 export async function addBarcode(productId, barcode) {
   const { data } = await client.post(`/api/products/${productId}/barcodes`, { barcode })
   return data

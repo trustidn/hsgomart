@@ -8,8 +8,9 @@ import (
 )
 
 var (
-	ErrProductNotFound = errors.New("product not found")
-	ErrBarcodeExists   = errors.New("barcode already registered")
+	ErrProductNotFound   = errors.New("product not found")
+	ErrBarcodeExists     = errors.New("barcode already registered")
+	ErrCategoryNotFound  = errors.New("category not found")
 )
 
 // PlanLimitChecker is used to enforce plan max_products (e.g. subscription.Service).
@@ -39,6 +40,30 @@ func (s *Service) CreateCategory(tenantID string, name string) (*Category, error
 
 func (s *Service) ListCategories(tenantID string) ([]Category, error) {
 	return ListCategoriesByTenant(s.db, tenantID)
+}
+
+func (s *Service) UpdateCategory(tenantID, categoryID string, name string) (*Category, error) {
+	if err := UpdateCategory(s.db, tenantID, categoryID, map[string]interface{}{"name": name}); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrCategoryNotFound
+		}
+		return nil, err
+	}
+	var c Category
+	if err := s.db.Where("tenant_id = ? AND id = ?", tenantID, categoryID).First(&c).Error; err != nil {
+		return nil, err
+	}
+	return &c, nil
+}
+
+func (s *Service) DeleteCategory(tenantID, categoryID string) error {
+	if err := DeleteCategory(s.db, tenantID, categoryID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrCategoryNotFound
+		}
+		return err
+	}
+	return nil
 }
 
 func (s *Service) CreateProduct(tenantID string, in CreateProductInput) (*Product, error) {

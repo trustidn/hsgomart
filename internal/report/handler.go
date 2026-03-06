@@ -106,8 +106,9 @@ func (h *Handler) TopProducts(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-// InventorySummaryResponse for API (product_name, stock per spec).
+// InventorySummaryResponse for API (product_id for adjust-stock, product_name, stock).
 type InventorySummaryResponse struct {
+	ProductID   string `json:"product_id"`
 	ProductName string `json:"product_name"`
 	Stock       int    `json:"stock"`
 }
@@ -129,6 +130,7 @@ func (h *Handler) InventorySummary(c *gin.Context) {
 	res := make([]InventorySummaryResponse, 0, len(rows))
 	for _, r := range rows {
 		res = append(res, InventorySummaryResponse{
+			ProductID:   r.ProductID,
 			ProductName: r.ProductName,
 			Stock:       r.Stock,
 		})
