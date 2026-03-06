@@ -66,7 +66,11 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg config.Config) {
 		reportSvc := report.NewService(db)
 		reportHandler := report.NewHandler(reportSvc)
 		apiGroup.GET("/reports/sales", reportHandler.SalesSummary)
+		apiGroup.GET("/reports/sales/daily", reportHandler.SalesDaily)
+		apiGroup.GET("/reports/sales/transactions", reportHandler.SalesTransactions)
+		apiGroup.GET("/reports/profit", reportHandler.ProfitReport)
 		apiGroup.GET("/reports/products", reportHandler.TopProducts)
 		apiGroup.GET("/reports/inventory", reportHandler.InventorySummary)
+		apiGroup.GET("/reports/cashiers", reportHandler.CashiersReport)
 	}
 }

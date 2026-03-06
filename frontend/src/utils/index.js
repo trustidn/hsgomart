@@ -7,3 +7,7 @@ export function formatCurrency(value) {
     minimumFractionDigits: 0,
   }).format(value)
 }
+
+export function formatPrice(value) {
+  return formatCurrency(value ?? 0)
+}

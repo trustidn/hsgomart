@@ -68,6 +68,89 @@ func (h *Handler) SalesSummary(c *gin.Context) {
 	})
 }
 
+// SalesDaily handles GET /api/reports/sales/daily?from=&to=
+func (h *Handler) SalesDaily(c *gin.Context) {
+	tenantID, ok := utils.GetTenantID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context required"})
+		return
+	}
+	from, to, err := parseDateRange(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format, use YYYY-MM-DD for from and to"})
+		return
+	}
+	rows, err := h.service.SalesDaily(tenantID, from, to)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get sales daily"})
+		return
+	}
+	c.JSON(http.StatusOK, rows)
+}
+
+// SalesTransactions handles GET /api/reports/sales/transactions?from=&to=
+func (h *Handler) SalesTransactions(c *gin.Context) {
+	tenantID, ok := utils.GetTenantID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context required"})
+		return
+	}
+	from, to, err := parseDateRange(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format, use YYYY-MM-DD for from and to"})
+		return
+	}
+	rows, err := h.service.SalesTransactions(tenantID, from, to)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get sales transactions"})
+		return
+	}
+	c.JSON(http.StatusOK, rows)
+}
+
+// ProfitReport handles GET /api/reports/profit?from=&to=
+func (h *Handler) ProfitReport(c *gin.Context) {
+	tenantID, ok := utils.GetTenantID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context required"})
+		return
+	}
+	from, to, err := parseDateRange(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format, use YYYY-MM-DD for from and to"})
+		return
+	}
+	summary, rows, err := h.service.ProfitReport(tenantID, from, to)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get profit report"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"summary": summary,
+		"rows":    rows,
+	})
+}
+
+// CashiersReport handles GET /api/reports/cashiers?from=&to=
+func (h *Handler) CashiersReport(c *gin.Context) {
+	tenantID, ok := utils.GetTenantID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context required"})
+		return
+	}
+	from, to, err := parseDateRange(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format, use YYYY-MM-DD for from and to"})
+		return
+	}
+	rows, err := h.service.CashiersReport(tenantID, from, to)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get cashiers report"})
+		return
+	}
+	c.JSON(http.StatusOK, rows)
+}
+
 // TopProductsResponse for API (product_name, quantity_sold, revenue per spec).
 type TopProductsResponse struct {
 	ProductName  string  `json:"product_name"`
