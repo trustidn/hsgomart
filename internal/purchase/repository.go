@@ -2,6 +2,7 @@ package purchase
 
 import (
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func CreatePurchase(db *gorm.DB, p *Purchase) error {
@@ -21,6 +22,16 @@ func ListPurchasesByTenant(db *gorm.DB, tenantID string) ([]Purchase, error) {
 	var list []Purchase
 	err := db.Where("tenant_id = ?", tenantID).Order("created_at DESC").Find(&list).Error
 	return list, err
+}
+
+// ExistsPurchaseByTenantAndInvoice returns true if a purchase with this tenant_id and invoice_number exists.
+func ExistsPurchaseByTenantAndInvoice(db *gorm.DB, tenantID, invoiceNumber string) (bool, error) {
+	if invoiceNumber == "" {
+		return false, nil
+	}
+	var count int64
+	err := db.Model(&Purchase{}).Where("tenant_id = ? AND invoice_number = ?", tenantID, invoiceNumber).Count(&count).Error
+	return count > 0, err
 }
 
 // GetPurchaseByID returns one purchase by ID if it belongs to the tenant.
@@ -58,9 +69,11 @@ func ListPurchaseItemRows(db *gorm.DB, purchaseID string) ([]PurchaseItemRow, er
 }
 
 // FindAvailableBatches returns batches for the product with remaining_quantity > 0, ordered by created_at ASC (FIFO).
+// Uses FOR UPDATE to prevent double-selling under concurrent POS checkouts.
 func FindAvailableBatches(db *gorm.DB, productID string) ([]InventoryBatch, error) {
 	var list []InventoryBatch
-	err := db.Where("product_id = ? AND remaining_quantity > 0", productID).
+	err := db.Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("product_id = ? AND remaining_quantity > 0", productID).
 		Order("created_at ASC").
 		Find(&list).Error
 	return list, err

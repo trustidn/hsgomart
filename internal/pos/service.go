@@ -55,10 +55,7 @@ func (s *Service) Checkout(tenantID, userID string, in CheckoutInput) (*Checkout
 	}()
 
 	var totalAmount float64
-	var itemsToInsert []TransactionItem
-
 	for _, it := range in.Items {
-		// 1. Find product (ensures product belongs to tenant)
 		p, err := product.FindProductByID(tx, tenantID, it.ProductID)
 		if err != nil {
 			tx.Rollback()
@@ -67,8 +64,6 @@ func (s *Service) Checkout(tenantID, userID string, in CheckoutInput) (*Checkout
 			}
 			return nil, err
 		}
-
-		// 2. Check stock
 		inv, err := inventory.GetInventoryByProduct(tx, tenantID, it.ProductID)
 		if err != nil {
 			tx.Rollback()
@@ -78,32 +73,52 @@ func (s *Service) Checkout(tenantID, userID string, in CheckoutInput) (*Checkout
 			tx.Rollback()
 			return nil, ErrInsufficientStock
 		}
+		totalAmount += p.SellPrice * float64(it.Quantity)
+	}
 
-		// 3. FIFO: deduct from batches and compute COGS
+	// Create transaction first so we have ID for stock_movements.reference_id
+	t := &Transaction{
+		TenantID:    tenantID,
+		UserID:      userID,
+		TotalAmount: totalAmount,
+		Status:      "completed",
+	}
+	if err := CreateTransaction(tx, t); err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	var itemsToInsert []TransactionItem
+	for _, it := range in.Items {
+		p, err := product.FindProductByID(tx, tenantID, it.ProductID)
+		if err != nil || p == nil {
+			tx.Rollback()
+			return nil, ErrProductNotFound
+		}
+		price := p.SellPrice
+		subtotal := price * float64(it.Quantity)
+
 		cogs, err := deductBatchesFIFO(tx, it.ProductID, it.Quantity)
 		if err != nil {
 			tx.Rollback()
 			return nil, err
 		}
+		unitCost := 0.0
+		if it.Quantity > 0 {
+			unitCost = cogs / float64(it.Quantity)
+		}
 
-		// 4. Calculate subtotal (revenue)
-		price := p.SellPrice
-		subtotal := price * float64(it.Quantity)
-		totalAmount += subtotal
-
-		// 5. Decrease inventory stock
 		if err := inventory.DecreaseStock(tx, tenantID, it.ProductID, it.Quantity); err != nil {
 			tx.Rollback()
 			return nil, err
 		}
-
-		// 6. Create stock movement (type = sale)
 		m := &inventory.StockMovement{
-			TenantID:  tenantID,
-			ProductID: it.ProductID,
-			Type:      inventory.MovementTypeSale,
-			Quantity:  it.Quantity,
-			Reference: "POS sale",
+			TenantID:    tenantID,
+			ProductID:   it.ProductID,
+			Type:        inventory.MovementTypeSale,
+			Quantity:    it.Quantity,
+			Reference:   "POS sale",
+			ReferenceID: t.ID,
 		}
 		if err := inventory.CreateMovement(tx, m); err != nil {
 			tx.Rollback()
@@ -115,20 +130,9 @@ func (s *Service) Checkout(tenantID, userID string, in CheckoutInput) (*Checkout
 			Price:     price,
 			Quantity:  it.Quantity,
 			Subtotal:  subtotal,
+			UnitCost:  unitCost,
 			Cogs:      cogs,
 		})
-	}
-
-	// Insert transaction
-	t := &Transaction{
-		TenantID:    tenantID,
-		UserID:      userID,
-		TotalAmount: totalAmount,
-		Status:      "completed",
-	}
-	if err := CreateTransaction(tx, t); err != nil {
-		tx.Rollback()
-		return nil, err
 	}
 
 	// Insert transaction items

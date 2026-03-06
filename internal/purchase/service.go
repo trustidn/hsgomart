@@ -9,9 +9,10 @@ import (
 )
 
 var (
-	ErrInvalidItems   = errors.New("items cannot be empty")
-	ErrProductInvalid = errors.New("product not found or does not belong to tenant")
-	ErrInvalidQtyCost = errors.New("quantity and cost_price must be positive")
+	ErrInvalidItems    = errors.New("items cannot be empty")
+	ErrProductInvalid  = errors.New("product not found or does not belong to tenant")
+	ErrInvalidQtyCost  = errors.New("quantity and cost_price must be positive")
+	ErrDuplicateInvoice = errors.New("invoice number already exists for this tenant")
 )
 
 type CreatePurchaseItemInput struct {
@@ -49,7 +50,7 @@ func (s *Service) CreatePurchase(tenantID string, in CreatePurchaseInput) (*Purc
 
 	var totalAmount float64
 	for _, it := range in.Items {
-		if it.Quantity <= 0 || it.CostPrice < 0 {
+		if it.Quantity <= 0 || it.CostPrice <= 0 {
 			tx.Rollback()
 			return nil, ErrInvalidQtyCost
 		}
@@ -63,6 +64,19 @@ func (s *Service) CreatePurchase(tenantID string, in CreatePurchaseInput) (*Purc
 		}
 		subtotal := it.CostPrice * float64(it.Quantity)
 		totalAmount += subtotal
+	}
+
+	// Prevent duplicate invoice per tenant (when invoice number is set)
+	if in.InvoiceNumber != "" {
+		exists, err := ExistsPurchaseByTenantAndInvoice(tx, tenantID, in.InvoiceNumber)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+		if exists {
+			tx.Rollback()
+			return nil, ErrDuplicateInvoice
+		}
 	}
 
 	p := &Purchase{
@@ -112,13 +126,19 @@ func (s *Service) CreatePurchase(tenantID string, in CreatePurchaseInput) (*Purc
 			ref = "purchase " + p.ID
 		}
 		m := &inventory.StockMovement{
-			TenantID:  tenantID,
-			ProductID: it.ProductID,
-			Type:      inventory.MovementTypePurchase,
-			Quantity:  it.Quantity,
-			Reference: ref,
+			TenantID:    tenantID,
+			ProductID:   it.ProductID,
+			Type:        inventory.MovementTypePurchase,
+			Quantity:    it.Quantity,
+			Reference:   ref,
+			ReferenceID: p.ID,
 		}
 		if err := inventory.CreateMovement(tx, m); err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+		// Update product last_purchase_price for reference in UI
+		if err := product.UpdateLastPurchasePrice(tx, it.ProductID, it.CostPrice); err != nil {
 			tx.Rollback()
 			return nil, err
 		}

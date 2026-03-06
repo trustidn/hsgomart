@@ -259,12 +259,13 @@ func (h *Handler) TopProducts(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-// InventorySummaryResponse for API (product_id, product_name, stock, cost_price for value).
+// InventorySummaryResponse for API (product_id, product_name, stock, cost_price, inventory_value from batches).
 type InventorySummaryResponse struct {
-	ProductID   string  `json:"product_id"`
-	ProductName string  `json:"product_name"`
-	Stock       int     `json:"stock"`
-	CostPrice   float64 `json:"cost_price"`
+	ProductID      string  `json:"product_id"`
+	ProductName    string  `json:"product_name"`
+	Stock          int     `json:"stock"`
+	CostPrice      float64 `json:"cost_price"`
+	InventoryValue float64 `json:"inventory_value"`
 }
 
 // InventorySummary handles GET /api/reports/inventory
@@ -284,10 +285,11 @@ func (h *Handler) InventorySummary(c *gin.Context) {
 	res := make([]InventorySummaryResponse, 0, len(rows))
 	for _, r := range rows {
 		res = append(res, InventorySummaryResponse{
-			ProductID:   r.ProductID,
-			ProductName: r.ProductName,
-			Stock:       r.Stock,
-			CostPrice:   r.CostPrice,
+			ProductID:      r.ProductID,
+			ProductName:    r.ProductName,
+			Stock:          r.Stock,
+			CostPrice:      r.CostPrice,
+			InventoryValue: r.InventoryValue,
 		})
 	}
 	c.JSON(http.StatusOK, res)

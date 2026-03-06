@@ -15,13 +15,14 @@ func (Inventory) TableName() string {
 }
 
 type StockMovement struct {
-	ID        string    `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
-	TenantID  string    `gorm:"type:uuid;not null;index"`
-	ProductID string    `gorm:"type:uuid;not null;index"`
-	Type      string    `gorm:"type:varchar(50);not null"` // purchase, sale, adjustment, return
-	Quantity  int       `gorm:"not null"`
-	Reference string    `gorm:"type:varchar(255)"`
-	CreatedAt time.Time `gorm:"autoCreateTime"`
+	ID          string    `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
+	TenantID    string    `gorm:"type:uuid;not null;index"`
+	ProductID   string    `gorm:"type:uuid;not null;index"`
+	Type        string    `gorm:"type:varchar(50);not null"` // purchase, sale, adjustment, return
+	Quantity    int       `gorm:"not null"`
+	Reference   string    `gorm:"type:varchar(255)"`
+	ReferenceID string    `gorm:"type:uuid;column:reference_id"` // purchase_id or transaction_id for traceability
+	CreatedAt   time.Time `gorm:"autoCreateTime"`
 }
 
 func (StockMovement) TableName() string {

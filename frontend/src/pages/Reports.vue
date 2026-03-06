@@ -286,7 +286,7 @@
             <tr v-for="row in inventoryRows" :key="row.product_id" class="hover:bg-gray-50">
               <td class="px-4 py-2 text-sm text-gray-800">{{ row.product_name }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ row.stock }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ formatPrice((row.stock ?? 0) * (row.cost_price ?? 0)) }}</td>
+              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.inventory_value ?? 0) }}</td>
             </tr>
             <tr v-if="!inventoryRows?.length">
               <td colspan="3" class="px-4 py-4 text-sm text-gray-500 text-center">No inventory data.</td>
@@ -437,7 +437,7 @@ const profitTableRows = computed(() => (profitRows.value || []).map((r) => [r.pr
 const topProductsRows = computed(() => (topProducts.value || []).map((r) => [r.product_name, r.quantity_sold, formatPrice(r.revenue)]))
 
 const inventoryTableHeaders = ['Product', 'Stock', 'Inventory Value']
-const inventoryTableRows = computed(() => (inventoryRows.value || []).map((r) => [r.product_name, r.stock, formatPrice((r.stock ?? 0) * (r.cost_price ?? 0))]))
+const inventoryTableRows = computed(() => (inventoryRows.value || []).map((r) => [r.product_name, r.stock, formatPrice(r.inventory_value ?? 0)]))
 
 const cashiersTableRows = computed(() => (cashiersRows.value || []).map((r) => [r.cashier, r.transactions, formatPrice(r.revenue)]))
 

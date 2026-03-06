@@ -33,7 +33,7 @@ func (h *Handler) Create(c *gin.Context) {
 	p, err := h.svc.CreatePurchase(tenantID, in)
 	if err != nil {
 		switch err {
-		case ErrInvalidItems, ErrProductInvalid, ErrInvalidQtyCost:
+		case ErrInvalidItems, ErrProductInvalid, ErrInvalidQtyCost, ErrDuplicateInvoice:
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		default:

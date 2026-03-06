@@ -54,17 +54,21 @@ func GetTopProducts(db *gorm.DB, tenantID string, fromDate, toDate time.Time) ([
 
 // InventorySummaryRow holds one row of inventory summary.
 type InventorySummaryRow struct {
-	ProductID   string  `json:"product_id"`
-	ProductName string  `json:"product_name"`
-	Stock       int     `json:"stock"`
-	CostPrice   float64 `json:"cost_price"`
+	ProductID      string  `json:"product_id"`
+	ProductName    string  `json:"product_name"`
+	Stock          int     `json:"stock"`
+	CostPrice      float64 `json:"cost_price"`       // product reference cost
+	InventoryValue float64 `json:"inventory_value"`  // SUM(remaining_quantity * cost_price) from batches
 }
 
-// GetInventorySummary returns all products for the tenant with stock (0 if no inventory row yet).
+// GetInventorySummary returns all products for the tenant with stock and inventory value from batches.
 func GetInventorySummary(db *gorm.DB, tenantID string) ([]InventorySummaryRow, error) {
 	var rows []InventorySummaryRow
 	err := db.Table("products").
-		Select("products.id as product_id, products.name as product_name, COALESCE(inventories.stock, 0) as stock, COALESCE(products.cost_price, 0) as cost_price").
+		Select(`products.id as product_id, products.name as product_name,
+			COALESCE(inventories.stock, 0) as stock,
+			COALESCE(products.cost_price, 0) as cost_price,
+			COALESCE((SELECT SUM(ib.remaining_quantity * ib.cost_price) FROM inventory_batches ib WHERE ib.product_id = products.id), 0) as inventory_value`).
 		Joins("LEFT JOIN inventories ON inventories.product_id = products.id AND inventories.tenant_id = products.tenant_id").
 		Where("products.tenant_id = ?", tenantID).
 		Order("products.name").

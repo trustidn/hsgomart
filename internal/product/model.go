@@ -14,15 +14,16 @@ func (Category) TableName() string {
 }
 
 type Product struct {
-	ID         string    `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
-	TenantID   string    `gorm:"type:uuid;not null;index"`
-	CategoryID *string   `gorm:"type:uuid;index"`
-	Name       string    `gorm:"type:varchar(255)"`
-	SKU        string    `gorm:"column:sku;type:varchar(100)"`
-	CostPrice  float64   `gorm:"column:cost_price;type:numeric"`
-	SellPrice  float64   `gorm:"column:sell_price;type:numeric"`
-	Status     string    `gorm:"type:varchar(50);default:active"`
-	CreatedAt  time.Time `gorm:"autoCreateTime"`
+	ID                 string    `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
+	TenantID           string    `gorm:"type:uuid;not null;index"`
+	CategoryID         *string   `gorm:"type:uuid;index"`
+	Name               string    `gorm:"type:varchar(255)"`
+	SKU                string    `gorm:"column:sku;type:varchar(100)"`
+	CostPrice          float64   `gorm:"column:cost_price;type:numeric"`
+	LastPurchasePrice  float64   `gorm:"column:last_purchase_price;type:numeric"`
+	SellPrice          float64   `gorm:"column:sell_price;type:numeric"`
+	Status             string    `gorm:"type:varchar(50);default:active"`
+	CreatedAt          time.Time `gorm:"autoCreateTime"`
 }
 
 func (Product) TableName() string {

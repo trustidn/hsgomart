@@ -98,6 +98,11 @@ func DeleteProduct(db *gorm.DB, tenantID, productID string) error {
 	return nil
 }
 
+// UpdateLastPurchasePrice sets last_purchase_price for the product (caller ensures product exists).
+func UpdateLastPurchasePrice(db *gorm.DB, productID string, costPrice float64) error {
+	return db.Model(&Product{}).Where("id = ?", productID).Update("last_purchase_price", costPrice).Error
+}
+
 // FindProductByBarcode returns the product that has this barcode, scoped by tenant_id.
 func FindProductByBarcode(db *gorm.DB, tenantID, barcode string) (*Product, error) {
 	var p Product
