@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/trustidn/hsmart-saas/internal/auth"
 	"github.com/trustidn/hsmart-saas/internal/inventory"
+	"github.com/trustidn/hsmart-saas/internal/pos"
 	"github.com/trustidn/hsmart-saas/internal/product"
 	"github.com/trustidn/hsmart-saas/internal/user"
 	"github.com/trustidn/hsmart-saas/pkg/config"
@@ -48,5 +49,9 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg config.Config) {
 		apiGroup.GET("/inventory", inventoryHandler.List)
 		apiGroup.GET("/products/:id/stock", inventoryHandler.GetStock)
 		apiGroup.POST("/products/:id/adjust-stock", inventoryHandler.AdjustStock)
+
+		posSvc := pos.NewService(db)
+		posHandler := pos.NewHandler(posSvc)
+		apiGroup.POST("/pos/checkout", posHandler.Checkout)
 	}
 }
