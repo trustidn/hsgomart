@@ -23,6 +23,7 @@ const routes = [
       { path: 'purchases/:id', name: 'PurchaseDetail', component: () => import('../pages/Purchases.vue'), meta: { roles: ['owner'] } },
       { path: 'pos', name: 'POS', component: () => import('../pages/POS.vue'), meta: { roles: ['owner', 'cashier'] } },
       { path: 'reports', name: 'Reports', component: () => import('../pages/Reports.vue'), meta: { roles: ['owner'] } },
+      { path: 'shifts', name: 'Shifts', component: () => import('../pages/Shifts.vue'), meta: { roles: ['owner'] } },
       { path: 'users', name: 'Users', component: () => import('../pages/Users.vue'), meta: { roles: ['owner'] } },
     ],
   },

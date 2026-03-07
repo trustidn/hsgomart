@@ -1,7 +1,17 @@
 <template>
   <div class="h-full flex flex-col">
-    <div class="flex items-center gap-4 mb-4 shrink-0">
+    <div class="flex items-center gap-4 mb-4 shrink-0 flex-wrap">
       <h1 class="text-2xl font-semibold text-gray-800">POS</h1>
+      <template v-if="isCashier && currentShift">
+        <span class="text-sm text-gray-600">Shift open · {{ formatPrice(currentShift.opening_cash) }} opening</span>
+        <button
+          type="button"
+          class="px-3 py-1.5 text-sm border border-amber-500 text-amber-700 rounded-md hover:bg-amber-50"
+          @click="shiftModalMode = 'close'"
+        >
+          Close shift
+        </button>
+      </template>
       <div class="flex-1 max-w-xs">
         <input
           ref="barcodeInputRef"
@@ -15,6 +25,9 @@
         <p v-if="barcodeError" class="text-sm text-red-600 mt-1">{{ barcodeError }}</p>
       </div>
     </div>
+    <p v-if="lowStockMessage" class="mb-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+      {{ lowStockMessage }}
+    </p>
     <p class="text-xs text-gray-500 mb-3">
       <span class="font-medium text-gray-600">Shortcuts:</span>
       <kbd class="px-1.5 py-0.5 rounded bg-gray-100 border border-gray-300 font-mono text-xs">F1</kbd> Cash
@@ -104,11 +117,12 @@
             <span>Total</span>
             <span>{{ formatPrice(totalAmount) }}</span>
           </div>
+          <p v-if="isCashier && !currentShift" class="text-sm text-amber-700 mb-2">Open a shift to enable checkout.</p>
           <div class="flex gap-2">
             <button
               type="button"
               class="flex-1 py-2.5 bg-slate-600 text-white rounded-md hover:bg-slate-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="!cartItems.length"
+              :disabled="!cartItems.length || !canCheckout"
               @click="openCheckoutModal('cash')"
             >
               CASH
@@ -116,7 +130,7 @@
             <button
               type="button"
               class="flex-1 py-2.5 bg-slate-700 text-white rounded-md hover:bg-slate-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="!cartItems.length"
+              :disabled="!cartItems.length || !canCheckout"
               @click="openCheckoutModal('card')"
             >
               CARD
@@ -174,6 +188,14 @@
       </div>
     </div>
 
+    <!-- Shift modal (open/close) -->
+    <ShiftModal
+      v-if="shiftModalMode"
+      :mode="shiftModalMode"
+      @done="onShiftModalDone"
+      @close="onShiftModalClose"
+    />
+
     <!-- Receipt modal (after checkout) -->
     <div
       v-if="showReceiptModal"
@@ -209,10 +231,21 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { useAuthStore } from '../stores/auth'
 import { getProducts, getProductByBarcode } from '../api/products'
-import { getProductStock } from '../api/inventory'
+import { getProductStock, getLowStock } from '../api/inventory'
 import { checkout as checkoutApi } from '../api/pos'
+import { getCurrentShift } from '../api/shifts'
 import Receipt from '../components/Receipt.vue'
+import ShiftModal from '../components/ShiftModal.vue'
+
+const auth = useAuthStore()
+const isCashier = computed(() => auth.role === 'cashier')
+const currentShift = ref(null)
+const shiftModalMode = ref(null) // 'open' | 'close' | null
+const lowStockList = ref([])
+const lowStockMessage = ref('')
+const canCheckout = computed(() => !isCashier.value || !!currentShift.value)
 
 const SCAN_DEBOUNCE_MS = 200
 const MIN_BARCODE_LENGTH = 8
@@ -319,6 +352,7 @@ function addToCart(p) {
 async function addToCartWithStockCheck(p) {
   const id = productId(p)
   barcodeError.value = ''
+  lowStockMessage.value = ''
   try {
     const res = await getProductStock(id)
     const stock = res?.stock ?? 0
@@ -335,6 +369,10 @@ async function addToCartWithStockCheck(p) {
       return false
     }
     addToCart(p)
+    const isLow = lowStockList.value.some((l) => l.product_id === id)
+    if (isLow) {
+      lowStockMessage.value = `⚠ Stock remaining: ${stock}`
+    }
     return true
   } catch (err) {
     barcodeError.value = err.response?.data?.error ?? 'Failed to check stock.'
@@ -396,9 +434,31 @@ function removeFromCart(productId) {
 }
 
 function openCheckoutModal(method) {
+  if (!canCheckout.value) return
   checkoutForm.value = { payment_method: method, paid_amount: totalAmount.value }
   checkoutError.value = ''
   showCheckoutModal.value = true
+}
+
+async function refreshCurrentShift() {
+  if (!isCashier.value) return
+  try {
+    const data = await getCurrentShift()
+    currentShift.value = data?.shift ?? null
+  } catch {
+    currentShift.value = null
+  }
+}
+
+function onShiftModalDone() {
+  refreshCurrentShift()
+  shiftModalMode.value = null
+}
+
+function onShiftModalClose() {
+  shiftModalMode.value = null
+  // Sync shift state (e.g. after "no active shift to close" so we clear stale "Shift open")
+  refreshCurrentShift()
 }
 
 async function submitCheckout() {
@@ -461,14 +521,45 @@ function handleKeyShortcuts(e) {
   }
 }
 
+// When cashier role is available, ensure we check shift and show open modal if none (handles store hydration after first paint)
+watch(
+  () => auth.role,
+  async (role) => {
+    if (role !== 'cashier') return
+    try {
+      const data = await getCurrentShift()
+      const shift = data?.shift ?? null
+      currentShift.value = shift
+      if (shift) shiftModalMode.value = null
+      else if (!shiftModalMode.value) shiftModalMode.value = 'open'
+    } catch {
+      currentShift.value = null
+      if (!shiftModalMode.value) shiftModalMode.value = 'open'
+    }
+  },
+  { immediate: true }
+)
+
 onMounted(async () => {
   window.addEventListener('keydown', handleKeyShortcuts)
   productsLoading.value = true
   productsError.value = null
   try {
-    const data = await getProducts()
-    products.value = Array.isArray(data) ? data : []
+    const [productsData, lowData] = await Promise.all([
+      getProducts(),
+      getLowStock().catch(() => []),
+    ])
+    products.value = Array.isArray(productsData) ? productsData : []
     filterProducts()
+    lowStockList.value = Array.isArray(lowData) ? lowData : []
+    // Shift check: watcher also runs (handles role after hydration); here we sync and clear modal if shift exists
+    if (isCashier.value) {
+      const shiftData = await getCurrentShift().catch(() => null)
+      const shift = shiftData?.shift ?? null
+      currentShift.value = shift
+      if (shift) shiftModalMode.value = null
+      else if (!shiftModalMode.value) shiftModalMode.value = 'open'
+    }
   } catch (err) {
     productsError.value = 'Failed to load products.'
   } finally {

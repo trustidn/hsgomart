@@ -8,6 +8,7 @@ import (
 	"github.com/trustidn/hsmart-saas/internal/product"
 	"github.com/trustidn/hsmart-saas/internal/purchase"
 	"github.com/trustidn/hsmart-saas/internal/report"
+	"github.com/trustidn/hsmart-saas/internal/shift"
 	"github.com/trustidn/hsmart-saas/internal/subscription"
 	"github.com/trustidn/hsmart-saas/internal/user"
 	"github.com/trustidn/hsmart-saas/pkg/config"
@@ -51,6 +52,14 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg config.Config) {
 		cashier.GET("/reports/sales", reportHandler.SalesSummary)
 		cashier.GET("/reports/products", reportHandler.TopProducts)
 		cashier.GET("/reports/inventory", reportHandler.InventorySummary)
+
+		shiftSvc := shift.NewService(db)
+		shiftHandler := shift.NewHandler(shiftSvc)
+		cashier.POST("/shifts/open", shiftHandler.OpenShift)
+		cashier.POST("/shifts/close", shiftHandler.CloseShift)
+		cashier.GET("/shifts/current", shiftHandler.GetCurrentShift)
+
+		cashier.GET("/inventory/low-stock", inventoryHandler.LowStock)
 	}
 
 	// Owner-only: users, categories, product write, inventory write, purchases, reports
@@ -97,5 +106,10 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg config.Config) {
 		owner.GET("/reports/payments", reportHandler.PaymentsReport)
 		owner.GET("/reports/profit", reportHandler.ProfitReport)
 		owner.GET("/reports/cashiers", reportHandler.CashiersReport)
+		owner.GET("/reports/shifts", reportHandler.ShiftsReport)
+
+		shiftSvc := shift.NewService(db)
+		shiftHandler := shift.NewHandler(shiftSvc)
+		owner.GET("/shifts", shiftHandler.ListShifts)
 	}
 }

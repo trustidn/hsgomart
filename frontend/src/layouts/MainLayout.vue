@@ -59,6 +59,7 @@ const menu = [
   { path: '/purchases', label: 'Purchases', roles: ['owner'] },
   { path: '/inventory-history', label: 'Inventory History', roles: ['owner'] },
   { path: '/reports', label: 'Reports', roles: ['owner'] },
+  { path: '/shifts', label: 'Shifts', roles: ['owner'] },
   { path: '/users', label: 'Users', roles: ['owner'] },
   { path: '/pos', label: 'POS', roles: ['owner', 'cashier'] },
 ]

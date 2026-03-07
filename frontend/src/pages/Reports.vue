@@ -328,6 +328,42 @@
       </div>
     </template>
 
+    <!-- Shifts (cash reconciliation) -->
+    <template v-else-if="activeTab === 'shifts'">
+      <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+        <div class="p-3 border-b border-gray-200">
+          <span class="font-medium text-gray-800">Shift reconciliation</span>
+        </div>
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cashier</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Opening</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Sales</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Expected</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Actual</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Difference</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            <tr v-for="(row, i) in shiftsRows" :key="i" class="hover:bg-gray-50">
+              <td class="px-4 py-2 text-sm text-gray-800">{{ row.date }}</td>
+              <td class="px-4 py-2 text-sm text-gray-800">{{ row.cashier }}</td>
+              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.opening) }}</td>
+              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.sales) }}</td>
+              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.expected) }}</td>
+              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.actual) }}</td>
+              <td class="px-4 py-2 text-sm text-right" :class="row.difference !== 0 ? 'text-amber-600 font-medium' : ''">{{ formatPrice(row.difference) }}</td>
+            </tr>
+            <tr v-if="!shiftsRows?.length">
+              <td colspan="7" class="px-4 py-4 text-sm text-gray-500 text-center">No closed shifts for this period.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </template>
+
   </div>
 </template>
 
@@ -343,6 +379,7 @@ import {
   getTopProducts,
   getInventoryReport,
   getCashiersReport,
+  getShiftsReport,
 } from '../api/reports'
 import { formatPrice } from '../utils'
 import * as XLSX from 'xlsx'
@@ -361,6 +398,7 @@ const tabs = [
   { id: 'products', label: 'Top Products' },
   { id: 'inventory', label: 'Inventory' },
   { id: 'cashiers', label: 'Cashiers' },
+  { id: 'shifts', label: 'Shifts' },
 ]
 
 const dateFilter = ref('month')
@@ -384,6 +422,7 @@ const profitRows = ref([])
 const topProducts = ref([])
 const inventoryRows = ref([])
 const cashiersRows = ref([])
+const shiftsRows = ref([])
 
 const dateRange = computed(() => {
   const now = new Date()
@@ -523,6 +562,11 @@ async function loadCashiers() {
   cashiersRows.value = Array.isArray(data) ? data : []
 }
 
+async function loadShifts() {
+  const data = await getShiftsReport(dateRange.value)
+  shiftsRows.value = Array.isArray(data) ? data : []
+}
+
 async function loadTab() {
   loading.value = true
   error.value = null
@@ -532,6 +576,7 @@ async function loadTab() {
     else if (activeTab.value === 'products') await loadProducts()
     else if (activeTab.value === 'inventory') await loadInventory()
     else if (activeTab.value === 'cashiers') await loadCashiers()
+    else if (activeTab.value === 'shifts') await loadShifts()
   } catch (err) {
     error.value = err.response?.data?.error ?? 'Failed to load report.'
   } finally {

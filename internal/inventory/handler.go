@@ -93,6 +93,21 @@ func (h *Handler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, list)
 }
 
+// LowStock returns products with stock at or below threshold (GET /api/inventory/low-stock).
+func (h *Handler) LowStock(c *gin.Context) {
+	tenantID, ok := utils.GetTenantID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context required"})
+		return
+	}
+	list, err := h.service.GetLowStockProducts(tenantID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get low stock list"})
+		return
+	}
+	c.JSON(http.StatusOK, list)
+}
+
 // GetStock returns current stock for a product (GET /api/products/:id/stock).
 func (h *Handler) GetStock(c *gin.Context) {
 	tenantID, ok := utils.GetTenantID(c)

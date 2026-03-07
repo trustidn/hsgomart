@@ -6,6 +6,19 @@
     <p v-else-if="error" class="text-red-600">{{ error }}</p>
 
     <template v-else>
+      <!-- Low Stock Alert -->
+      <div v-if="lowStock.length > 0" class="mb-6">
+        <router-link to="/inventory" class="block bg-amber-50 border border-amber-200 rounded-lg p-4 hover:bg-amber-100 transition">
+          <h2 class="text-lg font-semibold text-amber-800 mb-2 flex items-center gap-2">
+            <span>⚠</span> Low Stock
+          </h2>
+          <ul class="text-sm text-amber-900 space-y-1">
+            <li v-for="p in lowStock" :key="p.product_id">{{ p.product_name }} ({{ p.stock }})</li>
+          </ul>
+          <p class="text-xs text-amber-700 mt-2">Click to open Inventory →</p>
+        </router-link>
+      </div>
+
       <!-- Metric cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <div class="bg-white rounded-lg shadow p-4 border border-gray-200">
@@ -78,6 +91,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getSalesSummary, getTopProducts, getInventorySummary } from '../api/reports'
+import { getLowStock } from '../api/inventory'
 import { formatCurrency } from '../utils'
 
 const loading = ref(true)
@@ -85,19 +99,22 @@ const error = ref(null)
 const salesSummary = ref(null)
 const topProducts = ref([])
 const inventorySummary = ref([])
+const lowStock = ref([])
 
 onMounted(async () => {
   loading.value = true
   error.value = null
   try {
-    const [sales, products, inventory] = await Promise.all([
+    const [sales, products, inventory, low] = await Promise.all([
       getSalesSummary(),
       getTopProducts(),
       getInventorySummary(),
+      getLowStock().catch(() => []),
     ])
     salesSummary.value = sales
     topProducts.value = Array.isArray(products) ? products : []
     inventorySummary.value = Array.isArray(inventory) ? inventory : []
+    lowStock.value = Array.isArray(low) ? low : []
   } catch (err) {
     error.value = 'Failed to load dashboard data.'
   } finally {

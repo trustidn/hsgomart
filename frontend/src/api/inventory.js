@@ -26,3 +26,11 @@ export async function adjustStock(productId, payload) {
   const { data } = await client.post(`/api/products/${productId}/adjust-stock`, payload)
   return data
 }
+
+/**
+ * GET /api/inventory/low-stock - products with stock <= threshold
+ */
+export async function getLowStock() {
+  const { data } = await client.get('/api/inventory/low-stock')
+  return data
+}

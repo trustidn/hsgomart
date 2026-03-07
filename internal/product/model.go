@@ -21,9 +21,10 @@ type Product struct {
 	SKU                string    `gorm:"column:sku;type:varchar(100)"`
 	CostPrice          float64   `gorm:"column:cost_price;type:numeric"`
 	LastPurchasePrice  float64   `gorm:"column:last_purchase_price;type:numeric"`
-	SellPrice          float64   `gorm:"column:sell_price;type:numeric"`
-	Status             string    `gorm:"type:varchar(50);default:active"`
-	CreatedAt          time.Time `gorm:"autoCreateTime"`
+	SellPrice            float64   `gorm:"column:sell_price;type:numeric"`
+	LowStockThreshold    int       `gorm:"column:low_stock_threshold;default:10"`
+	Status               string    `gorm:"type:varchar(50);default:active"`
+	CreatedAt            time.Time `gorm:"autoCreateTime"`
 }
 
 func (Product) TableName() string {

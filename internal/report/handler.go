@@ -294,3 +294,23 @@ func (h *Handler) InventorySummary(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, res)
 }
+
+// ShiftsReport handles GET /api/reports/shifts?from=&to=
+func (h *Handler) ShiftsReport(c *gin.Context) {
+	tenantID, ok := utils.GetTenantID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context required"})
+		return
+	}
+	from, to, err := parseDateRange(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format, use YYYY-MM-DD for from and to"})
+		return
+	}
+	rows, err := h.service.ShiftsReport(tenantID, from, to)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get shifts report"})
+		return
+	}
+	c.JSON(http.StatusOK, rows)
+}

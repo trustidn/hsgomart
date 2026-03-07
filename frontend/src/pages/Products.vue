@@ -162,6 +162,18 @@
                 placeholder="e.g. 8991002101010"
               />
             </div>
+            <div>
+              <label for="prod-threshold" class="block text-sm font-medium text-gray-700 mb-1">Low stock threshold</label>
+              <input
+                id="prod-threshold"
+                v-model.number="productForm.low_stock_threshold"
+                type="number"
+                min="0"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500"
+                placeholder="10"
+              />
+              <p class="text-xs text-gray-500 mt-0.5">Alert when stock is at or below this value.</p>
+            </div>
           </div>
           <p v-if="productError" class="text-sm text-red-600 mt-2">{{ productError }}</p>
           <div class="flex gap-2 justify-end mt-4">
@@ -253,6 +265,17 @@
                 placeholder="e.g. 8991002101010"
               />
             </div>
+            <div>
+              <label for="edit-threshold" class="block text-sm font-medium text-gray-700 mb-1">Low stock threshold</label>
+              <input
+                id="edit-threshold"
+                v-model.number="editForm.low_stock_threshold"
+                type="number"
+                min="0"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500"
+                placeholder="10"
+              />
+            </div>
           </div>
           <p v-if="editError" class="text-sm text-red-600 mt-2">{{ editError }}</p>
           <div class="flex gap-2 justify-end mt-4">
@@ -313,6 +336,7 @@ const productForm = ref({
   cost_price: 0,
   sell_price: 0,
   barcode: '',
+  low_stock_threshold: 10,
 })
 const editForm = ref(null)
 const editProductId = ref('')
@@ -353,7 +377,7 @@ function categoryName(c) {
 }
 
 function openProductModal() {
-  productForm.value = { name: '', sku: '', category_id: '', cost_price: 0, sell_price: 0, barcode: '' }
+  productForm.value = { name: '', sku: '', category_id: '', cost_price: 0, sell_price: 0, barcode: '', low_stock_threshold: 10 }
   productError.value = ''
   showProductModal.value = true
 }
@@ -372,6 +396,7 @@ async function openEditModal(p) {
       sell_price: product.sell_price ?? product.SellPrice ?? 0,
       status: product.status ?? product.Status ?? 'active',
       barcode,
+      low_stock_threshold: product.low_stock_threshold ?? 10,
     }
     editInitialBarcode.value = barcode
     showEditModal.value = true
@@ -411,6 +436,7 @@ async function handleCreateProduct() {
       sku: productForm.value.sku || undefined,
       cost_price: Number(productForm.value.cost_price) || 0,
       sell_price: Number(productForm.value.sell_price) || 0,
+      low_stock_threshold: Math.max(0, Number(productForm.value.low_stock_threshold) || 10),
     }
     if (productForm.value.category_id) payload.category_id = productForm.value.category_id
     const created = await createProduct(payload)
@@ -444,6 +470,7 @@ async function handleUpdateProduct() {
       cost_price: Number(editForm.value.cost_price) || 0,
       sell_price: Number(editForm.value.sell_price) || 0,
       status: editForm.value.status || 'active',
+      low_stock_threshold: Math.max(0, Number(editForm.value.low_stock_threshold) ?? 10),
     }
     if (editForm.value.category_id) payload.category_id = editForm.value.category_id
     else payload.category_id = null

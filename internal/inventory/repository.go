@@ -67,6 +67,27 @@ func ListInventoriesByTenant(db *gorm.DB, tenantID string) ([]Inventory, error) 
 	return list, err
 }
 
+// LowStockRow holds a product with stock at or below threshold.
+type LowStockRow struct {
+	ProductID   string `json:"product_id"`
+	ProductName string `json:"product_name"`
+	Stock       int    `json:"stock"`
+	Threshold   int    `json:"threshold"`
+}
+
+// GetLowStockProducts returns products where stock <= low_stock_threshold for the tenant.
+func GetLowStockProducts(db *gorm.DB, tenantID string) ([]LowStockRow, error) {
+	var list []LowStockRow
+	err := db.Table("products").
+		Select("products.id as product_id, products.name as product_name, COALESCE(inventories.stock, 0) as stock, COALESCE(products.low_stock_threshold, 10) as threshold").
+		Joins("INNER JOIN inventories ON inventories.product_id = products.id AND inventories.tenant_id = products.tenant_id").
+		Where("products.tenant_id = ?", tenantID).
+		Where("COALESCE(inventories.stock, 0) <= COALESCE(products.low_stock_threshold, 10)").
+		Order("inventories.stock ASC").
+		Scan(&list).Error
+	return list, err
+}
+
 // ListMovements returns movements for tenant, optionally filtered by productID (empty = all).
 func ListMovements(db *gorm.DB, tenantID, productID string) ([]StockMovement, error) {
 	var list []StockMovement

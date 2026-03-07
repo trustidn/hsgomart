@@ -59,3 +59,8 @@ export async function getCashiersReport(params) {
   const { data } = await client.get('/api/reports/cashiers', { params: dateParams(params?.from, params?.to) })
   return data
 }
+
+export async function getShiftsReport(params) {
+  const { data } = await client.get('/api/reports/shifts', { params: dateParams(params?.from, params?.to) })
+  return data
+}

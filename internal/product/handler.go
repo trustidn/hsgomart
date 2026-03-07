@@ -108,14 +108,15 @@ func (h *Handler) DeleteCategory(c *gin.Context) {
 
 // productResponse for GET /api/products list and GET /api/products/:id (includes category_id, cost_price, barcode for edit).
 type productResponse struct {
-	ID         string   `json:"id"`
-	Name       string   `json:"name"`
-	SKU        string   `json:"sku"`
-	CategoryID *string  `json:"category_id,omitempty"`
-	CostPrice  float64  `json:"cost_price"`
-	SellPrice  float64  `json:"sell_price"`
-	Status     string   `json:"status"`
-	Barcode    string   `json:"barcode,omitempty"`
+	ID                 string   `json:"id"`
+	Name               string   `json:"name"`
+	SKU                string   `json:"sku"`
+	CategoryID         *string  `json:"category_id,omitempty"`
+	CostPrice          float64  `json:"cost_price"`
+	SellPrice          float64  `json:"sell_price"`
+	Status             string   `json:"status"`
+	Barcode            string   `json:"barcode,omitempty"`
+	LowStockThreshold  int      `json:"low_stock_threshold"`
 }
 
 func toProductResponse(p *Product) productResponse {
@@ -124,14 +125,15 @@ func toProductResponse(p *Product) productResponse {
 
 func toProductResponseWithBarcode(p *Product, barcode string) productResponse {
 	return productResponse{
-		ID:         p.ID,
-		Name:       p.Name,
-		SKU:        p.SKU,
-		CategoryID: p.CategoryID,
-		CostPrice:  p.CostPrice,
-		SellPrice:  p.SellPrice,
-		Status:     p.Status,
-		Barcode:    barcode,
+		ID:                p.ID,
+		Name:              p.Name,
+		SKU:               p.SKU,
+		CategoryID:        p.CategoryID,
+		CostPrice:         p.CostPrice,
+		SellPrice:         p.SellPrice,
+		Status:            p.Status,
+		Barcode:           barcode,
+		LowStockThreshold: p.LowStockThreshold,
 	}
 }
 
@@ -270,12 +272,13 @@ func (h *Handler) UpdateProduct(c *gin.Context) {
 		catID = nil
 	}
 	p, err := h.service.UpdateProduct(tenantID, productID, UpdateProductInput{
-		Name:       in.Name,
-		SKU:        in.SKU,
-		CategoryID: catID,
-		CostPrice:  in.CostPrice,
-		SellPrice:  in.SellPrice,
-		Status:     in.Status,
+		Name:              in.Name,
+		SKU:               in.SKU,
+		CategoryID:        catID,
+		CostPrice:         in.CostPrice,
+		SellPrice:         in.SellPrice,
+		Status:            in.Status,
+		LowStockThreshold:  in.LowStockThreshold,
 	})
 	if err != nil {
 		if err == ErrProductNotFound {

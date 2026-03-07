@@ -79,13 +79,18 @@ func (s *Service) CreateProduct(tenantID string, in CreateProductInput) (*Produc
 		}
 	}
 
+	threshold := in.LowStockThreshold
+	if threshold <= 0 {
+		threshold = 10
+	}
 	p := &Product{
-		TenantID:  tenantID,
-		Name:      in.Name,
-		SKU:       in.SKU,
-		CostPrice: in.CostPrice,
-		SellPrice: in.SellPrice,
-		Status:    "active",
+		TenantID:           tenantID,
+		Name:               in.Name,
+		SKU:                in.SKU,
+		CostPrice:          in.CostPrice,
+		SellPrice:          in.SellPrice,
+		LowStockThreshold:  threshold,
+		Status:             "active",
 	}
 	if in.CategoryID != nil && *in.CategoryID != "" {
 		p.CategoryID = in.CategoryID
@@ -157,6 +162,9 @@ func (s *Service) UpdateProduct(tenantID, productID string, in UpdateProductInpu
 	} else {
 		updates["category_id"] = nil
 	}
+	if in.LowStockThreshold != nil {
+		updates["low_stock_threshold"] = *in.LowStockThreshold
+	}
 	if err := UpdateProduct(s.db, tenantID, productID, updates); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrProductNotFound
@@ -201,21 +209,23 @@ func (s *Service) AddBarcode(tenantID, productID string, barcode string) (*Produ
 }
 
 type CreateProductInput struct {
-	Name       string   `json:"name" binding:"required"`
-	SKU        string   `json:"sku"`
-	CategoryID *string  `json:"category_id"`
-	CostPrice  float64  `json:"cost_price"`
-	SellPrice  float64  `json:"sell_price" binding:"required"`
-	Status     string   `json:"status"`
+	Name                string   `json:"name" binding:"required"`
+	SKU                 string   `json:"sku"`
+	CategoryID          *string  `json:"category_id"`
+	CostPrice           float64  `json:"cost_price"`
+	SellPrice           float64  `json:"sell_price" binding:"required"`
+	Status              string   `json:"status"`
+	LowStockThreshold   int      `json:"low_stock_threshold"` // default 10 if 0
 }
 
 type UpdateProductInput struct {
-	Name       string  `json:"name" binding:"required"`
-	SKU        string  `json:"sku"`
-	CategoryID *string `json:"category_id"`
-	CostPrice  float64 `json:"cost_price"`
-	SellPrice  float64 `json:"sell_price" binding:"required"`
-	Status     string  `json:"status"`
+	Name               string  `json:"name" binding:"required"`
+	SKU                string  `json:"sku"`
+	CategoryID         *string `json:"category_id"`
+	CostPrice          float64 `json:"cost_price"`
+	SellPrice          float64 `json:"sell_price" binding:"required"`
+	Status             string  `json:"status"`
+	LowStockThreshold  *int    `json:"low_stock_threshold"` // optional update
 }
 
 type CreateCategoryInput struct {

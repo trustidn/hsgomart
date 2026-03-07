@@ -63,3 +63,8 @@ func (s *Service) ProfitReport(tenantID string, fromDate, toDate time.Time) (Pro
 func (s *Service) CashiersReport(tenantID string, fromDate, toDate time.Time) ([]CashierRow, error) {
 	return GetCashiersReport(s.db, tenantID, fromDate, toDate)
 }
+
+// ShiftsReport returns shift reconciliation report for the tenant in the date range.
+func (s *Service) ShiftsReport(tenantID string, fromDate, toDate time.Time) ([]ShiftReportRow, error) {
+	return GetShiftsReport(s.db, tenantID, fromDate, toDate)
+}

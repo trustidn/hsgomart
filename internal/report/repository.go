@@ -236,3 +236,67 @@ func GetCashiersReport(db *gorm.DB, tenantID string, fromDate, toDate time.Time)
 		Scan(&rows).Error
 	return rows, err
 }
+
+// ShiftReportRow holds one row for the shifts report (cash reconciliation).
+type ShiftReportRow struct {
+	Date       string  `json:"date"`
+	Cashier    string  `json:"cashier"`
+	Opening    float64 `json:"opening"`
+	Sales      float64 `json:"sales"`
+	Expected   float64 `json:"expected"`
+	Actual     float64 `json:"actual"`
+	Difference float64 `json:"difference"`
+}
+
+// GetShiftsReport returns shift reconciliation rows for the tenant (closed shifts in date range by closed_at).
+func GetShiftsReport(db *gorm.DB, tenantID string, fromDate, toDate time.Time) ([]ShiftReportRow, error) {
+	type shiftRow struct {
+		ID          string
+		UserID      string
+		OpeningCash float64
+		ClosingCash *float64
+		OpenedAt    time.Time
+		ClosedAt    *time.Time
+		CashierName string
+	}
+	var list []shiftRow
+	err := db.Table("cashier_shifts").
+		Select("cashier_shifts.id, cashier_shifts.user_id, cashier_shifts.opening_cash, cashier_shifts.closing_cash, cashier_shifts.opened_at, cashier_shifts.closed_at, COALESCE(NULLIF(TRIM(users.name), ''), users.email, '') as cashier_name").
+		Joins("LEFT JOIN users ON users.id = cashier_shifts.user_id AND users.tenant_id = cashier_shifts.tenant_id").
+		Where("cashier_shifts.tenant_id = ? AND cashier_shifts.status = ?", tenantID, "closed").
+		Where("cashier_shifts.closed_at >= ? AND cashier_shifts.closed_at <= ?", fromDate, toDate).
+		Order("cashier_shifts.closed_at DESC").
+		Scan(&list).Error
+	if err != nil {
+		return nil, err
+	}
+	result := make([]ShiftReportRow, 0, len(list))
+	for _, s := range list {
+		if s.ClosedAt == nil {
+			continue
+		}
+		var cashSales float64
+		_ = db.Table("payments").
+			Select("COALESCE(SUM(payments.amount), 0)").
+			Joins("INNER JOIN transactions ON transactions.id = payments.transaction_id").
+			Where("transactions.tenant_id = ? AND payments.method = ?", tenantID, "cash").
+			Where("payments.created_at >= ? AND payments.created_at <= ?", s.OpenedAt, *s.ClosedAt).
+			Scan(&cashSales).Error
+		expected := s.OpeningCash + cashSales
+		actual := 0.0
+		if s.ClosingCash != nil {
+			actual = *s.ClosingCash
+		}
+		dateStr := s.ClosedAt.Format("2006-01-02 15:04")
+		result = append(result, ShiftReportRow{
+			Date:       dateStr,
+			Cashier:    s.CashierName,
+			Opening:    s.OpeningCash,
+			Sales:      cashSales,
+			Expected:   expected,
+			Actual:     actual,
+			Difference: actual - expected,
+		})
+	}
+	return result, nil
+}

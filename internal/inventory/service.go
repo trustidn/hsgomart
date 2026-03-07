@@ -158,3 +158,8 @@ func (s *Service) ListMovementRows(tenantID, productID string) ([]MovementRow, e
 func (s *Service) ListMovementRowsPaginated(tenantID, productID, movementType, fromDate, toDate string, limit, offset int) ([]MovementRow, int64, error) {
 	return ListMovementRowsPaginated(s.db, tenantID, productID, movementType, fromDate, toDate, limit, offset)
 }
+
+// GetLowStockProducts returns products with stock at or below threshold for the tenant.
+func (s *Service) GetLowStockProducts(tenantID string) ([]LowStockRow, error) {
+	return GetLowStockProducts(s.db, tenantID)
+}
