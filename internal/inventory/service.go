@@ -39,7 +39,8 @@ func (s *Service) ensureProductBelongsToTenant(tenantID, productID string) error
 	return nil
 }
 
-// GetStock returns current stock for the product. Returns 0 if no inventory row exists. Verifies product belongs to tenant.
+// GetStock returns current stock from the inventory table. Returns 0 if no inventory row exists. Verifies product belongs to tenant.
+// All stock checks (e.g. POS) must use this or GetInventoryByProduct; purchases only add to inventory, they do not replace it.
 func (s *Service) GetStock(tenantID, productID string) (int, error) {
 	if err := s.ensureProductBelongsToTenant(tenantID, productID); err != nil {
 		return 0, err

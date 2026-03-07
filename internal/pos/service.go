@@ -42,6 +42,7 @@ type CheckoutResult struct {
 
 // Checkout runs a sale in a single DB transaction: validate products, check stock, decrease inventory,
 // create movements, then create transaction, items, and payment. Rolls back on any error.
+// Stock check always uses the inventory table (inventories.stock) as the single source of truth.
 func (s *Service) Checkout(tenantID, userID string, in CheckoutInput) (*CheckoutResult, error) {
 	if len(in.Items) == 0 {
 		return nil, ErrInvalidItems
@@ -64,6 +65,7 @@ func (s *Service) Checkout(tenantID, userID string, in CheckoutInput) (*Checkout
 			}
 			return nil, err
 		}
+		// Stock is always read from inventory table; purchases only add to it, they do not define stock.
 		inv, err := inventory.GetInventoryByProduct(tx, tenantID, it.ProductID)
 		if err != nil {
 			tx.Rollback()
@@ -100,8 +102,21 @@ func (s *Service) Checkout(tenantID, userID string, in CheckoutInput) (*Checkout
 
 		cogs, err := deductBatchesFIFO(tx, it.ProductID, it.Quantity)
 		if err != nil {
-			tx.Rollback()
-			return nil, err
+			// Stock exists (validated above) but batches don't cover it (e.g. stock from adjustment, or no batches yet).
+			// Allow sale and use product cost as fallback COGS.
+			if err == ErrInsufficientStock {
+				fallbackCost := p.LastPurchasePrice
+				if fallbackCost <= 0 {
+					fallbackCost = p.CostPrice
+				}
+				cogs = fallbackCost * float64(it.Quantity)
+				if cogs < 0 {
+					cogs = 0
+				}
+			} else {
+				tx.Rollback()
+				return nil, err
+			}
 		}
 		unitCost := 0.0
 		if it.Quantity > 0 {

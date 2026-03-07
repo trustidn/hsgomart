@@ -46,6 +46,7 @@ func (h *Handler) Create(c *gin.Context) {
 		"id":             p.ID,
 		"supplier_name":  p.SupplierName,
 		"invoice_number": p.InvoiceNumber,
+		"notes":          p.Notes,
 		"total_amount":   p.TotalAmount,
 		"created_at":     p.CreatedAt,
 	})
@@ -71,6 +72,8 @@ func (h *Handler) List(c *gin.Context) {
 			"id":             p.ID,
 			"supplier_name":  p.SupplierName,
 			"invoice_number": p.InvoiceNumber,
+			"notes":          p.Notes,
+			"product_names":  p.ProductNames,
 			"total_amount":   p.TotalAmount,
 			"created_at":     p.CreatedAt,
 		})
@@ -115,6 +118,7 @@ func (h *Handler) GetByID(c *gin.Context) {
 			"id":             p.ID,
 			"supplier_name":  p.SupplierName,
 			"invoice_number": p.InvoiceNumber,
+			"notes":          p.Notes,
 			"total_amount":   p.TotalAmount,
 			"created_at":     p.CreatedAt,
 		},

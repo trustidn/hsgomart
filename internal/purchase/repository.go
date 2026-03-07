@@ -24,6 +24,34 @@ func ListPurchasesByTenant(db *gorm.DB, tenantID string) ([]Purchase, error) {
 	return list, err
 }
 
+// PurchaseProductNameRow is used to load product names per purchase for list view.
+type PurchaseProductNameRow struct {
+	PurchaseID  string
+	ProductName string
+}
+
+// GetProductNamesByPurchaseIDs returns a map of purchase_id -> list of product names (order preserved per item).
+func GetProductNamesByPurchaseIDs(db *gorm.DB, purchaseIDs []string) (map[string][]string, error) {
+	if len(purchaseIDs) == 0 {
+		return map[string][]string{}, nil
+	}
+	var rows []PurchaseProductNameRow
+	err := db.Table("purchase_items").
+		Select("purchase_items.purchase_id as purchase_id, COALESCE(products.name, '') as product_name").
+		Joins("LEFT JOIN products ON products.id = purchase_items.product_id").
+		Where("purchase_items.purchase_id IN ?", purchaseIDs).
+		Order("purchase_items.purchase_id").
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string][]string)
+	for _, r := range rows {
+		out[r.PurchaseID] = append(out[r.PurchaseID], r.ProductName)
+	}
+	return out, nil
+}
+
 // ExistsPurchaseByTenantAndInvoice returns true if a purchase with this tenant_id and invoice_number exists.
 func ExistsPurchaseByTenantAndInvoice(db *gorm.DB, tenantID, invoiceNumber string) (bool, error) {
 	if invoiceNumber == "" {

@@ -7,6 +7,7 @@ type Purchase struct {
 	TenantID      string    `gorm:"type:uuid;not null;index"`
 	SupplierName  string    `gorm:"type:varchar(255)"`
 	InvoiceNumber string    `gorm:"type:varchar(255)"`
+	Notes         string    `gorm:"type:text"`
 	TotalAmount   float64   `gorm:"column:total_amount;type:numeric;not null"`
 	CreatedAt     time.Time `gorm:"autoCreateTime"`
 }

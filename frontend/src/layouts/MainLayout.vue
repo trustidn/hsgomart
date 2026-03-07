@@ -54,10 +54,10 @@ const auth = useAuthStore()
 const menu = [
   { path: '/dashboard', label: 'Dashboard', roles: ['owner', 'cashier'] },
   { path: '/products', label: 'Products', roles: ['owner'] },
-  { path: '/inventory', label: 'Inventory', roles: ['owner'] },
-  { path: '/inventory-history', label: 'Inventory History', roles: ['owner'] },
   { path: '/categories', label: 'Categories', roles: ['owner'] },
+  { path: '/inventory', label: 'Inventory', roles: ['owner'] },
   { path: '/purchases', label: 'Purchases', roles: ['owner'] },
+  { path: '/inventory-history', label: 'Inventory History', roles: ['owner'] },
   { path: '/reports', label: 'Reports', roles: ['owner'] },
   { path: '/users', label: 'Users', roles: ['owner'] },
   { path: '/pos', label: 'POS', roles: ['owner', 'cashier'] },

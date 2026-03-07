@@ -7,6 +7,7 @@ import (
 )
 
 // GetInventoryByProduct returns the inventory row for tenant+product. Nil if not found.
+// This table (inventories.stock) is the single source of truth for stock; purchases only increase it, POS and others read from it.
 func GetInventoryByProduct(db *gorm.DB, tenantID, productID string) (*Inventory, error) {
 	var inv Inventory
 	err := db.Where("tenant_id = ? AND product_id = ?", tenantID, productID).First(&inv).Error

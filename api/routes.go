@@ -30,7 +30,7 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg config.Config) {
 	apiGroup := r.Group("/api")
 	apiGroup.Use(middleware.Auth(authSvc), middleware.Tenant(), middleware.Subscription(subscriptionSvc))
 
-	// Owner + Cashier: product read (for POS) and checkout. Register first so GET /products matches here.
+	// Owner + Cashier: product read (for POS), checkout, and dashboard report APIs (sales summary, top products, inventory summary).
 	cashier := apiGroup.Group("")
 	cashier.Use(middleware.Role("owner", "cashier"))
 	{
@@ -45,6 +45,12 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg config.Config) {
 		posSvc := pos.NewService(db)
 		posHandler := pos.NewHandler(posSvc)
 		cashier.POST("/pos/checkout", posHandler.Checkout)
+
+		reportSvc := report.NewService(db)
+		reportHandler := report.NewHandler(reportSvc)
+		cashier.GET("/reports/sales", reportHandler.SalesSummary)
+		cashier.GET("/reports/products", reportHandler.TopProducts)
+		cashier.GET("/reports/inventory", reportHandler.InventorySummary)
 	}
 
 	// Owner-only: users, categories, product write, inventory write, purchases, reports
@@ -82,16 +88,14 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg config.Config) {
 		owner.GET("/purchases/:id", purchaseHandler.GetByID)
 		owner.POST("/purchases", purchaseHandler.Create)
 
+		// Reports: sales/products/inventory are in cashier group (dashboard); owner-only reports below
 		reportSvc := report.NewService(db)
 		reportHandler := report.NewHandler(reportSvc)
-		owner.GET("/reports/sales", reportHandler.SalesSummary)
 		owner.GET("/reports/sales/daily", reportHandler.SalesDaily)
 		owner.GET("/reports/sales/hourly", reportHandler.SalesHourly)
 		owner.GET("/reports/sales/transactions", reportHandler.SalesTransactions)
 		owner.GET("/reports/payments", reportHandler.PaymentsReport)
 		owner.GET("/reports/profit", reportHandler.ProfitReport)
-		owner.GET("/reports/products", reportHandler.TopProducts)
-		owner.GET("/reports/inventory", reportHandler.InventorySummary)
 		owner.GET("/reports/cashiers", reportHandler.CashiersReport)
 	}
 }

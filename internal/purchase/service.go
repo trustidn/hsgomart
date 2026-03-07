@@ -24,6 +24,7 @@ type CreatePurchaseItemInput struct {
 type CreatePurchaseInput struct {
 	SupplierName  string                   `json:"supplier_name"`
 	InvoiceNumber string                   `json:"invoice_number"`
+	Notes         string                   `json:"notes"`
 	Items         []CreatePurchaseItemInput `json:"items" binding:"required,min=1,dive"`
 }
 
@@ -36,6 +37,7 @@ func NewService(db *gorm.DB) *Service {
 }
 
 // CreatePurchase creates a purchase with items, inventory batches, updates stock, and stock movements in one transaction.
+// Purchases only add stock; the inventory table (inventories.stock) remains the single source of truth for stock checks.
 func (s *Service) CreatePurchase(tenantID string, in CreatePurchaseInput) (*Purchase, error) {
 	if len(in.Items) == 0 {
 		return nil, ErrInvalidItems
@@ -83,6 +85,7 @@ func (s *Service) CreatePurchase(tenantID string, in CreatePurchaseInput) (*Purc
 		TenantID:      tenantID,
 		SupplierName:  in.SupplierName,
 		InvoiceNumber: in.InvoiceNumber,
+		Notes:         in.Notes,
 		TotalAmount:   totalAmount,
 	}
 	if err := CreatePurchase(tx, p); err != nil {
@@ -150,9 +153,38 @@ func (s *Service) CreatePurchase(tenantID string, in CreatePurchaseInput) (*Purc
 	return p, nil
 }
 
-// ListPurchases returns all purchases for the tenant.
-func (s *Service) ListPurchases(tenantID string) ([]Purchase, error) {
-	return ListPurchasesByTenant(s.db, tenantID)
+// PurchaseListRow is a purchase with product names for list API.
+type PurchaseListRow struct {
+	Purchase
+	ProductNames []string
+}
+
+// ListPurchases returns all purchases for the tenant with product names.
+func (s *Service) ListPurchases(tenantID string) ([]PurchaseListRow, error) {
+	list, err := ListPurchasesByTenant(s.db, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	if len(list) == 0 {
+		return nil, nil
+	}
+	ids := make([]string, 0, len(list))
+	for _, p := range list {
+		ids = append(ids, p.ID)
+	}
+	namesMap, err := GetProductNamesByPurchaseIDs(s.db, ids)
+	if err != nil {
+		return nil, err
+	}
+	rows := make([]PurchaseListRow, 0, len(list))
+	for _, p := range list {
+		names := namesMap[p.ID]
+		if names == nil {
+			names = []string{}
+		}
+		rows = append(rows, PurchaseListRow{Purchase: p, ProductNames: names})
+	}
+	return rows, nil
 }
 
 // GetPurchase returns one purchase by ID with its items.
