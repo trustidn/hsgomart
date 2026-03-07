@@ -163,3 +163,7 @@ func (s *Service) ListMovementRowsPaginated(tenantID, productID, movementType, f
 func (s *Service) GetLowStockProducts(tenantID string) ([]LowStockRow, error) {
 	return GetLowStockProducts(s.db, tenantID)
 }
+
+func (s *Service) GetExpiringProducts(tenantID string, days int) ([]ExpiringRow, error) {
+	return GetExpiringProducts(s.db, tenantID, days)
+}

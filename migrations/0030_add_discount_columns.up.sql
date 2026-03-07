@@ -1,0 +1,5 @@
+ALTER TABLE transaction_items ADD COLUMN IF NOT EXISTS discount_type VARCHAR(10);
+ALTER TABLE transaction_items ADD COLUMN IF NOT EXISTS discount_value NUMERIC DEFAULT 0;
+ALTER TABLE transaction_items ADD COLUMN IF NOT EXISTS discount_amount NUMERIC DEFAULT 0;
+
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS discount_amount NUMERIC DEFAULT 0;

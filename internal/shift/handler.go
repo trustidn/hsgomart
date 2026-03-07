@@ -1,7 +1,6 @@
 package shift
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -41,7 +40,6 @@ func (h *Handler) OpenShift(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		log.Printf("[shift] OpenShift error: %v", err)
 		msg := err.Error()
 		if len(msg) > 200 {
 			msg = msg[:200] + "..."
@@ -139,11 +137,9 @@ func (h *Handler) ListShifts(c *gin.Context) {
 	}
 	list, err := h.svc.ListShifts(tenantID, limit, offset)
 	if err != nil {
-		log.Printf("[shift] ListShifts error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list shifts"})
 		return
 	}
-	log.Printf("[shift] ListShifts tenant_id=%s count=%d", tenantID, len(list))
 	rows := make([]gin.H, 0, len(list))
 	for _, s := range list {
 		openedAt := s.OpenedAt.Format("2006-01-02T15:04:05Z07:00")

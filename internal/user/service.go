@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/trustidn/hsmart-saas/internal/subscription"
+	"github.com/trustidn/hsmart-saas/pkg/utils"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -53,6 +54,9 @@ func validRole(role string) bool {
 func (s *Service) CreateUser(tenantID string, in CreateUserInput) (*User, error) {
 	if !validRole(in.Role) {
 		return nil, ErrInvalidRole
+	}
+	if err := utils.ValidatePasswordStrength(in.Password); err != nil {
+		return nil, err
 	}
 	if s.planLimitChecker != nil {
 		subWithPlan, err := s.planLimitChecker.CheckSubscription(tenantID)
@@ -123,6 +127,9 @@ func (s *Service) UpdateUser(tenantID, userID string, in UpdateUserInput) (*User
 		updates["status"] = *in.Status
 	}
 	if in.Password != nil && *in.Password != "" {
+		if err := utils.ValidatePasswordStrength(*in.Password); err != nil {
+			return nil, err
+		}
 		hash, err := bcrypt.GenerateFromPassword([]byte(*in.Password), bcryptCost)
 		if err != nil {
 			return nil, err

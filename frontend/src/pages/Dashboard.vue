@@ -1,9 +1,12 @@
 <template>
   <div>
-    <h1 class="text-2xl font-semibold text-gray-800 mb-4">Dashboard</h1>
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+      <span class="text-sm text-gray-400">{{ new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) }}</span>
+    </div>
 
-    <p v-if="loading" class="text-gray-600">Loading dashboard...</p>
-    <p v-else-if="error" class="text-red-600">{{ error }}</p>
+    <p v-if="loading" class="text-gray-500 py-8 text-center">Loading dashboard...</p>
+    <p v-else-if="error" class="text-red-600 py-4">{{ error }}</p>
 
     <template v-else>
       <!-- Low Stock Alert -->
@@ -15,23 +18,54 @@
           <ul class="text-sm text-amber-900 space-y-1">
             <li v-for="p in lowStock" :key="p.product_id">{{ p.product_name }} ({{ p.stock }})</li>
           </ul>
-          <p class="text-xs text-amber-700 mt-2">Click to open Inventory →</p>
+          <p class="text-xs text-amber-700 mt-2">Click to open Inventory</p>
         </router-link>
+      </div>
+
+      <!-- Expiring Alert -->
+      <div v-if="expiring.length > 0" class="mb-6">
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h2 class="text-lg font-semibold text-red-800 mb-2">Expiring Soon</h2>
+          <ul class="text-sm text-red-900 space-y-1">
+            <li v-for="p in expiring" :key="p.batch_id">{{ p.product_name }} - exp {{ p.expired_at }} ({{ p.remaining }} left)</li>
+          </ul>
+        </div>
       </div>
 
       <!-- Metric cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <div class="bg-white rounded-lg shadow p-4 border border-gray-200">
-          <p class="text-sm font-medium text-gray-500 uppercase tracking-wide">Total Sales</p>
-          <p class="text-2xl font-semibold text-gray-800 mt-1">
-            {{ formatCurrency(salesSummary?.total_sales) }}
+        <div class="bg-white rounded-xl p-5 border border-gray-200">
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-medium text-gray-500">Total Sales</p>
+            <span class="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center">
+              <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </span>
+          </div>
+          <p class="text-2xl font-bold text-gray-900 mt-2">{{ formatCurrency(salesSummary?.total_sales) }}</p>
+          <p v-if="compare" class="text-sm mt-1" :class="compare.change_pct >= 0 ? 'text-green-600' : 'text-red-600'">
+            {{ compare.change_pct >= 0 ? '+' : '' }}{{ compare.change_pct.toFixed(1) }}% vs last month
           </p>
         </div>
-        <div class="bg-white rounded-lg shadow p-4 border border-gray-200">
-          <p class="text-sm font-medium text-gray-500 uppercase tracking-wide">Total Transactions</p>
-          <p class="text-2xl font-semibold text-gray-800 mt-1">
-            {{ salesSummary?.total_transactions ?? 0 }}
-          </p>
+        <div class="bg-white rounded-xl p-5 border border-gray-200">
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-medium text-gray-500">Total Transactions</p>
+            <span class="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center">
+              <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+            </span>
+          </div>
+          <p class="text-2xl font-bold text-gray-900 mt-2">{{ salesSummary?.total_transactions ?? 0 }}</p>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div class="bg-white rounded-xl p-5 border border-gray-200">
+          <h3 class="text-sm font-semibold text-gray-700 mb-4">Sales (7 days)</h3>
+          <canvas ref="salesChartRef" height="200"></canvas>
+        </div>
+        <div class="bg-white rounded-xl p-5 border border-gray-200">
+          <h3 class="text-sm font-semibold text-gray-700 mb-4">Top Products</h3>
+          <canvas ref="productsChartRef" height="200"></canvas>
         </div>
       </div>
 
@@ -42,9 +76,9 @@
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
-                <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product Name</th>
-                <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Quantity Sold</th>
-                <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product Name</th>
+                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Qty Sold</th>
+                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -68,8 +102,8 @@
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
-                <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product Name</th>
-                <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Stock</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product Name</th>
+                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Stock</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -89,10 +123,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { getSalesSummary, getTopProducts, getInventorySummary } from '../api/reports'
+import { ref, onMounted, nextTick } from 'vue'
+import { Chart, registerables } from 'chart.js'
+import { getSalesSummary, getTopProducts, getInventorySummary, getSalesDaily, getSalesCompare } from '../api/reports'
 import { getLowStock } from '../api/inventory'
 import { formatCurrency } from '../utils'
+import client from '../api/client'
+
+Chart.register(...registerables)
 
 const loading = ref(true)
 const error = ref(null)
@@ -100,25 +138,79 @@ const salesSummary = ref(null)
 const topProducts = ref([])
 const inventorySummary = ref([])
 const lowStock = ref([])
+const expiring = ref([])
+const compare = ref(null)
+
+const salesChartRef = ref(null)
+const productsChartRef = ref(null)
 
 onMounted(async () => {
   loading.value = true
   error.value = null
   try {
-    const [sales, products, inventory, low] = await Promise.all([
+    const [sales, products, inventory, low, expData, cmp] = await Promise.all([
       getSalesSummary(),
       getTopProducts(),
       getInventorySummary(),
       getLowStock().catch(() => []),
+      client.get('/api/inventory/expiring', { params: { days: 30 } }).then(r => r.data).catch(() => []),
+      getSalesCompare().catch(() => null),
     ])
     salesSummary.value = sales
     topProducts.value = Array.isArray(products) ? products : []
     inventorySummary.value = Array.isArray(inventory) ? inventory : []
     lowStock.value = Array.isArray(low) ? low : []
+    expiring.value = Array.isArray(expData) ? expData : []
+    compare.value = cmp
+
+    await nextTick()
+    renderCharts(products)
   } catch (err) {
     error.value = 'Failed to load dashboard data.'
   } finally {
     loading.value = false
   }
 })
+
+async function renderCharts(products) {
+  try {
+    const dailyData = await getSalesDaily().catch(() => [])
+    const daily = Array.isArray(dailyData) ? dailyData : []
+    if (salesChartRef.value && daily.length) {
+      new Chart(salesChartRef.value, {
+        type: 'line',
+        data: {
+          labels: daily.map(d => d.date),
+          datasets: [{
+            label: 'Sales',
+            data: daily.map(d => d.total_sales),
+            borderColor: '#475569',
+            backgroundColor: 'rgba(71,85,105,0.1)',
+            fill: true,
+            tension: 0.3,
+          }],
+        },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
+      })
+    }
+  } catch { /* chart optional */ }
+
+  try {
+    const prods = Array.isArray(products) ? products.slice(0, 5) : []
+    if (productsChartRef.value && prods.length) {
+      new Chart(productsChartRef.value, {
+        type: 'bar',
+        data: {
+          labels: prods.map(p => p.product_name),
+          datasets: [{
+            label: 'Revenue',
+            data: prods.map(p => p.revenue),
+            backgroundColor: ['#475569', '#64748b', '#94a3b8', '#cbd5e1', '#e2e8f0'],
+          }],
+        },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
+      })
+    }
+  } catch { /* chart optional */ }
+}
 </script>

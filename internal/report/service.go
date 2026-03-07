@@ -10,6 +10,10 @@ type Service struct {
 	db *gorm.DB
 }
 
+func (s *Service) DB() *gorm.DB {
+	return s.db
+}
+
 func NewService(db *gorm.DB) *Service {
 	return &Service{db: db}
 }
@@ -67,4 +71,39 @@ func (s *Service) CashiersReport(tenantID string, fromDate, toDate time.Time) ([
 // ShiftsReport returns shift reconciliation report for the tenant in the date range.
 func (s *Service) ShiftsReport(tenantID string, fromDate, toDate time.Time) ([]ShiftReportRow, error) {
 	return GetShiftsReport(s.db, tenantID, fromDate, toDate)
+}
+
+type CompareResult struct {
+	Current  PeriodStats `json:"current"`
+	Previous PeriodStats `json:"previous"`
+	ChangePct float64    `json:"change_pct"`
+}
+
+type PeriodStats struct {
+	TotalSales        float64 `json:"total_sales"`
+	TotalTransactions int     `json:"total_transactions"`
+}
+
+func (s *Service) SalesCompare(tenantID string, curFrom, curTo, prevFrom, prevTo time.Time) (*CompareResult, error) {
+	cur, err := GetSalesSummary(s.db, tenantID, curFrom, curTo)
+	if err != nil {
+		return nil, err
+	}
+	prev, err := GetSalesSummary(s.db, tenantID, prevFrom, prevTo)
+	if err != nil {
+		return nil, err
+	}
+	changePct := 0.0
+	if prev.TotalSales > 0 {
+		changePct = ((cur.TotalSales - prev.TotalSales) / prev.TotalSales) * 100
+	}
+	return &CompareResult{
+		Current:  PeriodStats{TotalSales: cur.TotalSales, TotalTransactions: cur.TotalTransactions},
+		Previous: PeriodStats{TotalSales: prev.TotalSales, TotalTransactions: prev.TotalTransactions},
+		ChangePct: changePct,
+	}, nil
+}
+
+func (s *Service) ProductMargin(tenantID string, fromDate, toDate time.Time) ([]MarginRow, error) {
+	return GetProductMargin(s.db, tenantID, fromDate, toDate)
 }

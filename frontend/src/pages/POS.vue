@@ -159,6 +159,9 @@
             >
               <option value="cash">Cash</option>
               <option value="card">Card</option>
+              <option value="ewallet">E-Wallet</option>
+              <option value="qris">QRIS</option>
+              <option value="transfer">Transfer</option>
             </select>
           </div>
           <div class="mb-4">
@@ -216,11 +219,17 @@
             :change="receiptData.change"
           />
         </div>
-        <div class="p-4 border-t border-gray-200 flex gap-2 justify-end">
-          <button type="button" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50" @click="printReceipt">
-            Print Receipt
+        <div class="p-4 border-t border-gray-200 flex flex-wrap gap-2 justify-end">
+          <button type="button" class="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-sm" @click="printReceipt">
+            Print
           </button>
-          <button type="button" class="px-4 py-2 bg-slate-600 text-white rounded-md hover:bg-slate-700" @click="closeReceipt">
+          <button type="button" class="px-3 py-2 border border-green-500 text-green-700 rounded-md hover:bg-green-50 text-sm" @click="downloadReceiptPDF">
+            PDF
+          </button>
+          <button type="button" class="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm" @click="shareWhatsApp">
+            WhatsApp
+          </button>
+          <button type="button" class="px-3 py-2 bg-slate-600 text-white rounded-md hover:bg-slate-700 text-sm" @click="closeReceipt">
             Done
           </button>
         </div>
@@ -236,6 +245,7 @@ import { getProducts, getProductByBarcode } from '../api/products'
 import { getProductStock, getLowStock } from '../api/inventory'
 import { checkout as checkoutApi } from '../api/pos'
 import { getCurrentShift } from '../api/shifts'
+import { generateReceiptPDF, buildReceiptText } from '../utils/receipt-pdf'
 import Receipt from '../components/Receipt.vue'
 import ShiftModal from '../components/ShiftModal.vue'
 
@@ -491,6 +501,19 @@ async function submitCheckout() {
 
 function printReceipt() {
   window.print()
+}
+
+function downloadReceiptPDF() {
+  if (!receiptData.value) return
+  const doc = generateReceiptPDF(receiptData.value)
+  doc.save(`receipt-${receiptData.value.transactionId || 'pos'}.pdf`)
+}
+
+function shareWhatsApp() {
+  if (!receiptData.value) return
+  const text = buildReceiptText(receiptData.value)
+  const url = `https://wa.me/?text=${encodeURIComponent(text)}`
+  window.open(url, '_blank')
 }
 
 function closeReceipt() {

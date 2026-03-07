@@ -30,13 +30,14 @@ func (PurchaseItem) TableName() string {
 }
 
 type InventoryBatch struct {
-	ID                string    `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
-	ProductID         string    `gorm:"type:uuid;not null;index"`
-	PurchaseItemID    string    `gorm:"type:uuid;not null;index"`
-	Quantity          int       `gorm:"not null"`
-	RemainingQuantity int       `gorm:"not null"`
-	CostPrice         float64   `gorm:"column:cost_price;type:numeric;not null"`
-	CreatedAt         time.Time `gorm:"autoCreateTime"`
+	ID                string     `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
+	ProductID         string     `gorm:"type:uuid;not null;index"`
+	PurchaseItemID    string     `gorm:"type:uuid;not null;index"`
+	Quantity          int        `gorm:"not null"`
+	RemainingQuantity int        `gorm:"not null"`
+	CostPrice         float64    `gorm:"column:cost_price;type:numeric;not null"`
+	ExpiredAt         *time.Time `gorm:"column:expired_at;type:date"`
+	CreatedAt         time.Time  `gorm:"autoCreateTime"`
 }
 
 func (InventoryBatch) TableName() string {

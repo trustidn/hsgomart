@@ -64,3 +64,13 @@ export async function getShiftsReport(params) {
   const { data } = await client.get('/api/reports/shifts', { params: dateParams(params?.from, params?.to) })
   return data
 }
+
+export async function getSalesCompare(params) {
+  const { data } = await client.get('/api/reports/sales/compare', { params })
+  return data
+}
+
+export async function getProductMargin(params) {
+  const { data } = await client.get('/api/reports/products/margin', { params: dateParams(params?.from, params?.to) })
+  return data
+}

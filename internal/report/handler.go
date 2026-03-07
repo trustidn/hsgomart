@@ -314,3 +314,107 @@ func (h *Handler) ShiftsReport(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, rows)
 }
+
+func (h *Handler) SalesCompare(c *gin.Context) {
+	tenantID, ok := utils.GetTenantID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context required"})
+		return
+	}
+	curFrom, _ := time.Parse("2006-01-02", c.Query("current_from"))
+	curTo, _ := time.Parse("2006-01-02", c.Query("current_to"))
+	prevFrom, _ := time.Parse("2006-01-02", c.Query("previous_from"))
+	prevTo, _ := time.Parse("2006-01-02", c.Query("previous_to"))
+
+	if curFrom.IsZero() || curTo.IsZero() {
+		now := time.Now()
+		curFrom = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+		curTo = now
+		prevFrom = curFrom.AddDate(0, -1, 0)
+		prevTo = curFrom.Add(-time.Second)
+	}
+	if prevFrom.IsZero() {
+		prevFrom = curFrom.AddDate(0, -1, 0)
+		prevTo = curFrom.Add(-time.Second)
+	}
+	curTo = curTo.Add(24*time.Hour - time.Second)
+	prevTo = prevTo.Add(24*time.Hour - time.Second)
+
+	result, err := h.service.SalesCompare(tenantID, curFrom, curTo, prevFrom, prevTo)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to compare sales"})
+		return
+	}
+	c.JSON(http.StatusOK, result)
+}
+
+func (h *Handler) ProductMargin(c *gin.Context) {
+	tenantID, ok := utils.GetTenantID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context required"})
+		return
+	}
+	from, to, err := parseDateRange(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format"})
+		return
+	}
+	rows, err := h.service.ProductMargin(tenantID, from, to)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get product margin"})
+		return
+	}
+	c.JSON(http.StatusOK, rows)
+}
+
+func (h *Handler) GetReceipt(c *gin.Context) {
+	tenantID, ok := utils.GetTenantID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context required"})
+		return
+	}
+	txnID := c.Param("id")
+
+	type receiptItem struct {
+		ProductName string  `json:"product_name"`
+		Quantity    int     `json:"quantity"`
+		Price       float64 `json:"price"`
+		Subtotal    float64 `json:"subtotal"`
+	}
+
+	var txn struct {
+		ID          string  `json:"id"`
+		TotalAmount float64 `json:"total_amount"`
+		CreatedAt   string  `json:"created_at"`
+		Cashier     string  `json:"cashier"`
+	}
+	err := h.service.DB().Raw(`
+		SELECT t.id, t.total_amount, TO_CHAR(t.created_at, 'YYYY-MM-DD HH24:MI') AS created_at,
+		       COALESCE(NULLIF(TRIM(u.name), ''), u.email) AS cashier
+		FROM transactions t LEFT JOIN users u ON u.id = t.user_id
+		WHERE t.id = ? AND t.tenant_id = ?
+	`, txnID, tenantID).Scan(&txn).Error
+	if err != nil || txn.ID == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": "transaction not found"})
+		return
+	}
+
+	var items []receiptItem
+	h.service.DB().Raw(`
+		SELECT p.name AS product_name, ti.quantity, ti.price, ti.subtotal
+		FROM transaction_items ti JOIN products p ON p.id = ti.product_id
+		WHERE ti.transaction_id = ?
+	`, txnID).Scan(&items)
+
+	var payments []struct {
+		Method string  `json:"method"`
+		Amount float64 `json:"amount"`
+	}
+	h.service.DB().Raw(`SELECT method, amount FROM payments WHERE transaction_id = ?`, txnID).Scan(&payments)
+
+	c.JSON(http.StatusOK, gin.H{
+		"transaction": txn,
+		"items":       items,
+		"payments":    payments,
+	})
+}

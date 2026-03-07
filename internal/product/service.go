@@ -83,14 +83,19 @@ func (s *Service) CreateProduct(tenantID string, in CreateProductInput) (*Produc
 	if threshold <= 0 {
 		threshold = 10
 	}
+	unit := in.Unit
+	if unit == "" {
+		unit = "pcs"
+	}
 	p := &Product{
-		TenantID:           tenantID,
-		Name:               in.Name,
-		SKU:                in.SKU,
-		CostPrice:          in.CostPrice,
-		SellPrice:          in.SellPrice,
-		LowStockThreshold:  threshold,
-		Status:             "active",
+		TenantID:          tenantID,
+		Name:              in.Name,
+		SKU:               in.SKU,
+		CostPrice:         in.CostPrice,
+		SellPrice:         in.SellPrice,
+		Unit:              unit,
+		LowStockThreshold: threshold,
+		Status:            "active",
 	}
 	if in.CategoryID != nil && *in.CategoryID != "" {
 		p.CategoryID = in.CategoryID
@@ -165,6 +170,9 @@ func (s *Service) UpdateProduct(tenantID, productID string, in UpdateProductInpu
 	if in.LowStockThreshold != nil {
 		updates["low_stock_threshold"] = *in.LowStockThreshold
 	}
+	if in.Unit != "" {
+		updates["unit"] = in.Unit
+	}
 	if err := UpdateProduct(s.db, tenantID, productID, updates); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrProductNotFound
@@ -208,24 +216,43 @@ func (s *Service) AddBarcode(tenantID, productID string, barcode string) (*Produ
 	return pb, nil
 }
 
+func (s *Service) DeleteBarcode(tenantID, productID, barcode string) error {
+	if _, err := FindProductByID(s.db, tenantID, productID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrProductNotFound
+		}
+		return err
+	}
+	res := s.db.Where("product_id = ? AND barcode = ?", productID, barcode).Delete(&ProductBarcode{})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return ErrProductNotFound
+	}
+	return nil
+}
+
 type CreateProductInput struct {
-	Name                string   `json:"name" binding:"required"`
-	SKU                 string   `json:"sku"`
-	CategoryID          *string  `json:"category_id"`
-	CostPrice           float64  `json:"cost_price"`
-	SellPrice           float64  `json:"sell_price" binding:"required"`
-	Status              string   `json:"status"`
-	LowStockThreshold   int      `json:"low_stock_threshold"` // default 10 if 0
+	Name              string  `json:"name" binding:"required"`
+	SKU               string  `json:"sku"`
+	CategoryID        *string `json:"category_id"`
+	CostPrice         float64 `json:"cost_price"`
+	SellPrice         float64 `json:"sell_price" binding:"required"`
+	Unit              string  `json:"unit"`
+	Status            string  `json:"status"`
+	LowStockThreshold int     `json:"low_stock_threshold"`
 }
 
 type UpdateProductInput struct {
-	Name               string  `json:"name" binding:"required"`
-	SKU                string  `json:"sku"`
-	CategoryID         *string `json:"category_id"`
-	CostPrice          float64 `json:"cost_price"`
-	SellPrice          float64 `json:"sell_price" binding:"required"`
-	Status             string  `json:"status"`
-	LowStockThreshold  *int    `json:"low_stock_threshold"` // optional update
+	Name              string  `json:"name" binding:"required"`
+	SKU               string  `json:"sku"`
+	CategoryID        *string `json:"category_id"`
+	CostPrice         float64 `json:"cost_price"`
+	SellPrice         float64 `json:"sell_price" binding:"required"`
+	Unit              string  `json:"unit"`
+	Status            string  `json:"status"`
+	LowStockThreshold *int    `json:"low_stock_threshold"`
 }
 
 type CreateCategoryInput struct {

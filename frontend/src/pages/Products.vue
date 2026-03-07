@@ -30,6 +30,7 @@
             <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product Name</th>
             <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
             <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Sell Price</th>
+            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Unit</th>
             <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
             <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
           </tr>
@@ -39,6 +40,7 @@
             <td class="px-4 py-2 text-sm text-gray-800">{{ p.name }}</td>
             <td class="px-4 py-2 text-sm text-gray-600">{{ p.sku }}</td>
             <td class="px-4 py-2 text-sm text-gray-600 text-right">{{ formatCurrency(p.sell_price) }}</td>
+            <td class="px-4 py-2 text-sm text-gray-600">{{ p.unit || 'pcs' }}</td>
             <td class="px-4 py-2 text-sm text-gray-600">{{ p.status }}</td>
             <td class="px-4 py-2 text-right">
               <button type="button" class="text-sm text-slate-600 hover:underline mr-2" @click="openEditModal(p)">Edit</button>
@@ -46,7 +48,7 @@
             </td>
           </tr>
           <tr v-if="!products?.length">
-            <td colspan="5" class="px-4 py-4 text-sm text-gray-500 text-center">No products yet. Add one above.</td>
+            <td colspan="6" class="px-4 py-4 text-sm text-gray-500 text-center">No products yet. Add one above.</td>
           </tr>
         </tbody>
       </table>
@@ -153,6 +155,20 @@
               />
             </div>
             <div>
+              <label for="prod-unit" class="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+              <select id="prod-unit" v-model="productForm.unit" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500">
+                <option value="pcs">pcs</option>
+                <option value="kg">kg</option>
+                <option value="liter">liter</option>
+                <option value="box">box</option>
+                <option value="pack">pack</option>
+                <option value="bottle">bottle</option>
+                <option value="sachet">sachet</option>
+                <option value="meter">meter</option>
+                <option value="dozen">dozen</option>
+              </select>
+            </div>
+            <div>
               <label for="prod-barcode" class="block text-sm font-medium text-gray-700 mb-1">Barcode (optional)</label>
               <input
                 id="prod-barcode"
@@ -256,6 +272,20 @@
               />
             </div>
             <div>
+              <label for="edit-unit" class="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+              <select id="edit-unit" v-model="editForm.unit" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500">
+                <option value="pcs">pcs</option>
+                <option value="kg">kg</option>
+                <option value="liter">liter</option>
+                <option value="box">box</option>
+                <option value="pack">pack</option>
+                <option value="bottle">bottle</option>
+                <option value="sachet">sachet</option>
+                <option value="meter">meter</option>
+                <option value="dozen">dozen</option>
+              </select>
+            </div>
+            <div>
               <label for="edit-barcode" class="block text-sm font-medium text-gray-700 mb-1">Barcode</label>
               <input
                 id="edit-barcode"
@@ -335,6 +365,7 @@ const productForm = ref({
   category_id: '',
   cost_price: 0,
   sell_price: 0,
+  unit: 'pcs',
   barcode: '',
   low_stock_threshold: 10,
 })
@@ -377,7 +408,7 @@ function categoryName(c) {
 }
 
 function openProductModal() {
-  productForm.value = { name: '', sku: '', category_id: '', cost_price: 0, sell_price: 0, barcode: '', low_stock_threshold: 10 }
+  productForm.value = { name: '', sku: '', category_id: '', cost_price: 0, sell_price: 0, unit: 'pcs', barcode: '', low_stock_threshold: 10 }
   productError.value = ''
   showProductModal.value = true
 }
@@ -395,6 +426,7 @@ async function openEditModal(p) {
       cost_price: product.cost_price ?? product.CostPrice ?? 0,
       sell_price: product.sell_price ?? product.SellPrice ?? 0,
       status: product.status ?? product.Status ?? 'active',
+      unit: product.unit ?? product.Unit ?? 'pcs',
       barcode,
       low_stock_threshold: product.low_stock_threshold ?? 10,
     }
@@ -436,6 +468,7 @@ async function handleCreateProduct() {
       sku: productForm.value.sku || undefined,
       cost_price: Number(productForm.value.cost_price) || 0,
       sell_price: Number(productForm.value.sell_price) || 0,
+      unit: productForm.value.unit || 'pcs',
       low_stock_threshold: Math.max(0, Number(productForm.value.low_stock_threshold) || 10),
     }
     if (productForm.value.category_id) payload.category_id = productForm.value.category_id
@@ -470,6 +503,7 @@ async function handleUpdateProduct() {
       cost_price: Number(editForm.value.cost_price) || 0,
       sell_price: Number(editForm.value.sell_price) || 0,
       status: editForm.value.status || 'active',
+      unit: editForm.value.unit || 'pcs',
       low_stock_threshold: Math.max(0, Number(editForm.value.low_stock_threshold) ?? 10),
     }
     if (editForm.value.category_id) payload.category_id = editForm.value.category_id

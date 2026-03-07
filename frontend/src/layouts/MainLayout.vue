@@ -1,42 +1,128 @@
 <template>
-  <div class="min-h-screen flex bg-gray-100">
+  <div class="min-h-screen flex bg-gray-50">
+    <!-- Mobile overlay -->
+    <div
+      v-if="sidebarOpen"
+      class="fixed inset-0 bg-black/40 z-30 lg:hidden"
+      @click="sidebarOpen = false"
+    />
+
     <!-- Sidebar -->
-    <aside class="w-56 bg-slate-800 text-white flex flex-col shrink-0">
-      <div class="p-4 font-semibold text-lg border-b border-slate-700">
-        HSMart POS
+    <aside
+      :class="[
+        'fixed inset-y-0 left-0 z-40 flex flex-col bg-slate-900 text-white border-r border-slate-800 transition-all duration-200 ease-in-out',
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+        'lg:translate-x-0 lg:static lg:z-auto',
+        collapsed ? 'lg:w-16' : 'lg:w-60',
+        'w-60',
+      ]"
+    >
+      <!-- Logo -->
+      <div class="h-14 flex items-center gap-2 px-4 border-b border-slate-800 shrink-0">
+        <div class="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center text-sm font-bold shrink-0">H</div>
+        <span v-show="!collapsed" class="font-semibold text-base tracking-tight truncate">HSMart POS</span>
       </div>
-      <nav class="flex-1 p-2 space-y-1">
-        <router-link
-          v-for="item in navItems"
-          :key="item.path"
-          :to="item.path"
-          active-class="bg-slate-600 text-white"
-          class="block px-3 py-2 rounded-md text-slate-200 hover:bg-slate-700"
-        >
-          {{ item.label }}
-        </router-link>
+
+      <!-- Navigation -->
+      <nav class="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
+        <template v-for="group in navGroups" :key="group.label">
+          <div v-if="!collapsed" class="px-2 pt-4 pb-1 text-[10px] uppercase tracking-widest text-slate-500 font-semibold">{{ group.label }}</div>
+          <router-link
+            v-for="item in group.items"
+            :key="item.path"
+            :to="item.path"
+            active-class="!bg-slate-700/80 !text-white"
+            :class="[
+              'flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors text-sm',
+              collapsed ? 'justify-center' : '',
+            ]"
+            :title="collapsed ? item.label : undefined"
+            @click="sidebarOpen = false"
+          >
+            <component :is="item.icon" class="w-[18px] h-[18px] shrink-0" />
+            <span v-show="!collapsed" class="truncate">{{ item.label }}</span>
+          </router-link>
+        </template>
       </nav>
+
+      <!-- Collapse toggle (desktop) -->
+      <button
+        class="hidden lg:flex items-center justify-center h-10 border-t border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+        @click="collapsed = !collapsed"
+      >
+        <svg :class="['w-4 h-4 transition-transform', collapsed ? 'rotate-180' : '']" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
+      </button>
     </aside>
 
     <!-- Main content -->
     <div class="flex-1 flex flex-col min-w-0">
-      <!-- Topbar -->
-      <header class="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 shrink-0">
-        <span class="text-gray-600">HSMart SaaS</span>
-        <div class="flex items-center gap-2">
-          <span class="text-sm text-gray-500">{{ userEmail }}</span>
-          <button
-            type="button"
-            class="text-sm text-red-600 hover:underline"
-            @click="handleLogout"
-          >
-            Logout
+      <!-- Trial banner -->
+      <div v-if="trialDaysLeft !== null && trialDaysLeft <= 7" class="bg-amber-500 text-white text-center text-sm py-2 px-4 font-medium">
+        Trial Anda habis dalam {{ trialDaysLeft }} hari.
+        <router-link to="/subscription" class="underline ml-1">Upgrade sekarang</router-link>
+      </div>
+
+      <!-- Top bar -->
+      <header class="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 shrink-0 sticky top-0 z-20">
+        <div class="flex items-center gap-3">
+          <button class="lg:hidden text-gray-500 hover:text-gray-700 -ml-1 p-1" @click="sidebarOpen = true">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>
+          <h2 class="text-sm font-medium text-gray-700 truncate">{{ pageTitle }}</h2>
+        </div>
+        <div class="flex items-center gap-2">
+          <!-- Notifications -->
+          <div class="relative">
+            <button @click="showNotif = !showNotif" class="relative p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+              <span v-if="notifCount > 0" class="absolute top-0 right-0 bg-red-500 text-white text-[10px] min-w-[16px] h-4 rounded-full flex items-center justify-center px-1 font-medium">{{ notifCount > 9 ? '9+' : notifCount }}</span>
+            </button>
+            <Transition
+              enter-active-class="transition ease-out duration-150"
+              enter-from-class="opacity-0 -translate-y-1"
+              enter-to-class="opacity-100 translate-y-0"
+              leave-active-class="transition ease-in duration-100"
+              leave-from-class="opacity-100 translate-y-0"
+              leave-to-class="opacity-0 -translate-y-1"
+            >
+              <div v-if="showNotif" class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden">
+                <div class="px-4 py-3 border-b font-medium text-sm text-gray-800">Notifications</div>
+                <div class="max-h-64 overflow-auto divide-y divide-gray-100">
+                  <div v-if="!notifications.length" class="px-4 py-6 text-sm text-gray-400 text-center">No alerts</div>
+                  <button
+                    v-for="n in notifications"
+                    :key="n.id"
+                    class="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-start gap-3"
+                    @click="goToNotif(n)"
+                  >
+                    <span :class="[n.type === 'low_stock' ? 'bg-amber-100 text-amber-600' : 'bg-red-100 text-red-600', 'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5']">{{ n.type === 'low_stock' ? '!' : '⏰' }}</span>
+                    <div>
+                      <div class="text-sm font-medium text-gray-800">{{ n.type === 'low_stock' ? 'Low Stock' : 'Expiring Soon' }}</div>
+                      <div class="text-xs text-gray-500 mt-0.5">{{ n.label }}</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </Transition>
+          </div>
+
+          <!-- User menu -->
+          <div class="flex items-center gap-2 pl-2 border-l border-gray-200">
+            <div class="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-xs font-medium text-slate-600 uppercase">{{ userInitials }}</div>
+            <span class="text-sm text-gray-600 hidden sm:block max-w-[140px] truncate">{{ userEmail }}</span>
+            <button
+              type="button"
+              class="text-xs text-gray-400 hover:text-red-600 transition-colors p-1"
+              title="Logout"
+              @click="handleLogout"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            </button>
+          </div>
         </div>
       </header>
 
-      <!-- Page content -->
-      <main class="flex-1 p-4 overflow-auto">
+      <main class="flex-1 p-4 lg:p-6 overflow-auto">
         <RouterView />
       </main>
     </div>
@@ -44,35 +130,109 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, h } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import client from '../api/client'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
 
+const sidebarOpen = ref(false)
+const collapsed = ref(false)
+const showNotif = ref(false)
+const notifications = ref([])
+const trialDaysLeft = ref(null)
+
+const IconDashboard = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' })]) }
+const IconBox = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' })]) }
+const IconTag = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z' })]) }
+const IconArchive = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4' })]) }
+const IconTruck = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0' })]) }
+const IconHistory = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' })]) }
+const IconClipboard = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' })]) }
+const IconChart = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' })]) }
+const IconClock = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' })]) }
+const IconUsers = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' })]) }
+const IconCredit = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' })]) }
+const IconCart = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z' })]) }
+
 const menu = [
-  { path: '/dashboard', label: 'Dashboard', roles: ['owner', 'cashier'] },
-  { path: '/products', label: 'Products', roles: ['owner'] },
-  { path: '/categories', label: 'Categories', roles: ['owner'] },
-  { path: '/inventory', label: 'Inventory', roles: ['owner'] },
-  { path: '/purchases', label: 'Purchases', roles: ['owner'] },
-  { path: '/inventory-history', label: 'Inventory History', roles: ['owner'] },
-  { path: '/reports', label: 'Reports', roles: ['owner'] },
-  { path: '/shifts', label: 'Shifts', roles: ['owner'] },
-  { path: '/users', label: 'Users', roles: ['owner'] },
-  { path: '/pos', label: 'POS', roles: ['owner', 'cashier'] },
+  { group: 'Main', items: [
+    { path: '/dashboard', label: 'Dashboard', icon: IconDashboard, roles: ['owner', 'cashier'] },
+    { path: '/pos', label: 'POS', icon: IconCart, roles: ['owner', 'cashier'] },
+  ]},
+  { group: 'Catalog', items: [
+    { path: '/products', label: 'Products', icon: IconBox, roles: ['owner'] },
+    { path: '/categories', label: 'Categories', icon: IconTag, roles: ['owner'] },
+  ]},
+  { group: 'Inventory', items: [
+    { path: '/inventory', label: 'Inventory', icon: IconArchive, roles: ['owner'] },
+    { path: '/purchases', label: 'Purchases', icon: IconTruck, roles: ['owner'] },
+    { path: '/inventory-history', label: 'History', icon: IconHistory, roles: ['owner'] },
+    { path: '/stock-opname', label: 'Stock Opname', icon: IconClipboard, roles: ['owner'] },
+  ]},
+  { group: 'Business', items: [
+    { path: '/reports', label: 'Reports', icon: IconChart, roles: ['owner'] },
+    { path: '/shifts', label: 'Shifts', icon: IconClock, roles: ['owner'] },
+    { path: '/users', label: 'Users', icon: IconUsers, roles: ['owner'] },
+    { path: '/subscription', label: 'Subscription', icon: IconCredit, roles: ['owner'] },
+  ]},
 ]
 
-const navItems = computed(() => {
-  const role = auth.role || 'cashier' // default cashier for legacy sessions without role
-  return menu.filter((m) => m.roles.includes(role))
+const navGroups = computed(() => {
+  const role = auth.role || 'cashier'
+  return menu
+    .map(g => ({ label: g.group, items: g.items.filter(i => i.roles.includes(role)) }))
+    .filter(g => g.items.length > 0)
+})
+
+const pageTitle = computed(() => {
+  const name = route.meta?.title || route.name
+  if (typeof name === 'string') return name.charAt(0).toUpperCase() + name.slice(1)
+  return 'Dashboard'
 })
 
 const userEmail = computed(() => auth.user?.email ?? 'User')
+const userInitials = computed(() => {
+  const email = auth.user?.email || 'U'
+  return email.substring(0, 2).toUpperCase()
+})
+
+const notifCount = computed(() => notifications.value.length)
 
 function handleLogout() {
   auth.logout()
   router.push('/login')
 }
+
+function goToNotif(n) {
+  showNotif.value = false
+  router.push('/inventory')
+}
+
+onMounted(async () => {
+  try {
+    const [lowRes, expRes] = await Promise.all([
+      client.get('/api/inventory/low-stock').catch(() => ({ data: [] })),
+      client.get('/api/inventory/expiring', { params: { days: 30 } }).catch(() => ({ data: [] })),
+    ])
+    const low = Array.isArray(lowRes.data) ? lowRes.data : []
+    const exp = Array.isArray(expRes.data) ? expRes.data : []
+    notifications.value = [
+      ...low.map((p, i) => ({ id: `low-${i}`, type: 'low_stock', label: `${p.product_name} (${p.stock})` })),
+      ...exp.map((p, i) => ({ id: `exp-${i}`, type: 'expiring', label: `${p.product_name} exp ${p.expired_at}` })),
+    ]
+  } catch { /* ignore */ }
+
+  if (auth.role === 'owner') {
+    try {
+      const { data } = await client.get('/api/subscription')
+      if (data.trial_days_left !== undefined && data.trial_days_left !== null) {
+        trialDaysLeft.value = data.trial_days_left
+      }
+    } catch { /* ignore */ }
+  }
+})
 </script>

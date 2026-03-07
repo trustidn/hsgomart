@@ -108,15 +108,16 @@ func (h *Handler) DeleteCategory(c *gin.Context) {
 
 // productResponse for GET /api/products list and GET /api/products/:id (includes category_id, cost_price, barcode for edit).
 type productResponse struct {
-	ID                 string   `json:"id"`
-	Name               string   `json:"name"`
-	SKU                string   `json:"sku"`
-	CategoryID         *string  `json:"category_id,omitempty"`
-	CostPrice          float64  `json:"cost_price"`
-	SellPrice          float64  `json:"sell_price"`
-	Status             string   `json:"status"`
-	Barcode            string   `json:"barcode,omitempty"`
-	LowStockThreshold  int      `json:"low_stock_threshold"`
+	ID                string   `json:"id"`
+	Name              string   `json:"name"`
+	SKU               string   `json:"sku"`
+	CategoryID        *string  `json:"category_id,omitempty"`
+	CostPrice         float64  `json:"cost_price"`
+	SellPrice         float64  `json:"sell_price"`
+	Unit              string   `json:"unit"`
+	Status            string   `json:"status"`
+	Barcode           string   `json:"barcode,omitempty"`
+	LowStockThreshold int      `json:"low_stock_threshold"`
 }
 
 func toProductResponse(p *Product) productResponse {
@@ -124,6 +125,10 @@ func toProductResponse(p *Product) productResponse {
 }
 
 func toProductResponseWithBarcode(p *Product, barcode string) productResponse {
+	unit := p.Unit
+	if unit == "" {
+		unit = "pcs"
+	}
 	return productResponse{
 		ID:                p.ID,
 		Name:              p.Name,
@@ -131,6 +136,7 @@ func toProductResponseWithBarcode(p *Product, barcode string) productResponse {
 		CategoryID:        p.CategoryID,
 		CostPrice:         p.CostPrice,
 		SellPrice:         p.SellPrice,
+		Unit:              unit,
 		Status:            p.Status,
 		Barcode:           barcode,
 		LowStockThreshold: p.LowStockThreshold,
@@ -277,8 +283,9 @@ func (h *Handler) UpdateProduct(c *gin.Context) {
 		CategoryID:        catID,
 		CostPrice:         in.CostPrice,
 		SellPrice:         in.SellPrice,
+		Unit:              in.Unit,
 		Status:            in.Status,
-		LowStockThreshold:  in.LowStockThreshold,
+		LowStockThreshold: in.LowStockThreshold,
 	})
 	if err != nil {
 		if err == ErrProductNotFound {
@@ -347,4 +354,46 @@ func (h *Handler) AddBarcode(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, pb)
+}
+
+func (h *Handler) DeleteBarcode(c *gin.Context) {
+	tenantID, ok := utils.GetTenantID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context required"})
+		return
+	}
+	productID := c.Param("id")
+	barcode := c.Param("barcode")
+	if productID == "" || barcode == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "product id and barcode required"})
+		return
+	}
+	if err := h.service.DeleteBarcode(tenantID, productID, barcode); err != nil {
+		if err == ErrProductNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "barcode not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete barcode"})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+func (h *Handler) ListBarcodes(c *gin.Context) {
+	tenantID, ok := utils.GetTenantID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context required"})
+		return
+	}
+	productID := c.Param("id")
+	if productID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "product id required"})
+		return
+	}
+	barcodes, err := h.service.GetProductBarcodes(tenantID, productID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list barcodes"})
+		return
+	}
+	c.JSON(http.StatusOK, barcodes)
 }

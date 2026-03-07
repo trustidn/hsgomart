@@ -183,6 +183,30 @@ func CountMovements(db *gorm.DB, tenantID, productID, movementType, fromDate, to
 	return n, err
 }
 
+type ExpiringRow struct {
+	ProductID   string `json:"product_id"`
+	ProductName string `json:"product_name"`
+	BatchID     string `json:"batch_id"`
+	Remaining   int    `json:"remaining"`
+	ExpiredAt   string `json:"expired_at"`
+}
+
+func GetExpiringProducts(db *gorm.DB, tenantID string, days int) ([]ExpiringRow, error) {
+	var list []ExpiringRow
+	err := db.Raw(`
+		SELECT ib.id AS batch_id, p.id AS product_id, p.name AS product_name,
+		       ib.remaining_quantity AS remaining, TO_CHAR(ib.expired_at, 'YYYY-MM-DD') AS expired_at
+		FROM inventory_batches ib
+		JOIN products p ON p.id = ib.product_id
+		WHERE p.tenant_id = ?
+		  AND ib.remaining_quantity > 0
+		  AND ib.expired_at IS NOT NULL
+		  AND ib.expired_at <= CURRENT_DATE + INTERVAL '1 day' * ?
+		ORDER BY ib.expired_at ASC
+	`, tenantID, days).Scan(&list).Error
+	return list, err
+}
+
 // ListMovementRowsPaginated returns movements and total count for pagination.
 func ListMovementRowsPaginated(db *gorm.DB, tenantID, productID, movementType, fromDate, toDate string, limit, offset int) ([]MovementRow, int64, error) {
 	list, err := listMovementRows(db, tenantID, productID, movementType, fromDate, toDate, limit, offset)

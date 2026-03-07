@@ -165,6 +165,7 @@
               <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Transaction ID</th>
               <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cashier</th>
               <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Receipt</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
@@ -173,9 +174,12 @@
               <td class="px-4 py-2 text-sm text-gray-600">{{ row.id }}</td>
               <td class="px-4 py-2 text-sm text-gray-600">{{ row.cashier || '—' }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.total_amount) }}</td>
+              <td class="px-4 py-2 text-right">
+                <button type="button" class="text-sm text-slate-600 hover:underline" @click="openReceiptModal(row.id)">View</button>
+              </td>
             </tr>
             <tr v-if="!salesTransactions?.length">
-              <td colspan="4" class="px-4 py-4 text-sm text-gray-500 text-center">No transactions for this period.</td>
+              <td colspan="5" class="px-4 py-4 text-sm text-gray-500 text-center">No transactions for this period.</td>
             </tr>
           </tbody>
         </table>
@@ -259,6 +263,33 @@
             <tr v-if="!topProducts?.length">
               <td colspan="3" class="px-4 py-4 text-sm text-gray-500 text-center">No data for this period.</td>
             </tr>
+          </tbody>
+        </table>
+      </div>
+    </template>
+
+    <!-- Product Margin -->
+    <template v-else-if="activeTab === 'margin'">
+      <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">COGS</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Margin</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Margin %</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            <tr v-for="r in marginRows" :key="r.product_id" class="hover:bg-gray-50">
+              <td class="px-4 py-2 text-sm">{{ r.product_name }}</td>
+              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(r.revenue) }}</td>
+              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(r.cogs) }}</td>
+              <td class="px-4 py-2 text-sm text-right" :class="r.margin >= 0 ? 'text-green-600' : 'text-red-600'">{{ formatPrice(r.margin) }}</td>
+              <td class="px-4 py-2 text-sm text-right">{{ r.margin_pct }}%</td>
+            </tr>
+            <tr v-if="!marginRows.length"><td colspan="5" class="px-4 py-4 text-sm text-gray-500 text-center">No data</td></tr>
           </tbody>
         </table>
       </div>
@@ -364,6 +395,39 @@
       </div>
     </template>
 
+    <!-- Receipt Modal -->
+    <div
+      v-if="showReceipt"
+      class="fixed inset-0 z-20 flex items-center justify-center bg-black/50 p-4"
+      @click.self="showReceipt = false"
+    >
+      <div class="bg-white rounded-lg shadow-xl max-w-sm w-full max-h-[90vh] overflow-auto">
+        <div class="p-4" v-if="receiptLoading">
+          <p class="text-gray-500 text-center py-8">Loading receipt...</p>
+        </div>
+        <div class="p-4" v-else-if="receiptError">
+          <p class="text-red-600 text-center py-4">{{ receiptError }}</p>
+        </div>
+        <div class="p-4" v-else-if="receiptObj">
+          <Receipt
+            :store-name="'HSMart'"
+            :date="receiptObj.transaction.created_at"
+            :transaction-id="receiptObj.transaction.id"
+            :cashier="receiptObj.transaction.cashier"
+            :items="receiptObj.items.map(i => ({ name: i.product_name, quantity: i.quantity, price: i.price, product_id: i.product_name }))"
+            :total="receiptObj.transaction.total_amount"
+            :paid-amount="receiptObj.payments.reduce((s, p) => s + p.amount, 0)"
+            :change="Math.max(0, receiptObj.payments.reduce((s, p) => s + p.amount, 0) - receiptObj.transaction.total_amount)"
+          />
+        </div>
+        <div class="p-4 border-t border-gray-200 flex flex-wrap gap-2 justify-end">
+          <button type="button" class="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-sm" @click="printReceiptFromReport">Print</button>
+          <button type="button" class="px-3 py-2 border border-green-500 text-green-700 rounded-md hover:bg-green-50 text-sm" @click="downloadReceiptPdfFromReport">PDF</button>
+          <button type="button" class="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm" @click="shareWhatsAppFromReport">WhatsApp</button>
+          <button type="button" class="px-3 py-2 bg-slate-600 text-white rounded-md hover:bg-slate-700 text-sm" @click="showReceipt = false">Close</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -380,8 +444,12 @@ import {
   getInventoryReport,
   getCashiersReport,
   getShiftsReport,
+  getProductMargin,
 } from '../api/reports'
 import { formatPrice } from '../utils'
+import { getReceipt } from '../api/receipt'
+import { generateReceiptPDF, buildReceiptText } from '../utils/receipt-pdf'
+import Receipt from '../components/Receipt.vue'
 import * as XLSX from 'xlsx'
 import { jsPDF } from 'jspdf'
 
@@ -396,6 +464,7 @@ const tabs = [
   { id: 'sales', label: 'Sales' },
   { id: 'profit', label: 'Profit & Loss' },
   { id: 'products', label: 'Top Products' },
+  { id: 'margin', label: 'Product Margin' },
   { id: 'inventory', label: 'Inventory' },
   { id: 'cashiers', label: 'Cashiers' },
   { id: 'shifts', label: 'Shifts' },
@@ -423,6 +492,7 @@ const topProducts = ref([])
 const inventoryRows = ref([])
 const cashiersRows = ref([])
 const shiftsRows = ref([])
+const marginRows = ref([])
 
 const dateRange = computed(() => {
   const now = new Date()
@@ -567,6 +637,11 @@ async function loadShifts() {
   shiftsRows.value = Array.isArray(data) ? data : []
 }
 
+async function loadMargin() {
+  const data = await getProductMargin(dateRange.value)
+  marginRows.value = Array.isArray(data) ? data : []
+}
+
 async function loadTab() {
   loading.value = true
   error.value = null
@@ -575,6 +650,7 @@ async function loadTab() {
     else if (activeTab.value === 'profit') await loadProfit()
     else if (activeTab.value === 'products') await loadProducts()
     else if (activeTab.value === 'inventory') await loadInventory()
+    else if (activeTab.value === 'margin') await loadMargin()
     else if (activeTab.value === 'cashiers') await loadCashiers()
     else if (activeTab.value === 'shifts') await loadShifts()
   } catch (err) {
@@ -594,6 +670,57 @@ onMounted(() => {
   if (dateFilter.value === 'custom' && !customFrom.value) setDateFilter('custom')
   loadTab()
 })
+
+const showReceipt = ref(false)
+const receiptObj = ref(null)
+const receiptLoading = ref(false)
+const receiptError = ref('')
+
+async function openReceiptModal(txnId) {
+  showReceipt.value = true
+  receiptLoading.value = true
+  receiptError.value = ''
+  receiptObj.value = null
+  try {
+    receiptObj.value = await getReceipt(txnId)
+  } catch (e) {
+    receiptError.value = e.response?.data?.error ?? 'Failed to load receipt.'
+  } finally {
+    receiptLoading.value = false
+  }
+}
+
+function receiptDataFromObj() {
+  if (!receiptObj.value) return null
+  const r = receiptObj.value
+  const paid = r.payments.reduce((s, p) => s + p.amount, 0)
+  return {
+    storeName: 'HSMart',
+    date: r.transaction.created_at,
+    transactionId: r.transaction.id,
+    cashier: r.transaction.cashier,
+    items: r.items.map(i => ({ name: i.product_name, quantity: i.quantity, price: i.price })),
+    total: r.transaction.total_amount,
+    paidAmount: paid,
+    change: Math.max(0, paid - r.transaction.total_amount),
+  }
+}
+
+function printReceiptFromReport() { window.print() }
+
+function downloadReceiptPdfFromReport() {
+  const data = receiptDataFromObj()
+  if (!data) return
+  const doc = generateReceiptPDF(data)
+  doc.save(`receipt-${data.transactionId || 'txn'}.pdf`)
+}
+
+function shareWhatsAppFromReport() {
+  const data = receiptDataFromObj()
+  if (!data) return
+  const text = buildReceiptText(data)
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
+}
 
 function exportCardExcel(headers, rows, slug) {
   const data = Array.isArray(rows) ? rows : (rows?.value ?? [])

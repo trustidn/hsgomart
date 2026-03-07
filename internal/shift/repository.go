@@ -53,14 +53,27 @@ func ListShifts(db *gorm.DB, tenantID string, limit, offset int) ([]CashierShift
 	return list, err
 }
 
-// SumCashPaymentsBetween returns sum of payment amounts where method = 'cash' and created_at in [from, to].
+// SumCashPaymentsBetween returns net cash: cash sales minus cash refunds in [from, to].
 func SumCashPaymentsBetween(db *gorm.DB, tenantID string, from, to time.Time) (float64, error) {
-	var sum float64
+	var cashIn float64
 	err := db.Table("payments").
 		Select("COALESCE(SUM(payments.amount), 0)").
 		Joins("INNER JOIN transactions ON transactions.id = payments.transaction_id").
 		Where("transactions.tenant_id = ? AND payments.method = ?", tenantID, "cash").
 		Where("payments.created_at >= ? AND payments.created_at <= ?", from, to).
-		Scan(&sum).Error
-	return sum, err
+		Scan(&cashIn).Error
+	if err != nil {
+		return 0, err
+	}
+
+	var cashRefunds float64
+	err = db.Table("refunds").
+		Select("COALESCE(SUM(amount), 0)").
+		Where("tenant_id = ? AND created_at >= ? AND created_at <= ?", tenantID, from, to).
+		Scan(&cashRefunds).Error
+	if err != nil {
+		return 0, err
+	}
+
+	return cashIn - cashRefunds, nil
 }

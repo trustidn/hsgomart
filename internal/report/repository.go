@@ -300,3 +300,35 @@ func GetShiftsReport(db *gorm.DB, tenantID string, fromDate, toDate time.Time) (
 	}
 	return result, nil
 }
+
+type MarginRow struct {
+	ProductID   string  `json:"product_id"`
+	ProductName string  `json:"product_name"`
+	Revenue     float64 `json:"revenue"`
+	COGS        float64 `json:"cogs"`
+	Margin      float64 `json:"margin"`
+	MarginPct   float64 `json:"margin_pct"`
+}
+
+func GetProductMargin(db *gorm.DB, tenantID string, fromDate, toDate time.Time) ([]MarginRow, error) {
+	var rows []MarginRow
+	err := db.Raw(`
+		SELECT ti.product_id,
+		       p.name AS product_name,
+		       SUM(ti.subtotal) AS revenue,
+		       SUM(ti.cogs) AS cogs,
+		       SUM(ti.subtotal) - SUM(ti.cogs) AS margin,
+		       CASE WHEN SUM(ti.subtotal) > 0
+		            THEN ROUND(((SUM(ti.subtotal) - SUM(ti.cogs)) / SUM(ti.subtotal) * 100)::numeric, 2)
+		            ELSE 0
+		       END AS margin_pct
+		FROM transaction_items ti
+		JOIN transactions t ON t.id = ti.transaction_id
+		JOIN products p ON p.id = ti.product_id
+		WHERE t.tenant_id = ? AND t.status = 'completed'
+		  AND t.created_at >= ? AND t.created_at <= ?
+		GROUP BY ti.product_id, p.name
+		ORDER BY margin DESC
+	`, tenantID, fromDate, toDate).Scan(&rows).Error
+	return rows, err
+}

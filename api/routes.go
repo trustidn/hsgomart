@@ -1,115 +1,143 @@
 package api
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
-	"github.com/trustidn/hsmart-saas/internal/auth"
-	"github.com/trustidn/hsmart-saas/internal/inventory"
-	"github.com/trustidn/hsmart-saas/internal/pos"
-	"github.com/trustidn/hsmart-saas/internal/product"
-	"github.com/trustidn/hsmart-saas/internal/purchase"
-	"github.com/trustidn/hsmart-saas/internal/report"
-	"github.com/trustidn/hsmart-saas/internal/shift"
-	"github.com/trustidn/hsmart-saas/internal/subscription"
-	"github.com/trustidn/hsmart-saas/internal/user"
 	"github.com/trustidn/hsmart-saas/pkg/config"
 	"github.com/trustidn/hsmart-saas/pkg/middleware"
 	"gorm.io/gorm"
 )
 
 func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg config.Config) {
-	authSvc := auth.NewService(db, cfg.JWTSecret)
-	authHandler := auth.NewHandler(authSvc)
+	svc := NewServiceRegistry(db, cfg)
+	h := NewHandlerRegistry(svc, db)
 
-	authGroup := r.Group("/auth")
+	registerAuthRoutes(r, h, svc)
+	registerAPIRoutes(r, h, svc)
+	registerAdminRoutes(r, h, svc)
+}
+
+func registerAuthRoutes(r *gin.Engine, h *HandlerRegistry, svc *ServiceRegistry) {
+	loginLimiter := middleware.NewRateLimiter(5, 1*time.Minute)
+
+	auth := r.Group("/auth")
 	{
-		authGroup.POST("/register", authHandler.Register)
-		authGroup.POST("/login", authHandler.Login)
-		authGroup.GET("/profile", middleware.Auth(authSvc), authHandler.Profile)
+		auth.POST("/register", h.Auth.Register)
+		auth.POST("/login", middleware.RateLimit(loginLimiter), h.Auth.Login)
+		auth.POST("/refresh", h.Auth.Refresh)
+		auth.GET("/profile", middleware.Auth(svc.Auth), h.Auth.Profile)
 	}
+}
 
-	subscriptionSvc := subscription.NewService(db)
-	apiGroup := r.Group("/api")
-	apiGroup.Use(middleware.Auth(authSvc), middleware.Tenant(), middleware.Subscription(subscriptionSvc))
+func registerAPIRoutes(r *gin.Engine, h *HandlerRegistry, svc *ServiceRegistry) {
+	api := r.Group("/api")
+	api.Use(middleware.Auth(svc.Auth), middleware.Tenant(), middleware.Subscription(svc.Subscription))
 
-	// Owner + Cashier: product read (for POS), checkout, and dashboard report APIs (sales summary, top products, inventory summary).
-	cashier := apiGroup.Group("")
-	cashier.Use(middleware.Role("owner", "cashier"))
+	registerCashierRoutes(api, h)
+	registerOwnerRoutes(api, h)
+}
+
+func registerCashierRoutes(api *gin.RouterGroup, h *HandlerRegistry) {
+	g := api.Group("")
+	g.Use(middleware.Role("owner", "cashier"))
 	{
-		productSvc := product.NewService(db, subscriptionSvc)
-		productHandler := product.NewHandler(productSvc)
-		cashier.GET("/products", productHandler.ListProducts)
-		cashier.GET("/products/barcode/:barcode", productHandler.GetProductByBarcode)
-		inventorySvc := inventory.NewService(db)
-		inventoryHandler := inventory.NewHandler(inventorySvc)
-		cashier.GET("/products/:id/stock", inventoryHandler.GetStock)
+		g.GET("/products", h.Product.ListProducts)
+		g.GET("/products/barcode/:barcode", h.Product.GetProductByBarcode)
+		g.GET("/products/:id/stock", h.Inventory.GetStock)
 
-		posSvc := pos.NewService(db)
-		posHandler := pos.NewHandler(posSvc)
-		cashier.POST("/pos/checkout", posHandler.Checkout)
+		g.POST("/pos/checkout", h.POS.Checkout)
+		g.GET("/pos/receipt/:id", h.Report.GetReceipt)
 
-		reportSvc := report.NewService(db)
-		reportHandler := report.NewHandler(reportSvc)
-		cashier.GET("/reports/sales", reportHandler.SalesSummary)
-		cashier.GET("/reports/products", reportHandler.TopProducts)
-		cashier.GET("/reports/inventory", reportHandler.InventorySummary)
+		g.GET("/reports/sales", h.Report.SalesSummary)
+		g.GET("/reports/products", h.Report.TopProducts)
+		g.GET("/reports/inventory", h.Report.InventorySummary)
 
-		shiftSvc := shift.NewService(db)
-		shiftHandler := shift.NewHandler(shiftSvc)
-		cashier.POST("/shifts/open", shiftHandler.OpenShift)
-		cashier.POST("/shifts/close", shiftHandler.CloseShift)
-		cashier.GET("/shifts/current", shiftHandler.GetCurrentShift)
+		g.POST("/shifts/open", h.Shift.OpenShift)
+		g.POST("/shifts/close", h.Shift.CloseShift)
+		g.GET("/shifts/current", h.Shift.GetCurrentShift)
 
-		cashier.GET("/inventory/low-stock", inventoryHandler.LowStock)
+		g.GET("/inventory/low-stock", h.Inventory.LowStock)
+		g.GET("/inventory/expiring", h.Inventory.Expiring)
 	}
+}
 
-	// Owner-only: users, categories, product write, inventory write, purchases, reports
-	owner := apiGroup.Group("")
-	owner.Use(middleware.Role("owner"))
+func registerOwnerRoutes(api *gin.RouterGroup, h *HandlerRegistry) {
+	g := api.Group("")
+	g.Use(middleware.Role("owner"))
 	{
-		userSvc := user.NewService(db, subscriptionSvc)
-		userHandler := user.NewHandler(userSvc)
-		owner.GET("/users", userHandler.List)
-		owner.POST("/users", userHandler.Create)
-		owner.PUT("/users/:id", userHandler.Update)
-		owner.DELETE("/users/:id", userHandler.Delete)
+		// User management
+		g.GET("/users", h.User.List)
+		g.POST("/users", h.User.Create)
+		g.PUT("/users/:id", h.User.Update)
+		g.DELETE("/users/:id", h.User.Delete)
 
-		productSvc := product.NewService(db, subscriptionSvc)
-		productHandler := product.NewHandler(productSvc)
-		owner.GET("/categories", productHandler.ListCategories)
-		owner.POST("/categories", productHandler.CreateCategory)
-		owner.PUT("/categories/:id", productHandler.UpdateCategory)
-		owner.DELETE("/categories/:id", productHandler.DeleteCategory)
-		owner.POST("/products", productHandler.CreateProduct)
-		owner.GET("/products/:id", productHandler.GetProduct)
-		owner.PUT("/products/:id", productHandler.UpdateProduct)
-		owner.DELETE("/products/:id", productHandler.DeleteProduct)
-		owner.POST("/products/:id/barcodes", productHandler.AddBarcode)
+		// Categories
+		g.GET("/categories", h.Product.ListCategories)
+		g.POST("/categories", h.Product.CreateCategory)
+		g.PUT("/categories/:id", h.Product.UpdateCategory)
+		g.DELETE("/categories/:id", h.Product.DeleteCategory)
 
-		inventorySvc := inventory.NewService(db)
-		inventoryHandler := inventory.NewHandler(inventorySvc)
-		owner.GET("/inventory", inventoryHandler.List)
-		owner.GET("/inventory/movements", inventoryHandler.ListMovements)
-		owner.POST("/products/:id/adjust-stock", inventoryHandler.AdjustStock)
+		// Products
+		g.POST("/products", h.Product.CreateProduct)
+		g.GET("/products/:id", h.Product.GetProduct)
+		g.PUT("/products/:id", h.Product.UpdateProduct)
+		g.DELETE("/products/:id", h.Product.DeleteProduct)
+		g.POST("/products/:id/barcodes", h.Product.AddBarcode)
+		g.GET("/products/:id/barcodes", h.Product.ListBarcodes)
+		g.DELETE("/products/:id/barcodes/:barcode", h.Product.DeleteBarcode)
 
-		purchaseSvc := purchase.NewService(db)
-		purchaseHandler := purchase.NewHandler(purchaseSvc)
-		owner.GET("/purchases", purchaseHandler.List)
-		owner.GET("/purchases/:id", purchaseHandler.GetByID)
-		owner.POST("/purchases", purchaseHandler.Create)
+		// Inventory
+		g.GET("/inventory", h.Inventory.List)
+		g.GET("/inventory/movements", h.Inventory.ListMovements)
+		g.POST("/products/:id/adjust-stock", h.Inventory.AdjustStock)
 
-		// Reports: sales/products/inventory are in cashier group (dashboard); owner-only reports below
-		reportSvc := report.NewService(db)
-		reportHandler := report.NewHandler(reportSvc)
-		owner.GET("/reports/sales/daily", reportHandler.SalesDaily)
-		owner.GET("/reports/sales/hourly", reportHandler.SalesHourly)
-		owner.GET("/reports/sales/transactions", reportHandler.SalesTransactions)
-		owner.GET("/reports/payments", reportHandler.PaymentsReport)
-		owner.GET("/reports/profit", reportHandler.ProfitReport)
-		owner.GET("/reports/cashiers", reportHandler.CashiersReport)
-		owner.GET("/reports/shifts", reportHandler.ShiftsReport)
+		// Purchases
+		g.GET("/purchases", h.Purchase.List)
+		g.GET("/purchases/:id", h.Purchase.GetByID)
+		g.POST("/purchases", h.Purchase.Create)
 
-		shiftSvc := shift.NewService(db)
-		shiftHandler := shift.NewHandler(shiftSvc)
-		owner.GET("/shifts", shiftHandler.ListShifts)
+		// Reports
+		g.GET("/reports/sales/daily", h.Report.SalesDaily)
+		g.GET("/reports/sales/hourly", h.Report.SalesHourly)
+		g.GET("/reports/sales/transactions", h.Report.SalesTransactions)
+		g.GET("/reports/sales/compare", h.Report.SalesCompare)
+		g.GET("/reports/payments", h.Report.PaymentsReport)
+		g.GET("/reports/profit", h.Report.ProfitReport)
+		g.GET("/reports/cashiers", h.Report.CashiersReport)
+		g.GET("/reports/shifts", h.Report.ShiftsReport)
+		g.GET("/reports/products/margin", h.Report.ProductMargin)
+
+		// Shifts
+		g.GET("/shifts", h.Shift.ListShifts)
+
+		// Subscription
+		g.GET("/subscription", h.Subscription.GetSubscription)
+		g.GET("/subscription/plans", h.Subscription.ListPlans)
+		g.PUT("/subscription", h.Subscription.ChangePlan)
+
+		// Refunds
+		g.POST("/pos/refund", h.Refund.CreateRefund)
+		g.GET("/refunds", h.Refund.ListRefunds)
+
+		// Stock opname
+		g.POST("/inventory/opname", h.Opname.Start)
+		g.PUT("/inventory/opname/:id", h.Opname.SubmitItems)
+		g.POST("/inventory/opname/:id/approve", h.Opname.Approve)
+		g.GET("/inventory/opname/:id", h.Opname.Get)
+		g.GET("/inventory/opnames", h.Opname.List)
+	}
+}
+
+func registerAdminRoutes(r *gin.Engine, h *HandlerRegistry, svc *ServiceRegistry) {
+	g := r.Group("/admin")
+	g.Use(middleware.Auth(svc.Auth), middleware.Role("superadmin"))
+	{
+		g.GET("/tenants", h.Admin.ListTenants)
+		g.GET("/tenants/:id", h.Admin.GetTenant)
+		g.PUT("/tenants/:id", h.Admin.UpdateTenant)
+		g.GET("/subscriptions", h.Admin.ListSubscriptions)
+		g.PUT("/subscriptions/:id", h.Admin.UpdateSubscription)
+		g.GET("/stats", h.Admin.Stats)
 	}
 }

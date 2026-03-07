@@ -2,14 +2,16 @@ package database
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"time"
 
 	"github.com/trustidn/hsmart-saas/pkg/config"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
-// ConnectDatabase connects to PostgreSQL using GORM and enables connection pooling.
-// Returns the GORM DB instance or an error if connection fails.
 func ConnectDatabase(cfg config.Config) (*gorm.DB, error) {
 	dsn := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
@@ -20,7 +22,24 @@ func ConnectDatabase(cfg config.Config) (*gorm.DB, error) {
 		cfg.DBName,
 	)
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	logLevel := logger.Warn
+	if cfg.AppEnv == "development" {
+		logLevel = logger.Info
+	}
+
+	gormLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags),
+		logger.Config{
+			SlowThreshold:             200 * time.Millisecond,
+			LogLevel:                  logLevel,
+			IgnoreRecordNotFoundError: true,
+			Colorful:                  true,
+		},
+	)
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: gormLogger,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
@@ -30,9 +49,9 @@ func ConnectDatabase(cfg config.Config) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
 	}
 
-	// Enable connection pooling
 	sqlDB.SetMaxIdleConns(10)
 	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	return db, nil
 }

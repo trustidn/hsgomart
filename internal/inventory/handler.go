@@ -108,6 +108,24 @@ func (h *Handler) LowStock(c *gin.Context) {
 	c.JSON(http.StatusOK, list)
 }
 
+func (h *Handler) Expiring(c *gin.Context) {
+	tenantID, ok := utils.GetTenantID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context required"})
+		return
+	}
+	days, _ := strconv.Atoi(c.DefaultQuery("days", "30"))
+	if days <= 0 {
+		days = 30
+	}
+	list, err := h.service.GetExpiringProducts(tenantID, days)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get expiring products"})
+		return
+	}
+	c.JSON(http.StatusOK, list)
+}
+
 // GetStock returns current stock for a product (GET /api/products/:id/stock).
 func (h *Handler) GetStock(c *gin.Context) {
 	tenantID, ok := utils.GetTenantID(c)

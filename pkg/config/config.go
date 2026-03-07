@@ -14,6 +14,7 @@ type Config struct {
 	DBPassword string
 	DBName     string
 	JWTSecret  string
+	AppEnv     string
 }
 
 // LoadConfig reads the .env file and maps environment variables into a Config struct.
@@ -31,6 +32,7 @@ func LoadConfig() (Config, error) {
 		DBPassword: getEnv("DB_PASSWORD", ""),
 		DBName:     getEnv("DB_NAME", "hsmart_saas"),
 		JWTSecret:  getEnv("JWT_SECRET", ""),
+		AppEnv:     getEnv("APP_ENV", "development"),
 	}, nil
 }
 

@@ -22,17 +22,21 @@ func (h *Handler) Register(c *gin.Context) {
 		return
 	}
 
-	token, err := h.service.Register(in)
+	pair, err := h.service.Register(in)
 	if err != nil {
 		if err == ErrEmailExists {
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
+		if err == utils.ErrWeakPassword {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "registration failed"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, TokenResponse{Token: token})
+	c.JSON(http.StatusCreated, TokenResponse{Token: pair.AccessToken, RefreshToken: pair.RefreshToken})
 }
 
 func (h *Handler) Login(c *gin.Context) {
@@ -42,7 +46,7 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := h.service.Login(in)
+	pair, err := h.service.Login(in)
 	if err != nil {
 		if err == ErrInvalidCredentials {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
@@ -52,10 +56,29 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, TokenResponse{Token: token})
+	c.JSON(http.StatusOK, TokenResponse{Token: pair.AccessToken, RefreshToken: pair.RefreshToken})
 }
 
-// Profile returns the authenticated user's profile. Uses tenant_id from context (set by JWT middleware).
+func (h *Handler) Refresh(c *gin.Context) {
+	var in RefreshInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	pair, err := h.service.Refresh(in.RefreshToken)
+	if err != nil {
+		if err == ErrInvalidRefreshToken {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "refresh failed"})
+		return
+	}
+
+	c.JSON(http.StatusOK, TokenResponse{Token: pair.AccessToken, RefreshToken: pair.RefreshToken})
+}
+
 func (h *Handler) Profile(c *gin.Context) {
 	userID, ok := utils.GetUserID(c)
 	if !ok {
