@@ -89,7 +89,7 @@ async function handleSubmit() {
       tenant_id: profile.tenant_id,
       role: profile.role,
     })
-    router.push('/dashboard')
+    router.push(profile.role === 'superadmin' ? '/admin/dashboard' : '/dashboard')
   } catch (err) {
     const msg = err.response?.data?.error ?? err.message
     errorMessage.value = (err.response?.status === 401 || (msg && msg.toLowerCase().includes('invalid')))
