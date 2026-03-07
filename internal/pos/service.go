@@ -6,6 +6,7 @@ import (
 	"github.com/trustidn/hsmart-saas/internal/inventory"
 	"github.com/trustidn/hsmart-saas/internal/product"
 	"github.com/trustidn/hsmart-saas/internal/purchase"
+	"github.com/trustidn/hsmart-saas/internal/user"
 	"gorm.io/gorm"
 )
 
@@ -36,6 +37,7 @@ type CheckoutInput struct {
 
 type CheckoutResult struct {
 	TransactionID string  `json:"transaction_id"`
+	Cashier       string  `json:"cashier"` // display name (fallback to email if name empty)
 	Total         float64 `json:"total"`
 	Change        float64 `json:"change"`
 }
@@ -180,8 +182,17 @@ func (s *Service) Checkout(tenantID, userID string, in CheckoutInput) (*Checkout
 		change = 0
 	}
 
+	cashierName := ""
+	if u, err := user.FindUserByID(s.db, tenantID, userID); err == nil {
+		cashierName = u.Name
+		if cashierName == "" {
+			cashierName = u.Email
+		}
+	}
+
 	return &CheckoutResult{
 		TransactionID: t.ID,
+		Cashier:       cashierName,
 		Total:         totalAmount,
 		Change:        change,
 	}, nil

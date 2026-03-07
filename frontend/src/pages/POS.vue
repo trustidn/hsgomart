@@ -187,6 +187,7 @@
             :store-name="receiptData.storeName"
             :date="receiptData.date"
             :transaction-id="receiptData.transactionId"
+            :cashier="receiptData.cashier"
             :items="receiptData.items"
             :total="receiptData.total"
             :paid-amount="receiptData.paidAmount"
@@ -414,6 +415,7 @@ async function submitCheckout() {
       storeName: 'HSMart',
       date: new Date(),
       transactionId: result?.transaction_id ?? '',
+      cashier: result?.cashier ?? '',
       items: cartItems.value.map((i) => ({ ...i })),
       total: result?.total ?? totalAmount.value,
       paidAmount: checkoutForm.value.paid_amount,

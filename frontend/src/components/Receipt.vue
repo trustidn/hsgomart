@@ -3,7 +3,8 @@
     <div class="text-center border-b border-dashed border-gray-400 pb-2 mb-2">
       <div class="font-bold text-base">{{ storeName }}</div>
       <div class="text-xs text-gray-600">{{ dateFormatted }}</div>
-      <div v-if="transactionId" class="text-xs text-gray-500 mt-1">#{{ transactionId }}</div>
+      <div v-if="transactionId" class="text-xs text-gray-500 mt-1">Transaction: #{{ transactionId }}</div>
+      <div v-if="cashier" class="text-sm mt-1">Cashier: {{ cashier }}</div>
     </div>
     <table class="w-full text-left border-b border-dashed border-gray-400 mb-2">
       <thead>
@@ -50,6 +51,7 @@ const props = defineProps({
   storeName: { type: String, default: 'HSMart' },
   date: { type: [String, Date], default: () => new Date() },
   transactionId: { type: String, default: '' },
+  cashier: { type: String, default: '' },
   items: { type: Array, default: () => [] },
   total: { type: Number, default: 0 },
   paidAmount: { type: Number, default: 0 },

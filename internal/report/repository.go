@@ -111,7 +111,7 @@ type SalesTransactionRow struct {
 func GetSalesTransactions(db *gorm.DB, tenantID string, fromDate, toDate time.Time, limit, offset int) ([]SalesTransactionRow, error) {
 	var rows []SalesTransactionRow
 	q := db.Table("transactions").
-		Select("transactions.id as id, to_char(transactions.created_at, 'YYYY-MM-DD HH24:MI') as created_at, transactions.total_amount as total_amount, COALESCE(users.email, users.name, '') as cashier").
+		Select("transactions.id as id, to_char(transactions.created_at, 'YYYY-MM-DD HH24:MI') as created_at, transactions.total_amount as total_amount, COALESCE(NULLIF(TRIM(users.name), ''), users.email, '') as cashier").
 		Joins("LEFT JOIN users ON users.id = transactions.user_id AND users.tenant_id = transactions.tenant_id").
 		Where("transactions.tenant_id = ? AND transactions.status = ?", tenantID, "completed").
 		Where("transactions.created_at >= ? AND transactions.created_at <= ?", fromDate, toDate).
@@ -227,11 +227,11 @@ type CashierRow struct {
 func GetCashiersReport(db *gorm.DB, tenantID string, fromDate, toDate time.Time) ([]CashierRow, error) {
 	var rows []CashierRow
 	err := db.Table("transactions").
-		Select("COALESCE(users.email, users.name, 'Unknown') as cashier, COUNT(*) as transactions, COALESCE(SUM(transactions.total_amount), 0) as revenue").
+		Select("COALESCE(NULLIF(TRIM(users.name), ''), users.email, 'Unknown') as cashier, COUNT(*) as transactions, COALESCE(SUM(transactions.total_amount), 0) as revenue").
 		Joins("LEFT JOIN users ON users.id = transactions.user_id AND users.tenant_id = transactions.tenant_id").
 		Where("transactions.tenant_id = ? AND transactions.status = ?", tenantID, "completed").
 		Where("transactions.created_at >= ? AND transactions.created_at <= ?", fromDate, toDate).
-		Group("transactions.user_id, users.email, users.name").
+		Group("transactions.user_id, users.name, users.email").
 		Order("revenue DESC").
 		Scan(&rows).Error
 	return rows, err
