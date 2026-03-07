@@ -33,6 +33,7 @@ const routes = [
       { path: 'users', name: 'Users', component: () => import('../pages/Users.vue'), meta: { title: 'Users', roles: ['owner'] } },
       { path: 'stock-opname', name: 'StockOpname', component: () => import('../pages/StockOpname.vue'), meta: { title: 'Stock Opname', roles: ['owner'] } },
       { path: 'subscription', name: 'Subscription', component: () => import('../pages/Subscription.vue'), meta: { title: 'Subscription', roles: ['owner'] } },
+      { path: 'settings', name: 'Settings', component: () => import('../pages/Settings.vue'), meta: { title: 'Settings', roles: ['owner'] } },
     ],
   },
   {
@@ -44,6 +45,7 @@ const routes = [
       { path: 'dashboard', name: 'AdminDashboard', component: () => import('../pages/admin/AdminDashboard.vue'), meta: { roles: ['superadmin'] } },
       { path: 'tenants', name: 'AdminTenants', component: () => import('../pages/admin/AdminTenants.vue'), meta: { roles: ['superadmin'] } },
       { path: 'subscriptions', name: 'AdminSubscriptions', component: () => import('../pages/admin/AdminSubscriptions.vue'), meta: { roles: ['superadmin'] } },
+      { path: 'orders', name: 'AdminOrders', component: () => import('../pages/admin/AdminOrders.vue'), meta: { roles: ['superadmin'] } },
     ],
   },
 ]
@@ -56,7 +58,9 @@ const router = createRouter({
 router.beforeEach((to) => {
   const auth = useAuthStore()
   if (to.meta.public) {
-    if ((to.name === 'Login' || to.name === 'Register') && auth.token) return { path: '/dashboard' }
+    if ((to.name === 'Login' || to.name === 'Register') && auth.token) {
+      return { path: auth.role === 'superadmin' ? '/admin/dashboard' : '/dashboard' }
+    }
     return true
   }
   if (to.meta.requiresAuth && !auth.token) return { name: 'Login' }

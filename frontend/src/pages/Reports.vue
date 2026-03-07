@@ -410,7 +410,7 @@
         </div>
         <div class="p-4" v-else-if="receiptObj">
           <Receipt
-            :store-name="'HSMart'"
+            :store-name="tenantStore.storeName()"
             :date="receiptObj.transaction.created_at"
             :transaction-id="receiptObj.transaction.id"
             :cashier="receiptObj.transaction.cashier"
@@ -449,9 +449,12 @@ import {
 import { formatPrice } from '../utils'
 import { getReceipt } from '../api/receipt'
 import { generateReceiptPDF, buildReceiptText } from '../utils/receipt-pdf'
+import { useTenantStore } from '../stores/tenant'
 import Receipt from '../components/Receipt.vue'
 import * as XLSX from 'xlsx'
 import { jsPDF } from 'jspdf'
+
+const tenantStore = useTenantStore()
 
 const dateFilterOptions = [
   { value: 'today', label: 'Today' },
@@ -695,7 +698,7 @@ function receiptDataFromObj() {
   const r = receiptObj.value
   const paid = r.payments.reduce((s, p) => s + p.amount, 0)
   return {
-    storeName: 'HSMart',
+    storeName: tenantStore.storeName(),
     date: r.transaction.created_at,
     transactionId: r.transaction.id,
     cashier: r.transaction.cashier,

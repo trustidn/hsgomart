@@ -1,0 +1,3 @@
+ALTER TABLE tenants DROP COLUMN IF EXISTS description;
+ALTER TABLE tenants DROP COLUMN IF EXISTS address;
+ALTER TABLE tenants DROP COLUMN IF EXISTS logo_url;

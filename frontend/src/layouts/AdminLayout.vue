@@ -6,6 +6,7 @@
         <router-link to="/admin/dashboard" active-class="bg-gray-700" class="block px-3 py-2 rounded-md text-gray-200 hover:bg-gray-700">Dashboard</router-link>
         <router-link to="/admin/tenants" active-class="bg-gray-700" class="block px-3 py-2 rounded-md text-gray-200 hover:bg-gray-700">Tenants</router-link>
         <router-link to="/admin/subscriptions" active-class="bg-gray-700" class="block px-3 py-2 rounded-md text-gray-200 hover:bg-gray-700">Subscriptions</router-link>
+        <router-link to="/admin/orders" active-class="bg-gray-700" class="block px-3 py-2 rounded-md text-gray-200 hover:bg-gray-700">Orders</router-link>
       </nav>
     </aside>
     <div class="flex-1 flex flex-col min-w-0">

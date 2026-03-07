@@ -35,6 +35,10 @@ client.interceptors.request.use((config) => {
 client.interceptors.response.use(
   (response) => response,
   async (error) => {
+    if (error.response?.status === 402) {
+      window.location.href = '/subscription'
+      return Promise.reject(error)
+    }
     const originalRequest = error.config
     if (error.response?.status === 401 && !originalRequest._retry) {
       const auth = useAuthStore()

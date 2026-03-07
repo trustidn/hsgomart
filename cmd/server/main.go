@@ -40,6 +40,7 @@ func main() {
 	}))
 
 	r.GET("/health", healthHandler(db))
+	r.Static("/uploads", "./uploads")
 
 	api.RegisterRoutes(r, db, cfg)
 

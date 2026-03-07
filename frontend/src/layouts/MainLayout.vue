@@ -19,8 +19,9 @@
     >
       <!-- Logo -->
       <div class="h-14 flex items-center gap-2 px-4 border-b border-slate-800 shrink-0">
-        <div class="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center text-sm font-bold shrink-0">H</div>
-        <span v-show="!collapsed" class="font-semibold text-base tracking-tight truncate">HSMart POS</span>
+        <img v-if="tenantStore.logoUrl()" :src="logoSrc" class="w-8 h-8 rounded-lg object-cover shrink-0" alt="" />
+        <div v-else class="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center text-sm font-bold shrink-0">{{ tenantStore.storeName().charAt(0) }}</div>
+        <span v-show="!collapsed" class="font-semibold text-base tracking-tight truncate">{{ tenantStore.storeName() }}</span>
       </div>
 
       <!-- Navigation -->
@@ -133,7 +134,10 @@
 import { ref, computed, onMounted, h } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useTenantStore } from '../stores/tenant'
 import client from '../api/client'
+
+const tenantStore = useTenantStore()
 
 const router = useRouter()
 const route = useRoute()
@@ -157,6 +161,7 @@ const IconClock = { render: () => h('svg', { fill: 'none', stroke: 'currentColor
 const IconUsers = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' })]) }
 const IconCredit = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' })]) }
 const IconCart = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z' })]) }
+const IconSettings = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' }), h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z' })]) }
 
 const menu = [
   { group: 'Main', items: [
@@ -178,6 +183,7 @@ const menu = [
     { path: '/shifts', label: 'Shifts', icon: IconClock, roles: ['owner'] },
     { path: '/users', label: 'Users', icon: IconUsers, roles: ['owner'] },
     { path: '/subscription', label: 'Subscription', icon: IconCredit, roles: ['owner'] },
+    { path: '/settings', label: 'Settings', icon: IconSettings, roles: ['owner'] },
   ]},
 ]
 
@@ -201,6 +207,8 @@ const userInitials = computed(() => {
 })
 
 const notifCount = computed(() => notifications.value.length)
+const baseURL = typeof window !== 'undefined' && window.location.port === '8080' ? '' : 'http://localhost:8080'
+const logoSrc = computed(() => tenantStore.logoUrl() ? `${baseURL}${tenantStore.logoUrl()}` : '')
 
 function handleLogout() {
   auth.logout()
@@ -213,6 +221,8 @@ function goToNotif(n) {
 }
 
 onMounted(async () => {
+  tenantStore.load()
+
   try {
     const [lowRes, expRes] = await Promise.all([
       client.get('/api/inventory/low-stock').catch(() => ({ data: [] })),

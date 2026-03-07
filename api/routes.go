@@ -31,6 +31,22 @@ func registerAuthRoutes(r *gin.Engine, h *HandlerRegistry, svc *ServiceRegistry)
 }
 
 func registerAPIRoutes(r *gin.Engine, h *HandlerRegistry, svc *ServiceRegistry) {
+	// Routes that bypass subscription middleware (so expired tenants can still upgrade)
+	bypass := r.Group("/api")
+	bypass.Use(middleware.Auth(svc.Auth), middleware.Tenant())
+	{
+		bypass.GET("/subscription", h.Subscription.GetSubscription)
+		bypass.GET("/subscription/plans", h.Subscription.ListPlans)
+		bypass.POST("/subscription/order", h.Order.CreateOrder)
+		bypass.POST("/subscription/order/:id/payment", h.Order.UploadPaymentProof)
+		bypass.GET("/subscription/orders", h.Order.ListOrders)
+		bypass.GET("/subscription/order/:id", h.Order.GetOrder)
+
+		bypass.GET("/tenant/profile", h.Tenant.GetProfile)
+		bypass.PUT("/tenant/profile", h.Tenant.UpdateProfile)
+		bypass.POST("/tenant/logo", h.Tenant.UploadLogo)
+	}
+
 	api := r.Group("/api")
 	api.Use(middleware.Auth(svc.Auth), middleware.Tenant(), middleware.Subscription(svc.Subscription))
 
@@ -111,9 +127,7 @@ func registerOwnerRoutes(api *gin.RouterGroup, h *HandlerRegistry) {
 		// Shifts
 		g.GET("/shifts", h.Shift.ListShifts)
 
-		// Subscription
-		g.GET("/subscription", h.Subscription.GetSubscription)
-		g.GET("/subscription/plans", h.Subscription.ListPlans)
+		// Subscription (upgrade plan directly without order flow)
 		g.PUT("/subscription", h.Subscription.ChangePlan)
 
 		// Refunds
@@ -139,5 +153,10 @@ func registerAdminRoutes(r *gin.Engine, h *HandlerRegistry, svc *ServiceRegistry
 		g.GET("/subscriptions", h.Admin.ListSubscriptions)
 		g.PUT("/subscriptions/:id", h.Admin.UpdateSubscription)
 		g.GET("/stats", h.Admin.Stats)
+
+		g.GET("/orders", h.Admin.ListOrders)
+		g.GET("/orders/:id", h.Admin.GetOrderDetail)
+		g.PUT("/orders/:id/approve", h.Admin.ApproveOrder)
+		g.PUT("/orders/:id/reject", h.Admin.RejectOrder)
 	}
 }

@@ -241,6 +241,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '../stores/auth'
+import { useTenantStore } from '../stores/tenant'
 import { getProducts, getProductByBarcode } from '../api/products'
 import { getProductStock, getLowStock } from '../api/inventory'
 import { checkout as checkoutApi } from '../api/pos'
@@ -248,6 +249,8 @@ import { getCurrentShift } from '../api/shifts'
 import { generateReceiptPDF, buildReceiptText } from '../utils/receipt-pdf'
 import Receipt from '../components/Receipt.vue'
 import ShiftModal from '../components/ShiftModal.vue'
+
+const tenantStore = useTenantStore()
 
 const auth = useAuthStore()
 const isCashier = computed(() => auth.role === 'cashier')
@@ -482,7 +485,7 @@ async function submitCheckout() {
     })
     showCheckoutModal.value = false
     receiptData.value = {
-      storeName: 'HSMart',
+      storeName: tenantStore.storeName(),
       date: new Date(),
       transactionId: result?.transaction_id ?? '',
       cashier: result?.cashier ?? '',
