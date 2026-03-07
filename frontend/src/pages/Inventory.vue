@@ -81,6 +81,20 @@
               </select>
             </div>
             <div>
+              <label for="adj-reason" class="block text-sm font-medium text-gray-700 mb-1">Alasan (audit)</label>
+              <select
+                id="adj-reason"
+                v-model="adjustForm.reason"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500"
+              >
+                <option value="">— Pilih alasan —</option>
+                <option value="expired product">Kadaluarsa</option>
+                <option value="damaged item">Barang rusak</option>
+                <option value="manual correction">Koreksi manual</option>
+                <option value="stock audit">Stock opname</option>
+              </select>
+            </div>
+            <div>
               <label for="adj-reference" class="block text-sm font-medium text-gray-700 mb-1">Reference</label>
               <input
                 id="adj-reference"
@@ -127,7 +141,7 @@ const showAdjustModal = ref(false)
 const showAdjustConfirm = ref(false)
 const adjustProductId = ref('')
 const adjustProductName = ref('')
-const adjustForm = ref({ quantity: 0, type: 'adjustment', reference: '' })
+const adjustForm = ref({ quantity: 0, type: 'adjustment', reason: '', reference: '' })
 const adjustSaving = ref(false)
 const adjustError = ref('')
 
@@ -159,7 +173,7 @@ onMounted(loadData)
 function openAdjustModal(row) {
   adjustProductId.value = row.product_id ?? row.product_Id ?? ''
   adjustProductName.value = row.product_name ?? row.product_Name ?? ''
-  adjustForm.value = { quantity: 0, type: 'adjustment', reference: '' }
+  adjustForm.value = { quantity: 0, type: 'adjustment', reason: '', reference: '' }
   adjustError.value = ''
   showAdjustConfirm.value = false
   showAdjustModal.value = true
@@ -177,6 +191,7 @@ async function doAdjustStock() {
     await adjustStock(adjustProductId.value, {
       quantity: -qty,
       type: adjustForm.value.type,
+      reason: adjustForm.value.reason || undefined,
       reference: adjustForm.value.reference || undefined,
     })
     showAdjustModal.value = false

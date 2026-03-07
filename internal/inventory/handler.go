@@ -23,10 +23,11 @@ type MovementResponse struct {
 	Type        string `json:"type"`
 	Quantity    int    `json:"quantity"`
 	Reference   string `json:"reference"`
+	Reason      string `json:"reason"`
 	CreatedAt   string `json:"created_at"`
 }
 
-// ListMovements handles GET /api/inventory/movements (optional: product_id, limit, page for pagination).
+// ListMovements handles GET /api/inventory/movements (optional: product_id, type, from_date, to_date, limit, page).
 func (h *Handler) ListMovements(c *gin.Context) {
 	tenantID, ok := utils.GetTenantID(c)
 	if !ok {
@@ -34,6 +35,9 @@ func (h *Handler) ListMovements(c *gin.Context) {
 		return
 	}
 	productID := c.Query("product_id")
+	movementType := c.Query("type")
+	fromDate := c.Query("from_date")
+	toDate := c.Query("to_date")
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	if limit <= 0 {
 		limit = 20
@@ -47,7 +51,7 @@ func (h *Handler) ListMovements(c *gin.Context) {
 	}
 	offset := (page - 1) * limit
 
-	rows, total, err := h.service.ListMovementRowsPaginated(tenantID, productID, limit, offset)
+	rows, total, err := h.service.ListMovementRowsPaginated(tenantID, productID, movementType, fromDate, toDate, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list movements"})
 		return
@@ -63,6 +67,7 @@ func (h *Handler) ListMovements(c *gin.Context) {
 			Type:        r.Type,
 			Quantity:    r.Quantity,
 			Reference:   r.Reference,
+			Reason:      r.Reason,
 			CreatedAt:   createdAt,
 		})
 	}
@@ -117,6 +122,7 @@ type AdjustStockInput struct {
 	Quantity  int    `json:"quantity" binding:"required"`
 	Type      string `json:"type" binding:"required"` // adjustment, purchase, sale, return
 	Reference string `json:"reference"`
+	Reason    string `json:"reason"` // adjustment reason for audit (e.g. expired product, damaged item)
 }
 
 // AdjustStock applies a stock reduction only (POST /api/products/:id/adjust-stock). Quantity must be <= 0.
@@ -140,7 +146,7 @@ func (h *Handler) AdjustStock(c *gin.Context) {
 		return
 	}
 
-	err := h.service.AdjustStock(tenantID, productID, in.Quantity, in.Type, in.Reference)
+	err := h.service.AdjustStock(tenantID, productID, in.Quantity, in.Type, in.Reference, in.Reason)
 	if err != nil {
 		if err == ErrProductNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})

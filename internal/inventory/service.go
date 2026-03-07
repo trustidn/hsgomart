@@ -28,9 +28,9 @@ func NewService(db *gorm.DB) *Service {
 	return &Service{db: db}
 }
 
-// ensureProductBelongsToTenant returns ErrProductNotFound if product is not in tenant.
-func (s *Service) ensureProductBelongsToTenant(tenantID, productID string) error {
-	_, err := product.FindProductByID(s.db, tenantID, productID)
+// ensureProductBelongsToTenant returns ErrProductNotFound if product is not in tenant. Pass db for use inside transactions.
+func (s *Service) ensureProductBelongsToTenant(db *gorm.DB, tenantID, productID string) error {
+	_, err := product.FindProductByID(db, tenantID, productID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return ErrProductNotFound
@@ -43,7 +43,7 @@ func (s *Service) ensureProductBelongsToTenant(tenantID, productID string) error
 // GetStock returns current stock from the inventory table. Returns 0 if no inventory row exists. Verifies product belongs to tenant.
 // All stock checks (e.g. POS) must use this or GetInventoryByProduct; purchases only add to inventory, they do not replace it.
 func (s *Service) GetStock(tenantID, productID string) (int, error) {
-	if err := s.ensureProductBelongsToTenant(tenantID, productID); err != nil {
+	if err := s.ensureProductBelongsToTenant(s.db, tenantID, productID); err != nil {
 		return 0, err
 	}
 	inv, err := GetInventoryByProduct(s.db, tenantID, productID)
@@ -58,43 +58,47 @@ func (s *Service) GetStock(tenantID, productID string) (int, error) {
 
 // AdjustStock applies a delta (negative only). Creates an adjustment movement record.
 // Policy: stock increase only via Purchase; Adjust Stock is for corrections/reductions only.
-func (s *Service) AdjustStock(tenantID, productID string, quantity int, movementType, reference string) error {
+// Wrapped in a DB transaction: if movement insert fails, stock update is rolled back.
+func (s *Service) AdjustStock(tenantID, productID string, quantity int, movementType, reference, reason string) error {
 	if quantity > 0 {
 		return ErrAdjustOnlyDecrease
 	}
-	if err := s.ensureProductBelongsToTenant(tenantID, productID); err != nil {
-		return err
-	}
-	inv, err := GetInventoryByProduct(s.db, tenantID, productID)
-	if err != nil {
-		return err
-	}
-	if inv == nil {
-		inv = &Inventory{TenantID: tenantID, ProductID: productID, Stock: 0}
-		if err := CreateInventory(s.db, inv); err != nil {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		if err := s.ensureProductBelongsToTenant(tx, tenantID, productID); err != nil {
 			return err
 		}
-	}
-	newStock := inv.Stock + quantity
-	if newStock < 0 {
-		return ErrInsufficientStock
-	}
-	if err := UpdateStock(s.db, tenantID, productID, newStock); err != nil {
-		return err
-	}
-	m := &StockMovement{
-		TenantID:  tenantID,
-		ProductID: productID,
-		Type:      movementType,
-		Quantity:  quantity,
-		Reference: reference,
-	}
-	return CreateMovement(s.db, m)
+		inv, err := GetInventoryByProduct(tx, tenantID, productID)
+		if err != nil {
+			return err
+		}
+		if inv == nil {
+			inv = &Inventory{TenantID: tenantID, ProductID: productID, Stock: 0}
+			if err := CreateInventory(tx, inv); err != nil {
+				return err
+			}
+		}
+		newStock := inv.Stock + quantity
+		if newStock < 0 {
+			return ErrInsufficientStock
+		}
+		if err := UpdateStock(tx, tenantID, productID, newStock); err != nil {
+			return err
+		}
+		m := &StockMovement{
+			TenantID:  tenantID,
+			ProductID: productID,
+			Type:      movementType,
+			Quantity:  quantity,
+			Reference: reference,
+			Reason:    reason,
+		}
+		return CreateMovement(tx, m)
+	})
 }
 
 // IncreaseStock adds quantity and creates a movement record.
 func (s *Service) IncreaseStock(tenantID, productID string, quantity int, movementType, reference string) error {
-	if err := s.ensureProductBelongsToTenant(tenantID, productID); err != nil {
+	if err := s.ensureProductBelongsToTenant(s.db, tenantID, productID); err != nil {
 		return err
 	}
 	if err := IncreaseStock(s.db, tenantID, productID, quantity); err != nil {
@@ -112,7 +116,7 @@ func (s *Service) IncreaseStock(tenantID, productID string, quantity int, moveme
 
 // DecreaseStock subtracts quantity and creates a movement record. Returns ErrInsufficientStock if not enough.
 func (s *Service) DecreaseStock(tenantID, productID string, quantity int, movementType, reference string) error {
-	if err := s.ensureProductBelongsToTenant(tenantID, productID); err != nil {
+	if err := s.ensureProductBelongsToTenant(s.db, tenantID, productID); err != nil {
 		return err
 	}
 	inv, err := GetInventoryByProduct(s.db, tenantID, productID)
@@ -150,7 +154,7 @@ func (s *Service) ListMovementRows(tenantID, productID string) ([]MovementRow, e
 	return ListMovementRows(s.db, tenantID, productID)
 }
 
-// ListMovementRowsPaginated returns movements and total count for pagination.
-func (s *Service) ListMovementRowsPaginated(tenantID, productID string, limit, offset int) ([]MovementRow, int64, error) {
-	return ListMovementRowsPaginated(s.db, tenantID, productID, limit, offset)
+// ListMovementRowsPaginated returns movements and total count for pagination with optional filters.
+func (s *Service) ListMovementRowsPaginated(tenantID, productID, movementType, fromDate, toDate string, limit, offset int) ([]MovementRow, int64, error) {
+	return ListMovementRowsPaginated(s.db, tenantID, productID, movementType, fromDate, toDate, limit, offset)
 }
