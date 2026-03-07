@@ -21,7 +21,7 @@ type StockMovement struct {
 	Type        string    `gorm:"type:varchar(50);not null"` // purchase, sale, adjustment, return
 	Quantity    int       `gorm:"not null"`
 	Reference   string    `gorm:"type:varchar(255)"`
-	ReferenceID string    `gorm:"type:uuid;column:reference_id"` // purchase_id or transaction_id for traceability
+	ReferenceID *string   `gorm:"type:uuid;column:reference_id"` // purchase_id or transaction_id for traceability; NULL for adjustment
 	CreatedAt   time.Time `gorm:"autoCreateTime"`
 }
 

@@ -8,8 +8,9 @@ import (
 )
 
 var (
-	ErrProductNotFound   = errors.New("product not found")
-	ErrInsufficientStock = errors.New("insufficient stock")
+	ErrProductNotFound     = errors.New("product not found")
+	ErrInsufficientStock   = errors.New("insufficient stock")
+	ErrAdjustOnlyDecrease  = errors.New("penambahan stok hanya melalui Purchase; Adjust Stock hanya untuk pengurangan (quantity negatif)")
 )
 
 const (
@@ -55,8 +56,12 @@ func (s *Service) GetStock(tenantID, productID string) (int, error) {
 	return inv.Stock, nil
 }
 
-// AdjustStock applies a delta (positive or negative) and creates an adjustment movement record.
+// AdjustStock applies a delta (negative only). Creates an adjustment movement record.
+// Policy: stock increase only via Purchase; Adjust Stock is for corrections/reductions only.
 func (s *Service) AdjustStock(tenantID, productID string, quantity int, movementType, reference string) error {
+	if quantity > 0 {
+		return ErrAdjustOnlyDecrease
+	}
 	if err := s.ensureProductBelongsToTenant(tenantID, productID); err != nil {
 		return err
 	}
@@ -143,4 +148,9 @@ func (s *Service) ListMovements(tenantID, productID string) ([]StockMovement, er
 // ListMovementRows returns movements with product name for the tenant.
 func (s *Service) ListMovementRows(tenantID, productID string) ([]MovementRow, error) {
 	return ListMovementRows(s.db, tenantID, productID)
+}
+
+// ListMovementRowsPaginated returns movements and total count for pagination.
+func (s *Service) ListMovementRowsPaginated(tenantID, productID string, limit, offset int) ([]MovementRow, int64, error) {
+	return ListMovementRowsPaginated(s.db, tenantID, productID, limit, offset)
 }

@@ -128,13 +128,14 @@ func (s *Service) CreatePurchase(tenantID string, in CreatePurchaseInput) (*Purc
 		if ref == "purchase " {
 			ref = "purchase " + p.ID
 		}
+		refID := p.ID
 		m := &inventory.StockMovement{
 			TenantID:    tenantID,
 			ProductID:   it.ProductID,
 			Type:        inventory.MovementTypePurchase,
 			Quantity:    it.Quantity,
 			Reference:   ref,
-			ReferenceID: p.ID,
+			ReferenceID: &refID,
 		}
 		if err := inventory.CreateMovement(tx, m); err != nil {
 			tx.Rollback()

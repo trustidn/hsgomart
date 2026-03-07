@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -25,7 +26,7 @@ type MovementResponse struct {
 	CreatedAt   string `json:"created_at"`
 }
 
-// ListMovements handles GET /api/inventory/movements (optional query: product_id).
+// ListMovements handles GET /api/inventory/movements (optional: product_id, limit, page for pagination).
 func (h *Handler) ListMovements(c *gin.Context) {
 	tenantID, ok := utils.GetTenantID(c)
 	if !ok {
@@ -33,7 +34,20 @@ func (h *Handler) ListMovements(c *gin.Context) {
 		return
 	}
 	productID := c.Query("product_id")
-	rows, err := h.service.ListMovementRows(tenantID, productID)
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if page < 1 {
+		page = 1
+	}
+	offset := (page - 1) * limit
+
+	rows, total, err := h.service.ListMovementRowsPaginated(tenantID, productID, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list movements"})
 		return
@@ -52,7 +66,7 @@ func (h *Handler) ListMovements(c *gin.Context) {
 			CreatedAt:   createdAt,
 		})
 	}
-	c.JSON(http.StatusOK, res)
+	c.JSON(http.StatusOK, gin.H{"movements": res, "total": total})
 }
 
 // List returns all inventory rows for the tenant (product_id and stock per product).
@@ -105,7 +119,8 @@ type AdjustStockInput struct {
 	Reference string `json:"reference"`
 }
 
-// AdjustStock applies a stock adjustment (POST /api/products/:id/adjust-stock).
+// AdjustStock applies a stock reduction only (POST /api/products/:id/adjust-stock). Quantity must be <= 0.
+// Stock increase is only via Purchase.
 func (h *Handler) AdjustStock(c *gin.Context) {
 	tenantID, ok := utils.GetTenantID(c)
 	if !ok {
@@ -132,6 +147,10 @@ func (h *Handler) AdjustStock(c *gin.Context) {
 			return
 		}
 		if err == ErrInsufficientStock {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if err == ErrAdjustOnlyDecrease {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}

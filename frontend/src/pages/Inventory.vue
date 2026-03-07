@@ -25,21 +25,7 @@
               <span v-if="(row.stock ?? 0) < 10" class="text-red-600 font-semibold">LOW STOCK</span>
               <span v-else class="text-green-600">OK</span>
             </td>
-            <td class="px-4 py-2 text-right space-x-2">
-              <button
-                type="button"
-                class="text-sm px-2 py-1 border border-gray-300 rounded hover:bg-gray-100"
-                @click="quickAdjust(row, 10)"
-              >
-                +10
-              </button>
-              <button
-                type="button"
-                class="text-sm px-2 py-1 border border-gray-300 rounded hover:bg-gray-100"
-                @click="quickAdjust(row, -10)"
-              >
-                -10
-              </button>
+            <td class="px-4 py-2 text-right">
               <button
                 type="button"
                 class="text-sm text-slate-600 hover:text-slate-800 font-medium"
@@ -63,21 +49,23 @@
       @click.self="showAdjustModal = false"
     >
       <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
-        <h2 class="text-lg font-semibold text-gray-800 mb-2">Adjust Stock</h2>
+        <h2 class="text-lg font-semibold text-gray-800 mb-2">Koreksi stok (pengurangan)</h2>
         <p v-if="adjustProductName" class="text-sm text-gray-600 mb-4">{{ adjustProductName }}</p>
+        <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5 mb-4">Penambahan stok hanya melalui menu Purchase. Adjust hanya untuk pengurangan.</p>
         <form @submit.prevent="handleAdjustStock">
           <div class="space-y-4">
             <div>
-              <label for="adj-quantity" class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+              <label for="adj-quantity" class="block text-sm font-medium text-gray-700 mb-1">Jumlah pengurangan</label>
               <input
                 id="adj-quantity"
                 v-model.number="adjustForm.quantity"
                 type="number"
                 required
+                min="1"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500"
-                placeholder="e.g. 10 or -5"
+                placeholder="contoh: 8"
               />
-              <p class="text-xs text-gray-500 mt-1">Use positive to add, negative to subtract.</p>
+              <p class="text-xs text-gray-500 mt-1">Isi angka jumlah yang akan dikurangi (misal 8).</p>
             </div>
             <div>
               <label for="adj-type" class="block text-sm font-medium text-gray-700 mb-1">Type</label>
@@ -105,11 +93,20 @@
           </div>
           <p v-if="adjustError" class="text-sm text-red-600 mt-2">{{ adjustError }}</p>
           <div class="flex gap-2 justify-end mt-4">
-            <button type="button" class="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-md" @click="showAdjustModal = false">
-              Cancel
+            <button v-if="!showAdjustConfirm" type="button" class="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-md" @click="showAdjustModal = false">
+              Batal
             </button>
-            <button type="submit" :disabled="adjustSaving" class="px-3 py-2 bg-slate-600 text-white rounded-md hover:bg-slate-700 disabled:opacity-50">
-              {{ adjustSaving ? 'Saving...' : 'Save' }}
+            <template v-if="showAdjustConfirm">
+              <p class="text-sm text-gray-700 mr-auto">Yakin kurangi stok <strong>{{ adjustProductName }}</strong> sebanyak <strong>{{ adjustForm.quantity }}</strong>?</p>
+              <button type="button" class="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-md" @click="showAdjustConfirm = false">
+                Batal
+              </button>
+              <button type="button" class="px-3 py-2 bg-slate-600 text-white rounded-md hover:bg-slate-700" @click="confirmAdjustStock">
+                Ya, kurangi
+              </button>
+            </template>
+            <button v-else type="submit" :disabled="adjustSaving" class="px-3 py-2 bg-slate-600 text-white rounded-md hover:bg-slate-700 disabled:opacity-50">
+              {{ adjustSaving ? 'Menyimpan...' : 'Lanjut' }}
             </button>
           </div>
         </form>
@@ -127,6 +124,7 @@ const loading = ref(true)
 const error = ref(null)
 
 const showAdjustModal = ref(false)
+const showAdjustConfirm = ref(false)
 const adjustProductId = ref('')
 const adjustProductName = ref('')
 const adjustForm = ref({ quantity: 0, type: 'adjustment', reference: '' })
@@ -163,41 +161,46 @@ function openAdjustModal(row) {
   adjustProductName.value = row.product_name ?? row.product_Name ?? ''
   adjustForm.value = { quantity: 0, type: 'adjustment', reference: '' }
   adjustError.value = ''
+  showAdjustConfirm.value = false
   showAdjustModal.value = true
 }
 
-async function quickAdjust(row, delta) {
-  const productId = row.product_id ?? row.product_Id ?? ''
-  if (!productId) return
-  const quantity = delta > 0 ? delta : -delta
-  try {
-    await adjustStock(productId, {
-      quantity: delta > 0 ? quantity : -quantity,
-      type: 'adjustment',
-      reference: 'quick adjust',
-    })
-    await loadData()
-  } catch (err) {
-    error.value = err.response?.data?.error ?? 'Failed to adjust stock.'
+async function doAdjustStock() {
+  const qty = Math.abs(Number(adjustForm.value.quantity)) || 0
+  if (qty < 1) {
+    adjustError.value = 'Jumlah pengurangan minimal 1.'
+    return
   }
-}
-
-async function handleAdjustStock() {
-  if (!adjustProductId.value) return
-  adjustError.value = ''
   adjustSaving.value = true
+  adjustError.value = ''
   try {
     await adjustStock(adjustProductId.value, {
-      quantity: Number(adjustForm.value.quantity),
+      quantity: -qty,
       type: adjustForm.value.type,
       reference: adjustForm.value.reference || undefined,
     })
     showAdjustModal.value = false
+    showAdjustConfirm.value = false
     await loadData()
   } catch (err) {
-    adjustError.value = err.response?.data?.error ?? 'Failed to adjust stock.'
+    adjustError.value = err.response?.data?.error ?? 'Gagal mengoreksi stok.'
   } finally {
     adjustSaving.value = false
   }
+}
+
+function handleAdjustStock() {
+  if (!adjustProductId.value) return
+  const qty = Number(adjustForm.value.quantity)
+  if (!qty || qty < 1) {
+    adjustError.value = 'Isi jumlah pengurangan (angka positif, misal 8).'
+    return
+  }
+  adjustError.value = ''
+  showAdjustConfirm.value = true
+}
+
+function confirmAdjustStock() {
+  doAdjustStock()
 }
 </script>

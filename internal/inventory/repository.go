@@ -89,6 +89,11 @@ type MovementRow struct {
 
 // ListMovementRows returns movements with product name for the tenant (productID empty = all).
 func ListMovementRows(db *gorm.DB, tenantID, productID string) ([]MovementRow, error) {
+	return listMovementRows(db, tenantID, productID, 0, 0)
+}
+
+// listMovementRows with limit and offset (limit 0 = no limit).
+func listMovementRows(db *gorm.DB, tenantID, productID string, limit, offset int) ([]MovementRow, error) {
 	var list []MovementRow
 	q := db.Table("stock_movements").
 		Select("products.name as product_name, stock_movements.type as type, stock_movements.quantity as quantity, stock_movements.reference as reference, stock_movements.created_at as created_at").
@@ -97,6 +102,37 @@ func ListMovementRows(db *gorm.DB, tenantID, productID string) ([]MovementRow, e
 	if productID != "" {
 		q = q.Where("stock_movements.product_id = ?", productID)
 	}
-	err := q.Order("stock_movements.created_at DESC").Scan(&list).Error
+	q = q.Order("stock_movements.created_at DESC")
+	if limit > 0 {
+		q = q.Limit(limit)
+	}
+	if offset > 0 {
+		q = q.Offset(offset)
+	}
+	err := q.Scan(&list).Error
 	return list, err
+}
+
+// CountMovements returns total count of movements for the tenant (productID empty = all).
+func CountMovements(db *gorm.DB, tenantID, productID string) (int64, error) {
+	var n int64
+	q := db.Model(&StockMovement{}).Where("tenant_id = ?", tenantID)
+	if productID != "" {
+		q = q.Where("product_id = ?", productID)
+	}
+	err := q.Count(&n).Error
+	return n, err
+}
+
+// ListMovementRowsPaginated returns movements and total count for pagination.
+func ListMovementRowsPaginated(db *gorm.DB, tenantID, productID string, limit, offset int) ([]MovementRow, int64, error) {
+	list, err := listMovementRows(db, tenantID, productID, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	total, err := CountMovements(db, tenantID, productID)
+	if err != nil {
+		return nil, 0, err
+	}
+	return list, total, nil
 }

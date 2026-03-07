@@ -9,9 +9,10 @@ export async function getInventory() {
 }
 
 /**
- * GET /api/inventory/movements - stock movement history (optional product_id query)
+ * GET /api/inventory/movements - stock movement history (optional product_id, limit, page)
+ * Returns { movements: [], total: number }
  */
-export async function getMovements(params) {
+export async function getMovements(params = {}) {
   const { data } = await client.get('/api/inventory/movements', { params })
   return data
 }

@@ -127,13 +127,14 @@ func (s *Service) Checkout(tenantID, userID string, in CheckoutInput) (*Checkout
 			tx.Rollback()
 			return nil, err
 		}
+		refID := t.ID
 		m := &inventory.StockMovement{
 			TenantID:    tenantID,
 			ProductID:   it.ProductID,
 			Type:        inventory.MovementTypeSale,
 			Quantity:    it.Quantity,
 			Reference:   "POS sale",
-			ReferenceID: t.ID,
+			ReferenceID: &refID,
 		}
 		if err := inventory.CreateMovement(tx, m); err != nil {
 			tx.Rollback()
