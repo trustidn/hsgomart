@@ -51,6 +51,9 @@
             <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
             <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
             <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Quantity</th>
+            <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase cursor-help" title="Stock after this movement">
+              Stock After
+            </th>
             <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Reference</th>
             <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Reason</th>
           </tr>
@@ -63,11 +66,14 @@
               <span :class="typeBadgeClass(m.type)" class="inline-flex px-2 py-0.5 rounded text-xs font-medium">{{ m.type || '—' }}</span>
             </td>
             <td class="px-4 py-2 text-sm text-gray-600 text-right font-medium">{{ formatQuantity(m.quantity) }}</td>
+            <td class="px-4 py-2 text-right" :title="'Stock after this movement'">
+              <span :class="(m.stock_after ?? 0) < 0 ? 'text-red-600 font-semibold' : 'text-gray-600'">{{ m.stock_after ?? '—' }}</span>
+            </td>
             <td class="px-4 py-2 text-sm text-gray-600">{{ m.reference || '—' }}</td>
             <td class="px-4 py-2 text-sm text-gray-600">{{ m.reason || '—' }}</td>
           </tr>
           <tr v-if="!movements?.length">
-            <td colspan="6" class="px-4 py-4 text-sm text-gray-500 text-center">No movements yet.</td>
+            <td colspan="7" class="px-4 py-4 text-sm text-gray-500 text-center">No movements yet.</td>
           </tr>
         </tbody>
       </table>

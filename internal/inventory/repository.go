@@ -78,7 +78,7 @@ func ListMovements(db *gorm.DB, tenantID, productID string) ([]StockMovement, er
 	return list, err
 }
 
-// MovementRow holds a movement with product name for listing (used by ListMovementRows).
+// MovementRow holds a movement with product name and running balance for listing.
 type MovementRow struct {
 	ProductName string
 	Type        string
@@ -86,6 +86,7 @@ type MovementRow struct {
 	Reference   string
 	Reason      string
 	CreatedAt   time.Time
+	StockAfter  int // running balance: stock level after this movement (cumulative sum per product)
 }
 
 // ListMovementRows returns movements with product name for the tenant (productID empty = all).
@@ -94,33 +95,50 @@ func ListMovementRows(db *gorm.DB, tenantID, productID string) ([]MovementRow, e
 }
 
 // listMovementRows with optional filters and limit/offset (limit 0 = no limit).
+// Uses a window function to compute stock_after (running balance) per product.
 // movementType, fromDate, toDate empty = no filter. Dates in YYYY-MM-DD; range is inclusive.
 func listMovementRows(db *gorm.DB, tenantID, productID, movementType, fromDate, toDate string, limit, offset int) ([]MovementRow, error) {
-	var list []MovementRow
-	q := db.Table("stock_movements").
-		Select("products.name as product_name, stock_movements.type as type, stock_movements.quantity as quantity, stock_movements.reference as reference, COALESCE(stock_movements.reason, '') as reason, stock_movements.created_at as created_at").
-		Joins("LEFT JOIN products ON products.id = stock_movements.product_id").
-		Where("stock_movements.tenant_id = ?", tenantID)
+	// Window: SUM(quantity) OVER (PARTITION BY product_id ORDER BY created_at) = running balance after each movement.
+	sql := `WITH running AS (
+  SELECT sm.tenant_id, sm.product_id, sm.type, sm.quantity, sm.reference, COALESCE(sm.reason,'') AS reason, sm.created_at,
+         p.name AS product_name,
+         (SUM(sm.quantity) OVER (PARTITION BY sm.product_id ORDER BY sm.created_at))::integer AS stock_after
+  FROM stock_movements sm
+  LEFT JOIN products p ON p.id = sm.product_id
+  WHERE sm.tenant_id = ?
+)
+SELECT product_name, type, quantity, reference, reason, created_at, stock_after
+FROM running
+WHERE 1=1`
+	args := []interface{}{tenantID}
+
 	if productID != "" {
-		q = q.Where("stock_movements.product_id = ?", productID)
+		sql += " AND product_id = ?"
+		args = append(args, productID)
 	}
 	if movementType != "" {
-		q = q.Where("stock_movements.type = ?", movementType)
+		sql += " AND type = ?"
+		args = append(args, movementType)
 	}
 	if fromDate != "" {
-		q = q.Where("stock_movements.created_at >= ?", fromDate+"T00:00:00Z")
+		sql += " AND created_at >= ?"
+		args = append(args, fromDate+"T00:00:00Z")
 	}
 	if toDate != "" {
-		q = q.Where("stock_movements.created_at <= ?", toDate+"T23:59:59.999Z")
+		sql += " AND created_at <= ?"
+		args = append(args, toDate+"T23:59:59.999Z")
 	}
-	q = q.Order("stock_movements.created_at DESC")
+	sql += " ORDER BY created_at DESC"
 	if limit > 0 {
-		q = q.Limit(limit)
+		sql += " LIMIT ?"
+		args = append(args, limit)
 	}
 	if offset > 0 {
-		q = q.Offset(offset)
+		sql += " OFFSET ?"
+		args = append(args, offset)
 	}
-	err := q.Scan(&list).Error
+	var list []MovementRow
+	err := db.Raw(sql, args...).Scan(&list).Error
 	return list, err
 }
 

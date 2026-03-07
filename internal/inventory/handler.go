@@ -22,6 +22,7 @@ type MovementResponse struct {
 	ProductName string `json:"product_name"`
 	Type        string `json:"type"`
 	Quantity    int    `json:"quantity"`
+	StockAfter  int    `json:"stock_after"` // running balance after this movement
 	Reference   string `json:"reference"`
 	Reason      string `json:"reason"`
 	CreatedAt   string `json:"created_at"`
@@ -66,6 +67,7 @@ func (h *Handler) ListMovements(c *gin.Context) {
 			ProductName: r.ProductName,
 			Type:        r.Type,
 			Quantity:    r.Quantity,
+			StockAfter:  r.StockAfter,
 			Reference:   r.Reference,
 			Reason:      r.Reason,
 			CreatedAt:   createdAt,
