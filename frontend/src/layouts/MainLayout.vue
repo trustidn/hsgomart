@@ -51,16 +51,22 @@ import { useAuthStore } from '../stores/auth'
 const router = useRouter()
 const auth = useAuthStore()
 
-const navItems = [
-  { path: '/dashboard', label: 'Dashboard' },
-  { path: '/products', label: 'Products' },
-  { path: '/inventory', label: 'Inventory' },
-  { path: '/inventory-history', label: 'Inventory History' },
-  { path: '/categories', label: 'Categories' },
-  { path: '/purchases', label: 'Purchases' },
-  { path: '/pos', label: 'POS' },
-  { path: '/reports', label: 'Reports' },
+const menu = [
+  { path: '/dashboard', label: 'Dashboard', roles: ['owner', 'cashier'] },
+  { path: '/products', label: 'Products', roles: ['owner'] },
+  { path: '/inventory', label: 'Inventory', roles: ['owner'] },
+  { path: '/inventory-history', label: 'Inventory History', roles: ['owner'] },
+  { path: '/categories', label: 'Categories', roles: ['owner'] },
+  { path: '/purchases', label: 'Purchases', roles: ['owner'] },
+  { path: '/reports', label: 'Reports', roles: ['owner'] },
+  { path: '/users', label: 'Users', roles: ['owner'] },
+  { path: '/pos', label: 'POS', roles: ['owner', 'cashier'] },
 ]
+
+const navItems = computed(() => {
+  const role = auth.role || 'cashier' // default cashier for legacy sessions without role
+  return menu.filter((m) => m.roles.includes(role))
+})
 
 const userEmail = computed(() => auth.user?.email ?? 'User')
 

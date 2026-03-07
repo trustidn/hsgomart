@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 const TOKEN_KEY = 'hsmart_token'
 const USER_KEY = 'hsmart_user'
 const TENANT_ID_KEY = 'hsmart_tenant_id'
+const ROLE_KEY = 'hsmart_role'
 
 function loadFromStorage(key, parse = false) {
   try {
@@ -24,6 +25,7 @@ export const useAuthStore = defineStore('auth', {
     token: loadFromStorage(TOKEN_KEY),
     user: loadFromStorage(USER_KEY, true),
     tenant_id: loadFromStorage(TENANT_ID_KEY),
+    role: loadFromStorage(ROLE_KEY),
   }),
 
   getters: {
@@ -35,17 +37,21 @@ export const useAuthStore = defineStore('auth', {
       this.token = payload.token ?? this.token
       this.user = payload.user ?? null
       this.tenant_id = payload.tenant_id ?? null
+      this.role = payload.role ?? payload.user?.role ?? null
       saveToStorage(TOKEN_KEY, this.token)
       saveToStorage(USER_KEY, this.user)
       saveToStorage(TENANT_ID_KEY, this.tenant_id)
+      saveToStorage(ROLE_KEY, this.role)
     },
     logout() {
       this.token = null
       this.user = null
       this.tenant_id = null
+      this.role = null
       saveToStorage(TOKEN_KEY, null)
       saveToStorage(USER_KEY, null)
       saveToStorage(TENANT_ID_KEY, null)
+      saveToStorage(ROLE_KEY, null)
     },
   },
 })

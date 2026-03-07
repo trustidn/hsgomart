@@ -9,8 +9,10 @@ import (
 )
 
 var (
-	ErrUserNotFound  = errors.New("user not found")
-	ErrEmailExists   = errors.New("email already registered in this tenant")
+	ErrUserNotFound     = errors.New("user not found")
+	ErrEmailExists      = errors.New("email already registered in this tenant")
+	ErrInvalidRole      = errors.New("role must be owner or cashier")
+	ErrCannotDeleteSelf = errors.New("cannot delete your own account")
 )
 
 const bcryptCost = 10
@@ -41,9 +43,17 @@ type UpdateUserInput struct {
 	Email    *string `json:"email"`
 	Password *string `json:"password"`
 	Role     *string `json:"role"`
+	Status   *string `json:"status"`
+}
+
+func validRole(role string) bool {
+	return role == "owner" || role == "cashier"
 }
 
 func (s *Service) CreateUser(tenantID string, in CreateUserInput) (*User, error) {
+	if !validRole(in.Role) {
+		return nil, ErrInvalidRole
+	}
 	if s.planLimitChecker != nil {
 		subWithPlan, err := s.planLimitChecker.CheckSubscription(tenantID)
 		if err != nil {
@@ -104,7 +114,13 @@ func (s *Service) UpdateUser(tenantID, userID string, in UpdateUserInput) (*User
 		updates["email"] = *in.Email
 	}
 	if in.Role != nil {
+		if !validRole(*in.Role) {
+			return nil, ErrInvalidRole
+		}
 		updates["role"] = *in.Role
+	}
+	if in.Status != nil {
+		updates["status"] = *in.Status
 	}
 	if in.Password != nil && *in.Password != "" {
 		hash, err := bcrypt.GenerateFromPassword([]byte(*in.Password), bcryptCost)
@@ -127,8 +143,11 @@ func (s *Service) UpdateUser(tenantID, userID string, in UpdateUserInput) (*User
 	return s.GetUser(tenantID, userID)
 }
 
-func (s *Service) DeleteUser(tenantID, userID string) error {
-	if err := DeleteUser(s.db, tenantID, userID); err != nil {
+func (s *Service) DeleteUser(tenantID, currentUserID, targetUserID string) error {
+	if currentUserID == targetUserID {
+		return ErrCannotDeleteSelf
+	}
+	if err := DeleteUser(s.db, tenantID, targetUserID); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrUserNotFound
 		}

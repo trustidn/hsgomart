@@ -19,7 +19,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg config.Config) {
 	authSvc := auth.NewService(db, cfg.JWTSecret)
 	authHandler := auth.NewHandler(authSvc)
 
-	// Auth routes (public except profile). No tenant middleware; profile uses Auth only.
 	authGroup := r.Group("/auth")
 	{
 		authGroup.POST("/register", authHandler.Register)
@@ -27,59 +26,72 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg config.Config) {
 		authGroup.GET("/profile", middleware.Auth(authSvc), authHandler.Profile)
 	}
 
-	// Protected API: require Auth, Tenant, and valid Subscription (active/trial).
 	subscriptionSvc := subscription.NewService(db)
 	apiGroup := r.Group("/api")
 	apiGroup.Use(middleware.Auth(authSvc), middleware.Tenant(), middleware.Subscription(subscriptionSvc))
-	{
-		userSvc := user.NewService(db, subscriptionSvc)
-		userHandler := user.NewHandler(userSvc)
-		apiGroup.GET("/users", userHandler.List)
-		apiGroup.POST("/users", userHandler.Create)
-		apiGroup.PUT("/users/:id", userHandler.Update)
-		apiGroup.DELETE("/users/:id", userHandler.Delete)
 
+	// Owner + Cashier: product read (for POS) and checkout. Register first so GET /products matches here.
+	cashier := apiGroup.Group("")
+	cashier.Use(middleware.Role("owner", "cashier"))
+	{
 		productSvc := product.NewService(db, subscriptionSvc)
 		productHandler := product.NewHandler(productSvc)
-		apiGroup.GET("/categories", productHandler.ListCategories)
-		apiGroup.POST("/categories", productHandler.CreateCategory)
-		apiGroup.PUT("/categories/:id", productHandler.UpdateCategory)
-		apiGroup.DELETE("/categories/:id", productHandler.DeleteCategory)
-		apiGroup.GET("/products", productHandler.ListProducts)
-		apiGroup.GET("/products/barcode/:barcode", productHandler.GetProductByBarcode)
-		apiGroup.POST("/products", productHandler.CreateProduct)
-		apiGroup.GET("/products/:id", productHandler.GetProduct)
-		apiGroup.PUT("/products/:id", productHandler.UpdateProduct)
-		apiGroup.DELETE("/products/:id", productHandler.DeleteProduct)
-		apiGroup.POST("/products/:id/barcodes", productHandler.AddBarcode)
-
+		cashier.GET("/products", productHandler.ListProducts)
+		cashier.GET("/products/barcode/:barcode", productHandler.GetProductByBarcode)
 		inventorySvc := inventory.NewService(db)
 		inventoryHandler := inventory.NewHandler(inventorySvc)
-		apiGroup.GET("/inventory", inventoryHandler.List)
-		apiGroup.GET("/inventory/movements", inventoryHandler.ListMovements)
-		apiGroup.GET("/products/:id/stock", inventoryHandler.GetStock)
-		apiGroup.POST("/products/:id/adjust-stock", inventoryHandler.AdjustStock)
+		cashier.GET("/products/:id/stock", inventoryHandler.GetStock)
 
 		posSvc := pos.NewService(db)
 		posHandler := pos.NewHandler(posSvc)
-		apiGroup.POST("/pos/checkout", posHandler.Checkout)
+		cashier.POST("/pos/checkout", posHandler.Checkout)
+	}
+
+	// Owner-only: users, categories, product write, inventory write, purchases, reports
+	owner := apiGroup.Group("")
+	owner.Use(middleware.Role("owner"))
+	{
+		userSvc := user.NewService(db, subscriptionSvc)
+		userHandler := user.NewHandler(userSvc)
+		owner.GET("/users", userHandler.List)
+		owner.POST("/users", userHandler.Create)
+		owner.PUT("/users/:id", userHandler.Update)
+		owner.DELETE("/users/:id", userHandler.Delete)
+
+		productSvc := product.NewService(db, subscriptionSvc)
+		productHandler := product.NewHandler(productSvc)
+		owner.GET("/categories", productHandler.ListCategories)
+		owner.POST("/categories", productHandler.CreateCategory)
+		owner.PUT("/categories/:id", productHandler.UpdateCategory)
+		owner.DELETE("/categories/:id", productHandler.DeleteCategory)
+		owner.POST("/products", productHandler.CreateProduct)
+		owner.GET("/products/:id", productHandler.GetProduct)
+		owner.PUT("/products/:id", productHandler.UpdateProduct)
+		owner.DELETE("/products/:id", productHandler.DeleteProduct)
+		owner.POST("/products/:id/barcodes", productHandler.AddBarcode)
+
+		inventorySvc := inventory.NewService(db)
+		inventoryHandler := inventory.NewHandler(inventorySvc)
+		owner.GET("/inventory", inventoryHandler.List)
+		owner.GET("/inventory/movements", inventoryHandler.ListMovements)
+		owner.POST("/products/:id/adjust-stock", inventoryHandler.AdjustStock)
 
 		purchaseSvc := purchase.NewService(db)
 		purchaseHandler := purchase.NewHandler(purchaseSvc)
-		apiGroup.GET("/purchases", middleware.Owner(), purchaseHandler.List)
-		apiGroup.GET("/purchases/:id", middleware.Owner(), purchaseHandler.GetByID)
-		apiGroup.POST("/purchases", middleware.Owner(), purchaseHandler.Create)
+		owner.GET("/purchases", purchaseHandler.List)
+		owner.GET("/purchases/:id", purchaseHandler.GetByID)
+		owner.POST("/purchases", purchaseHandler.Create)
 
 		reportSvc := report.NewService(db)
 		reportHandler := report.NewHandler(reportSvc)
-		apiGroup.GET("/reports/sales", reportHandler.SalesSummary)
-		apiGroup.GET("/reports/sales/daily", reportHandler.SalesDaily)
-		apiGroup.GET("/reports/sales/hourly", reportHandler.SalesHourly)
-		apiGroup.GET("/reports/sales/transactions", reportHandler.SalesTransactions)
-		apiGroup.GET("/reports/payments", reportHandler.PaymentsReport)
-		apiGroup.GET("/reports/profit", reportHandler.ProfitReport)
-		apiGroup.GET("/reports/products", reportHandler.TopProducts)
-		apiGroup.GET("/reports/inventory", reportHandler.InventorySummary)
-		apiGroup.GET("/reports/cashiers", reportHandler.CashiersReport)
+		owner.GET("/reports/sales", reportHandler.SalesSummary)
+		owner.GET("/reports/sales/daily", reportHandler.SalesDaily)
+		owner.GET("/reports/sales/hourly", reportHandler.SalesHourly)
+		owner.GET("/reports/sales/transactions", reportHandler.SalesTransactions)
+		owner.GET("/reports/payments", reportHandler.PaymentsReport)
+		owner.GET("/reports/profit", reportHandler.ProfitReport)
+		owner.GET("/reports/products", reportHandler.TopProducts)
+		owner.GET("/reports/inventory", reportHandler.InventorySummary)
+		owner.GET("/reports/cashiers", reportHandler.CashiersReport)
 	}
 }

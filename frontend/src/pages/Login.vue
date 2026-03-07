@@ -64,19 +64,19 @@ async function handleSubmit() {
   loading.value = true
   try {
     const data = await apiLogin(email.value, password.value)
-    auth.login({
-      token: data.token,
-      user: data.user ?? null,
-      tenant_id: data.tenant_id ?? null,
-    })
-    if (!data.user || !data.tenant_id) {
-      const profile = await getProfile()
-      auth.login({
-        token: auth.token,
-        user: { id: profile.user_id, email: profile.email, role: profile.role },
-        tenant_id: profile.tenant_id,
-      })
+    const token = data.token
+    if (!token) {
+      errorMessage.value = 'Invalid response from server.'
+      return
     }
+    auth.login({ token })
+    const profile = await getProfile()
+    auth.login({
+      token,
+      user: { id: profile.user_id, email: profile.email, role: profile.role },
+      tenant_id: profile.tenant_id,
+      role: profile.role,
+    })
     router.push('/dashboard')
   } catch (err) {
     const msg = err.response?.data?.error ?? err.message

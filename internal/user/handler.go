@@ -74,6 +74,10 @@ func (h *Handler) Create(c *gin.Context) {
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
 		}
+		if err == ErrInvalidRole {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		if err == subscription.ErrPlanLimitReached {
 			c.JSON(http.StatusPaymentRequired, gin.H{"error": "plan limit reached"})
 			return
@@ -110,6 +114,10 @@ func (h *Handler) Update(c *gin.Context) {
 
 	u, err := h.service.UpdateUser(tenantID, userID, in)
 	if err != nil {
+		if err == ErrInvalidRole {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
 		if err == ErrUserNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 			return
@@ -134,9 +142,14 @@ func (h *Handler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.service.DeleteUser(tenantID, userID); err != nil {
+	currentUserID, _ := utils.GetUserID(c)
+	if err := h.service.DeleteUser(tenantID, currentUserID, userID); err != nil {
 		if err == ErrUserNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+			return
+		}
+		if err == ErrCannotDeleteSelf {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete user"})
