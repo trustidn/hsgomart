@@ -14,15 +14,15 @@
       </thead>
       <tbody>
         <tr v-for="s in subs" :key="s.id" class="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
-          <td class="px-4 py-3 font-medium">{{ s.tenant_name }}</td>
-          <td class="px-4 py-3">{{ s.plan_name }}</td>
+          <td class="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">{{ s.tenant_name }}</td>
+          <td class="px-4 py-3 text-gray-800 dark:text-gray-200">{{ s.plan_name }}</td>
           <td class="px-4 py-3 text-center">
             <span class="px-2 py-0.5 rounded text-xs font-medium"
-              :class="s.status === 'active' ? 'bg-green-100 text-green-700' : s.status === 'trial' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'">
+              :class="s.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : s.status === 'trial' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'">
               {{ s.status }}
             </span>
           </td>
-          <td class="px-4 py-3">{{ s.end_date ?? '-' }}</td>
+          <td class="px-4 py-3 text-gray-800 dark:text-gray-200">{{ s.end_date ?? '-' }}</td>
           <td class="px-4 py-3 text-center">
             <span v-if="s.days_remaining !== null && s.days_remaining !== undefined" class="text-xs font-medium"
               :class="s.days_remaining <= 0 ? 'text-red-600' : s.days_remaining <= 7 ? 'text-amber-600' : 'text-green-600'">

@@ -5,7 +5,7 @@
       <button @click="openCreate" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">Add Plan</button>
     </div>
 
-    <div v-if="loading" class="text-gray-400 py-8 text-center">Loading...</div>
+    <div v-if="loading" class="text-gray-400 dark:text-gray-500 py-8 text-center">Loading...</div>
     <table v-else class="w-full bg-white dark:bg-gray-900 rounded-lg shadow text-sm">
       <thead class="bg-gray-50 dark:bg-gray-800">
         <tr>
@@ -22,23 +22,23 @@
       <tbody>
         <tr v-for="p in plans" :key="p.id" class="border-t dark:border-gray-700">
           <td class="px-4 py-3">
-            <div class="font-medium">{{ p.name }}</div>
+            <div class="font-medium text-gray-800 dark:text-gray-200">{{ p.name }}</div>
             <div v-if="p.description" class="text-xs text-gray-400 mt-0.5">{{ p.description }}</div>
           </td>
-          <td class="px-4 py-3 text-right">{{ p.price === 0 ? 'Free' : 'Rp ' + Number(p.price).toLocaleString('id-ID') }}</td>
-          <td class="px-4 py-3 text-center">{{ formatDuration(p.duration_days) }}</td>
-          <td class="px-4 py-3 text-right">{{ p.max_users }}</td>
-          <td class="px-4 py-3 text-right">{{ p.max_products }}</td>
-          <td class="px-4 py-3 text-center">{{ p.tenant_count }}</td>
+          <td class="px-4 py-3 text-right text-gray-800 dark:text-gray-200">{{ p.price === 0 ? 'Free' : 'Rp ' + Number(p.price).toLocaleString('id-ID') }}</td>
+          <td class="px-4 py-3 text-center text-gray-800 dark:text-gray-200">{{ formatDuration(p.duration_days) }}</td>
+          <td class="px-4 py-3 text-right text-gray-800 dark:text-gray-200">{{ p.max_users }}</td>
+          <td class="px-4 py-3 text-right text-gray-800 dark:text-gray-200">{{ p.max_products }}</td>
+          <td class="px-4 py-3 text-center text-gray-800 dark:text-gray-200">{{ p.tenant_count }}</td>
           <td class="px-4 py-3 text-center">
-            <span class="px-2 py-0.5 rounded text-xs" :class="p.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'">
+            <span class="px-2 py-0.5 rounded text-xs" :class="p.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'">
               {{ p.is_active ? 'Active' : 'Inactive' }}
             </span>
           </td>
           <td class="px-4 py-3 text-center space-x-2">
-            <button @click="openEdit(p)" class="text-indigo-600 hover:underline text-xs">Edit</button>
-            <button v-if="p.is_active" @click="toggleActive(p.id, false)" class="text-red-600 hover:underline text-xs">Deactivate</button>
-            <button v-else @click="toggleActive(p.id, true)" class="text-green-600 hover:underline text-xs">Activate</button>
+            <button @click="openEdit(p)" class="text-indigo-600 dark:text-indigo-400 hover:underline text-xs">Edit</button>
+            <button v-if="p.is_active" @click="toggleActive(p.id, false)" class="text-red-600 dark:text-red-400 hover:underline text-xs">Deactivate</button>
+            <button v-else @click="toggleActive(p.id, true)" class="text-green-600 dark:text-green-400 hover:underline text-xs">Activate</button>
           </td>
         </tr>
       </tbody>

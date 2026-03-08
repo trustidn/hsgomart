@@ -28,7 +28,7 @@
           v-for="t in tabs"
           :key="t.id"
           type="button"
-          :class="[activeTab === t.id ? 'border-slate-600 text-slate-600' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700']"
+          :class="[activeTab === t.id ? 'border-slate-600 text-slate-600 dark:text-slate-300' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200']"
           class="py-2 px-1 border-b-2 font-medium text-sm"
           @click="activeTab = t.id"
         >
@@ -72,8 +72,8 @@
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
             <tr v-for="(row, i) in paymentsReport" :key="i" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
               <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.method }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ row.transactions }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.revenue) }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ row.transactions }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ formatPrice(row.revenue) }}</td>
             </tr>
             <tr v-if="!paymentsReport?.length">
               <td colspan="3" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No data for this period.</td>
@@ -101,8 +101,8 @@
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
             <tr v-for="row in salesDaily" :key="row.date" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
               <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.date }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ row.total_transactions }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.total_sales) }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ row.total_transactions }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ formatPrice(row.total_sales) }}</td>
             </tr>
             <tr v-if="!salesDaily?.length">
               <td colspan="3" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No data for this period.</td>
@@ -130,8 +130,8 @@
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
             <tr v-for="row in salesHourly" :key="row.hour" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
               <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.hour }}:00</td>
-              <td class="px-4 py-2 text-sm text-right">{{ row.transactions }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.revenue) }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ row.transactions }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ formatPrice(row.revenue) }}</td>
             </tr>
             <tr v-if="hourlyDate && !salesHourly?.length">
               <td colspan="3" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No data for this date.</td>
@@ -173,9 +173,9 @@
               <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.created_at }}</td>
               <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ row.id }}</td>
               <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ row.cashier || '—' }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.total_amount) }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ formatPrice(row.total_amount) }}</td>
               <td class="px-4 py-2 text-right">
-                <button type="button" class="text-sm text-slate-600 hover:underline" @click="openReceiptModal(row.id)">View</button>
+                <button type="button" class="text-sm text-slate-600 dark:text-slate-400 hover:underline dark:hover:text-slate-300" @click="openReceiptModal(row.id)">View</button>
               </td>
             </tr>
             <tr v-if="!salesTransactions?.length">
@@ -223,10 +223,10 @@
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
             <tr v-for="(row, i) in profitRows" :key="i" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
               <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.product_name }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ row.quantity_sold }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.revenue) }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.cost) }}</td>
-              <td class="px-4 py-2 text-sm text-right" :class="row.profit >= 0 ? 'text-green-600' : 'text-red-600'">{{ formatPrice(row.profit) }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ row.quantity_sold }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ formatPrice(row.revenue) }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ formatPrice(row.cost) }}</td>
+              <td class="px-4 py-2 text-sm text-right" :class="row.profit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">{{ formatPrice(row.profit) }}</td>
             </tr>
             <tr v-if="!profitRows?.length">
               <td colspan="5" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No data for this period.</td>
@@ -257,8 +257,8 @@
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
             <tr v-for="(row, i) in topProducts" :key="i" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
               <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.product_name }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ row.quantity_sold }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.revenue) }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ row.quantity_sold }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ formatPrice(row.revenue) }}</td>
             </tr>
             <tr v-if="!topProducts?.length">
               <td colspan="3" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No data for this period.</td>
@@ -283,11 +283,11 @@
           </thead>
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
             <tr v-for="r in marginRows" :key="r.product_id" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
-              <td class="px-4 py-2 text-sm">{{ r.product_name }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(r.revenue) }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(r.cogs) }}</td>
-              <td class="px-4 py-2 text-sm text-right" :class="r.margin >= 0 ? 'text-green-600' : 'text-red-600'">{{ formatPrice(r.margin) }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ r.margin_pct }}%</td>
+              <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ r.product_name }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ formatPrice(r.revenue) }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ formatPrice(r.cogs) }}</td>
+              <td class="px-4 py-2 text-sm text-right" :class="r.margin >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">{{ formatPrice(r.margin) }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ r.margin_pct }}%</td>
             </tr>
             <tr v-if="!marginRows.length"><td colspan="5" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No data</td></tr>
           </tbody>
@@ -316,8 +316,8 @@
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
             <tr v-for="row in inventoryRows" :key="row.product_id" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
               <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.product_name }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ row.stock }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.inventory_value ?? 0) }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ row.stock }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ formatPrice(row.inventory_value ?? 0) }}</td>
             </tr>
             <tr v-if="!inventoryRows?.length">
               <td colspan="3" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No inventory data.</td>
@@ -348,8 +348,8 @@
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
             <tr v-for="(row, i) in cashiersRows" :key="i" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
               <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.cashier }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ row.transactions }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.revenue) }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ row.transactions }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ formatPrice(row.revenue) }}</td>
             </tr>
             <tr v-if="!cashiersRows?.length">
               <td colspan="3" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No data for this period.</td>
@@ -381,11 +381,11 @@
             <tr v-for="(row, i) in shiftsRows" :key="i" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
               <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.date }}</td>
               <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.cashier }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.opening) }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.sales) }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.expected) }}</td>
-              <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.actual) }}</td>
-              <td class="px-4 py-2 text-sm text-right" :class="row.difference !== 0 ? 'text-amber-600 font-medium' : ''">{{ formatPrice(row.difference) }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ formatPrice(row.opening) }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ formatPrice(row.sales) }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ formatPrice(row.expected) }}</td>
+              <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ formatPrice(row.actual) }}</td>
+              <td class="px-4 py-2 text-sm text-right" :class="row.difference !== 0 ? 'text-amber-600 dark:text-amber-400 font-medium' : 'text-gray-800 dark:text-gray-200'">{{ formatPrice(row.difference) }}</td>
             </tr>
             <tr v-if="!shiftsRows?.length">
               <td colspan="7" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No closed shifts for this period.</td>
@@ -421,7 +421,7 @@
           />
         </div>
         <div class="p-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-2 justify-end">
-          <button type="button" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 text-sm" @click="printReceiptFromReport">Print</button>
+          <button type="button" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm" @click="printReceiptFromReport">Print</button>
           <button type="button" class="px-3 py-2 border border-green-500 dark:border-green-600 text-green-700 dark:text-green-400 rounded-md hover:bg-green-50 dark:hover:bg-green-900/20 text-sm" @click="downloadReceiptPdfFromReport">PDF</button>
           <button type="button" class="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm" @click="shareWhatsAppFromReport">WhatsApp</button>
           <button type="button" class="px-3 py-2 bg-slate-600 text-white rounded-md hover:bg-slate-700 text-sm" @click="showReceipt = false">Close</button>

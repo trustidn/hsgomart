@@ -217,6 +217,16 @@
           </div>
           <form @submit.prevent="submitCheckout" class="p-6 space-y-4">
             <div>
+              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Nama (opsional)</label>
+              <input v-model="checkoutForm.customer_name" type="text" placeholder="Nama pelanggan"
+                class="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">No HP (opsional)</label>
+              <input v-model="checkoutForm.customer_phone" type="tel" placeholder="08xxxxxxxxxx - untuk WhatsApp struk"
+                class="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div>
               <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">Metode Pembayaran</label>
               <select v-model="checkoutForm.payment_method"
                 class="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -309,7 +319,7 @@ const productsError = ref(null)
 const searchQuery = ref('')
 const cartItems = ref([])
 const showCheckoutModal = ref(false)
-const checkoutForm = ref({ payment_method: 'cash', paid_amount: 0 })
+const checkoutForm = ref({ payment_method: 'cash', paid_amount: 0, customer_name: '', customer_phone: '' })
 const checkoutError = ref('')
 const checkoutSubmitting = ref(false)
 const showReceiptModal = ref(false)
@@ -419,7 +429,7 @@ function removeFromCart(productId) { cartItems.value = cartItems.value.filter((i
 
 function openCheckoutModal(method) {
   if (!canCheckout.value) return
-  checkoutForm.value = { payment_method: method, paid_amount: totalAmount.value }
+  checkoutForm.value = { payment_method: method, paid_amount: totalAmount.value, customer_name: '', customer_phone: '' }
   checkoutError.value = ''
   showCheckoutModal.value = true
 }
@@ -439,6 +449,8 @@ async function submitCheckout() {
       items: cartItems.value.map((i) => ({ product_id: i.product_id, quantity: i.quantity })),
       payment_method: checkoutForm.value.payment_method,
       paid_amount: checkoutForm.value.paid_amount,
+      customer_name: checkoutForm.value.customer_name?.trim() || '',
+      customer_phone: checkoutForm.value.customer_phone?.trim() || '',
     })
     showCheckoutModal.value = false
     receiptData.value = {
@@ -447,6 +459,8 @@ async function submitCheckout() {
       items: cartItems.value.map((i) => ({ ...i })),
       total: result?.total ?? totalAmount.value,
       paidAmount: checkoutForm.value.paid_amount, change: result?.change ?? 0,
+      customerName: checkoutForm.value.customer_name?.trim() || '',
+      customerPhone: checkoutForm.value.customer_phone?.trim() || '',
     }
     showReceiptModal.value = true
   } catch (err) { checkoutError.value = err.response?.data?.error ?? 'Checkout gagal.' }
@@ -460,7 +474,13 @@ function downloadReceiptPDF() {
 }
 function shareWhatsApp() {
   if (!receiptData.value) return
-  window.open(`https://wa.me/?text=${encodeURIComponent(buildReceiptText(receiptData.value))}`, '_blank')
+  const text = encodeURIComponent(buildReceiptText(receiptData.value))
+  const phone = (receiptData.value.customerPhone || '').trim().replace(/\D/g, '')
+  const waPhone = phone ? (phone.startsWith('62') ? phone : '62' + phone.replace(/^0+/, '')) : ''
+  const url = waPhone
+    ? `https://wa.me/${waPhone}?text=${text}`
+    : `https://wa.me/?text=${text}`
+  window.open(url, '_blank')
 }
 function closeReceipt() { showReceiptModal.value = false; receiptData.value = null; cartItems.value = []; nextTick(() => barcodeInputRef.value?.focus()) }
 

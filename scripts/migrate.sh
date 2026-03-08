@@ -37,8 +37,18 @@ case "$1" in
     down)
         "$MIGRATE_CMD" -path migrations -database "$DATABASE_URL" down
         ;;
+    force)
+        if [ -z "$2" ]; then
+            echo "Usage: $0 force <version>"
+            echo "  Example: $0 force 36"
+            echo "  Use to fix 'Dirty database version' - sets version and clears dirty flag."
+            exit 1
+        fi
+        "$MIGRATE_CMD" -path migrations -database "$DATABASE_URL" force "$2"
+        ;;
     *)
-        echo "Usage: $0 up|down"
+        echo "Usage: $0 up|down|force <version>"
+        echo "  force - Fix dirty state: $0 force 36"
         exit 1
         ;;
 esac

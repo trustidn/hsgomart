@@ -14,7 +14,7 @@
       </button>
     </div>
 
-    <div v-if="loading" class="text-gray-400 py-8 text-center">Loading...</div>
+    <div v-if="loading" class="text-gray-400 dark:text-gray-500 py-8 text-center">Loading...</div>
     <div v-else class="bg-white dark:bg-gray-900 rounded-lg shadow overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-gray-50 dark:bg-gray-800">
@@ -31,12 +31,12 @@
         </thead>
         <tbody>
           <tr v-for="t in tenants" :key="t.id" class="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
-            <td class="px-4 py-3 font-medium">{{ t.name }}</td>
+            <td class="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">{{ t.name }}</td>
             <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ t.email }}</td>
             <td class="px-4 py-3 text-center">
               <span class="px-2 py-0.5 rounded text-xs font-medium" :class="tenantStatusClass(t.status)">{{ t.status }}</span>
             </td>
-            <td class="px-4 py-3">{{ t.plan_name }}</td>
+            <td class="px-4 py-3 text-gray-800 dark:text-gray-200">{{ t.plan_name }}</td>
             <td class="px-4 py-3 text-center">
               <span v-if="t.sub_status" class="px-2 py-0.5 rounded text-xs font-medium" :class="subStatusClass(t.sub_status)">{{ t.sub_status }}</span>
               <span v-else class="text-xs text-gray-400">—</span>
@@ -47,14 +47,14 @@
               </span>
               <span v-else class="text-xs text-gray-400">—</span>
             </td>
-            <td class="px-4 py-3 text-right">{{ t.user_count }}</td>
+            <td class="px-4 py-3 text-right text-gray-800 dark:text-gray-200">{{ t.user_count }}</td>
             <td class="px-4 py-3 text-center space-x-1">
-              <button @click="openEdit(t)" class="text-indigo-600 hover:underline text-xs">Edit</button>
-              <button @click="confirmDelete(t)" class="text-red-600 hover:underline text-xs">Delete</button>
+              <button @click="openEdit(t)" class="text-indigo-600 dark:text-indigo-400 hover:underline text-xs">Edit</button>
+              <button @click="confirmDelete(t)" class="text-red-600 dark:text-red-400 hover:underline text-xs">Delete</button>
             </td>
           </tr>
           <tr v-if="!tenants.length">
-            <td colspan="8" class="px-4 py-8 text-center text-gray-400">No tenants found.</td>
+            <td colspan="8" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">No tenants found.</td>
           </tr>
         </tbody>
       </table>

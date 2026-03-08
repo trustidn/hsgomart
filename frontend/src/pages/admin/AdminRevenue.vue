@@ -16,7 +16,7 @@
       <button @click="exportCSV" v-if="report.orders?.length" class="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Export CSV</button>
     </div>
 
-    <div v-if="loading" class="text-gray-400 py-8 text-center">Loading...</div>
+    <div v-if="loading" class="text-gray-400 dark:text-gray-500 py-8 text-center">Loading...</div>
     <template v-else>
       <!-- Summary Cards -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -41,14 +41,14 @@
           <div v-for="pb in report.plan_breakdown" :key="pb.plan_name" class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
             <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ pb.plan_name }}</p>
             <p class="text-lg font-bold text-gray-800 dark:text-gray-200">Rp {{ Number(pb.total || 0).toLocaleString('id-ID') }}</p>
-            <p class="text-xs text-gray-400">{{ pb.order_count }} order(s)</p>
+            <p class="text-xs text-gray-400 dark:text-gray-500">{{ pb.order_count }} order(s)</p>
           </div>
         </div>
       </div>
 
       <!-- Detail Table -->
       <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-        <div v-if="!report.orders?.length" class="p-8 text-center text-gray-400 text-sm">No approved orders in this period.</div>
+        <div v-if="!report.orders?.length" class="p-8 text-center text-gray-400 dark:text-gray-500 text-sm">No approved orders in this period.</div>
         <table v-else class="w-full text-sm">
           <thead class="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs uppercase">
             <tr>
@@ -61,10 +61,10 @@
           </thead>
           <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
             <tr v-for="o in report.orders" :key="o.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
-              <td class="px-4 py-3 font-mono text-xs">{{ o.invoice }}</td>
-              <td class="px-4 py-3">{{ o.tenant_name }}</td>
-              <td class="px-4 py-3">{{ o.plan_name }}</td>
-              <td class="px-4 py-3 text-right font-medium">Rp {{ Number(o.amount).toLocaleString('id-ID') }}</td>
+              <td class="px-4 py-3 font-mono text-xs text-gray-800 dark:text-gray-200">{{ o.invoice }}</td>
+              <td class="px-4 py-3 text-gray-800 dark:text-gray-200">{{ o.tenant_name }}</td>
+              <td class="px-4 py-3 text-gray-800 dark:text-gray-200">{{ o.plan_name }}</td>
+              <td class="px-4 py-3 text-right font-medium text-gray-800 dark:text-gray-200">Rp {{ Number(o.amount).toLocaleString('id-ID') }}</td>
               <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ formatDateTime(o.approved_at) }}</td>
             </tr>
           </tbody>

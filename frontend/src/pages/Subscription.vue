@@ -16,9 +16,9 @@
               Status:
               <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                 :class="{
-                  'bg-amber-100 text-amber-700': subscription.status === 'trial',
-                  'bg-green-100 text-green-700': subscription.status === 'active',
-                  'bg-red-100 text-red-700': subscription.status === 'expired',
+                  'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300': subscription.status === 'trial',
+                  'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300': subscription.status === 'active',
+                  'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300': subscription.status === 'expired',
                 }">{{ subscription.status }}</span>
             </p>
             <p v-if="trialDaysLeft !== null" class="text-sm text-amber-600 mt-1">Trial ends in {{ trialDaysLeft }} days</p>
@@ -72,16 +72,16 @@
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
               <tr v-for="o in orders" :key="o.id">
-                <td class="px-4 py-3 font-mono text-xs">{{ o.invoice_number }}</td>
-                <td class="px-4 py-3">{{ planName(o.plan_id) }}</td>
-                <td class="px-4 py-3 text-right">Rp {{ Number(o.amount).toLocaleString('id-ID') }}</td>
+                <td class="px-4 py-3 font-mono text-xs text-gray-800 dark:text-gray-200">{{ o.invoice_number }}</td>
+                <td class="px-4 py-3 text-gray-800 dark:text-gray-200">{{ planName(o.plan_id) }}</td>
+                <td class="px-4 py-3 text-right text-gray-800 dark:text-gray-200">Rp {{ Number(o.amount).toLocaleString('id-ID') }}</td>
                 <td class="px-4 py-3 text-center">
                   <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                     :class="statusClass(o.status)">{{ statusLabel(o.status) }}</span>
                 </td>
                 <td class="px-4 py-3 text-center">
                   <button v-if="o.status === 'pending_payment' || o.status === 'rejected'" @click="openUpload(o)"
-                    class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">Upload Proof</button>
+                    class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-xs font-medium">Upload Proof</button>
                   <span v-else-if="o.status === 'pending_review'" class="text-xs text-gray-400 dark:text-gray-400">Waiting review</span>
                   <span v-else-if="o.status === 'approved'" class="text-xs text-green-600">Approved</span>
                 </td>
@@ -100,7 +100,7 @@
               <p><span class="text-gray-500 dark:text-gray-400">Plan:</span> <strong>{{ selectedPlan?.name }}</strong></p>
               <p><span class="text-gray-500 dark:text-gray-400">Price:</span> <strong>Rp {{ Number(selectedPlan?.price).toLocaleString('id-ID') }}</strong> / {{ formatDuration(selectedPlan?.duration_days) }}</p>
             </div>
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
+            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-xs text-blue-800 dark:text-blue-300">
               <p class="font-medium mb-1">Transfer to:</p>
               <p>{{ bankInfo.bank_name || 'Bank' }} — {{ bankInfo.bank_account || '-' }}</p>
               <p>a/n {{ bankInfo.bank_holder || '-' }}</p>
@@ -122,7 +122,7 @@
           <div class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Upload Payment Proof</h3>
             <p class="text-sm text-gray-500 dark:text-gray-400">Invoice: <strong>{{ uploadOrder?.invoice_number }}</strong></p>
-            <div v-if="uploadOrder?.status === 'rejected' && uploadOrder?.admin_notes" class="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700">
+            <div v-if="uploadOrder?.status === 'rejected' && uploadOrder?.admin_notes" class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-xs text-red-700 dark:text-red-300">
               <p class="font-medium">Rejected:</p>
               <p>{{ uploadOrder.admin_notes }}</p>
             </div>
@@ -244,10 +244,10 @@ async function submitProof() {
 
 function statusClass(status) {
   const map = {
-    pending_payment: 'bg-yellow-100 text-yellow-700',
-    pending_review: 'bg-blue-100 text-blue-700',
-    approved: 'bg-green-100 text-green-700',
-    rejected: 'bg-red-100 text-red-700',
+    pending_payment: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
+    pending_review: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+    approved: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+    rejected: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
   }
   return map[status] || 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
 }

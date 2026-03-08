@@ -2,7 +2,7 @@
   <div class="max-w-3xl mx-auto space-y-6">
     <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Platform Settings</h1>
 
-    <div v-if="loading" class="text-gray-400 py-8 text-center">Loading...</div>
+    <div v-if="loading" class="text-gray-400 dark:text-gray-500 py-8 text-center">Loading...</div>
     <template v-else>
       <!-- Logo -->
       <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
@@ -17,7 +17,7 @@
               Upload Logo
               <input type="file" class="hidden" accept=".png,.jpg,.jpeg,.webp" @change="handleLogo" />
             </label>
-            <p class="text-xs text-gray-400 mt-1">PNG, JPG, WebP. Max 2MB.</p>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">PNG, JPG, WebP. Max 2MB.</p>
           </div>
         </div>
       </div>

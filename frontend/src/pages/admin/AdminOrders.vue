@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
     <div class="flex items-center justify-between">
-      <h1 class="text-xl font-semibold text-gray-900">Subscription Orders</h1>
+      <h1 class="text-xl font-semibold text-gray-900 dark:text-white">Subscription Orders</h1>
       <div class="flex gap-2">
         <button v-for="s in statuses" :key="s.value" @click="filterStatus = s.value"
           class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
@@ -11,10 +11,10 @@
       </div>
     </div>
 
-    <div v-if="loading" class="text-center py-12 text-gray-400">Loading...</div>
+    <div v-if="loading" class="text-center py-12 text-gray-400 dark:text-gray-500">Loading...</div>
 
     <div v-else class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-      <div v-if="!filteredOrders.length" class="p-8 text-center text-gray-400 text-sm">No orders found.</div>
+      <div v-if="!filteredOrders.length" class="p-8 text-center text-gray-400 dark:text-gray-500 text-sm">No orders found.</div>
       <table v-else class="w-full text-sm">
         <thead class="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs uppercase">
           <tr>
@@ -29,10 +29,10 @@
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
           <tr v-for="o in filteredOrders" :key="o.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
-            <td class="px-4 py-3 font-mono text-xs">{{ o.invoice_number }}</td>
-            <td class="px-4 py-3">{{ o.tenant_name }}</td>
-            <td class="px-4 py-3">{{ o.plan_name }}</td>
-            <td class="px-4 py-3 text-right">Rp {{ Number(o.amount).toLocaleString('id-ID') }}</td>
+            <td class="px-4 py-3 font-mono text-xs text-gray-800 dark:text-gray-200">{{ o.invoice_number }}</td>
+            <td class="px-4 py-3 text-gray-800 dark:text-gray-200">{{ o.tenant_name }}</td>
+            <td class="px-4 py-3 text-gray-800 dark:text-gray-200">{{ o.plan_name }}</td>
+            <td class="px-4 py-3 text-right text-gray-800 dark:text-gray-200">Rp {{ Number(o.amount).toLocaleString('id-ID') }}</td>
             <td class="px-4 py-3 text-center">
               <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(o.status)">
                 {{ statusLabel(o.status) }}
@@ -40,7 +40,7 @@
             </td>
             <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ formatDateTime(o.created_at) }}</td>
             <td class="px-4 py-3 text-center">
-              <button @click="openDetail(o)" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">View</button>
+              <button @click="openDetail(o)" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-xs font-medium">View</button>
             </td>
           </tr>
         </tbody>
@@ -56,8 +56,8 @@
           <div class="grid grid-cols-2 gap-3 text-sm">
             <div><span class="text-gray-500 dark:text-gray-400">Invoice:</span> <strong class="font-mono">{{ detail.invoice_number }}</strong></div>
             <div><span class="text-gray-500 dark:text-gray-400">Status:</span> <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(detail.status)">{{ statusLabel(detail.status) }}</span></div>
-            <div><span class="text-gray-500 dark:text-gray-400">Tenant:</span> {{ detail.tenant_name }}</div>
-            <div><span class="text-gray-500 dark:text-gray-400">Plan:</span> {{ detail.plan_name }}</div>
+            <div><span class="text-gray-500 dark:text-gray-400">Tenant:</span> <span class="text-gray-800 dark:text-gray-200">{{ detail.tenant_name }}</span></div>
+            <div><span class="text-gray-500 dark:text-gray-400">Plan:</span> <span class="text-gray-800 dark:text-gray-200">{{ detail.plan_name }}</span></div>
             <div><span class="text-gray-500 dark:text-gray-400">Amount:</span> Rp {{ Number(detail.amount).toLocaleString('id-ID') }}</div>
             <div><span class="text-gray-500 dark:text-gray-400">Created:</span> {{ formatDateTime(detail.created_at) }}</div>
             <div v-if="detail.paid_at"><span class="text-gray-500 dark:text-gray-400">Paid:</span> {{ formatDateTime(detail.paid_at) }}</div>
@@ -69,21 +69,21 @@
             <p>{{ detail.notes }}</p>
           </div>
 
-          <div v-if="detail.admin_notes" class="bg-yellow-50 rounded-lg p-3 text-xs text-yellow-800">
+          <div v-if="detail.admin_notes" class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 text-xs text-yellow-800 dark:text-yellow-300">
             <p class="font-medium">Admin Notes:</p>
             <p>{{ detail.admin_notes }}</p>
           </div>
 
           <!-- Payment Proof -->
           <div v-if="detail.payment_proof_url">
-            <p class="text-sm font-medium text-gray-700 mb-2">Payment Proof</p>
+            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Payment Proof</p>
             <img :src="proofSrc(detail.payment_proof_url)" alt="Payment proof" class="w-full max-h-64 object-contain rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800" />
           </div>
 
           <!-- Actions for pending_review -->
           <div v-if="detail.status === 'pending_review'" class="space-y-3">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Admin Notes (optional for approve, required for reject)</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Admin Notes (optional for approve, required for reject)</label>
               <textarea v-model="adminNotes" rows="2" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" placeholder="Notes..." />
             </div>
             <div class="flex gap-3">

@@ -43,6 +43,8 @@ type CheckoutInput struct {
 	Payments      []PaymentInput      `json:"payments"`
 	PaymentMethod string              `json:"payment_method"`
 	PaidAmount    float64             `json:"paid_amount"`
+	CustomerName  string              `json:"customer_name"`
+	CustomerPhone string              `json:"customer_phone"`
 }
 
 type CheckoutResult struct {
@@ -142,6 +144,8 @@ func (s *Service) Checkout(tenantID, userID string, in CheckoutInput) (*Checkout
 		TotalAmount:    totalAmount,
 		DiscountAmount: totalDiscount,
 		Status:         "completed",
+		CustomerName:   in.CustomerName,
+		CustomerPhone:  in.CustomerPhone,
 	}
 	if err := CreateTransaction(tx, t); err != nil {
 		tx.Rollback()

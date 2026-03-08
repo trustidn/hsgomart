@@ -9,6 +9,8 @@ type Transaction struct {
 	TotalAmount    float64   `gorm:"column:total_amount;type:numeric;not null"`
 	DiscountAmount float64   `gorm:"column:discount_amount;type:numeric;default:0"`
 	Status         string    `gorm:"type:varchar(50);default:completed"`
+	CustomerName   string    `gorm:"column:customer_name;type:varchar(255)"`
+	CustomerPhone  string    `gorm:"column:customer_phone;type:varchar(50)"`
 	CreatedAt      time.Time `gorm:"autoCreateTime"`
 }
 
