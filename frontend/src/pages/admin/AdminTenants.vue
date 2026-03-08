@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold text-gray-800">Tenants</h1>
+      <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Tenants</h1>
       <button @click="openCreate" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">Add Tenant</button>
     </div>
 
@@ -9,30 +9,30 @@
     <div class="flex gap-2 mb-4">
       <button v-for="s in statusFilters" :key="s.value" @click="filterStatus = s.value; load()"
         class="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-        :class="filterStatus === s.value ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'">
+        :class="filterStatus === s.value ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'">
         {{ s.label }}
       </button>
     </div>
 
     <div v-if="loading" class="text-gray-400 py-8 text-center">Loading...</div>
-    <div v-else class="bg-white rounded-lg shadow overflow-x-auto">
+    <div v-else class="bg-white dark:bg-gray-900 rounded-lg shadow overflow-x-auto">
       <table class="w-full text-sm">
-        <thead class="bg-gray-50">
+        <thead class="bg-gray-50 dark:bg-gray-800">
           <tr>
-            <th class="px-4 py-3 text-left text-gray-600">Name</th>
-            <th class="px-4 py-3 text-left text-gray-600">Email</th>
-            <th class="px-4 py-3 text-center text-gray-600">Status</th>
-            <th class="px-4 py-3 text-left text-gray-600">Plan</th>
-            <th class="px-4 py-3 text-center text-gray-600">Subscription</th>
-            <th class="px-4 py-3 text-center text-gray-600">Days Left</th>
-            <th class="px-4 py-3 text-right text-gray-600">Users</th>
-            <th class="px-4 py-3 text-center text-gray-600">Actions</th>
+            <th class="px-4 py-3 text-left text-gray-600 dark:text-gray-400">Name</th>
+            <th class="px-4 py-3 text-left text-gray-600 dark:text-gray-400">Email</th>
+            <th class="px-4 py-3 text-center text-gray-600 dark:text-gray-400">Status</th>
+            <th class="px-4 py-3 text-left text-gray-600 dark:text-gray-400">Plan</th>
+            <th class="px-4 py-3 text-center text-gray-600 dark:text-gray-400">Subscription</th>
+            <th class="px-4 py-3 text-center text-gray-600 dark:text-gray-400">Days Left</th>
+            <th class="px-4 py-3 text-right text-gray-600 dark:text-gray-400">Users</th>
+            <th class="px-4 py-3 text-center text-gray-600 dark:text-gray-400">Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="t in tenants" :key="t.id" class="border-t hover:bg-gray-50">
+          <tr v-for="t in tenants" :key="t.id" class="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
             <td class="px-4 py-3 font-medium">{{ t.name }}</td>
-            <td class="px-4 py-3 text-gray-500">{{ t.email }}</td>
+            <td class="px-4 py-3 text-gray-500 dark:text-gray-400">{{ t.email }}</td>
             <td class="px-4 py-3 text-center">
               <span class="px-2 py-0.5 rounded text-xs font-medium" :class="tenantStatusClass(t.status)">{{ t.status }}</span>
             </td>
@@ -63,39 +63,39 @@
     <!-- Create/Edit Modal -->
     <Teleport to="body">
       <div v-if="showModal" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" @click.self="showModal = false">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 space-y-4">
-          <h3 class="text-lg font-semibold text-gray-900">{{ isEdit ? 'Edit Tenant' : 'New Tenant' }}</h3>
+        <div class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg p-6 space-y-4">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ isEdit ? 'Edit Tenant' : 'New Tenant' }}</h3>
           <div class="space-y-3">
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-sm font-medium text-gray-600 mb-1">Name</label>
-                <input v-model="form.name" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Name</label>
+                <input v-model="form.name" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-600 mb-1">Email</label>
-                <input v-model="form.email" type="email" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Email</label>
+                <input v-model="form.email" type="email" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
               </div>
             </div>
             <div v-if="!isEdit">
-              <label class="block text-sm font-medium text-gray-600 mb-1">Password</label>
-              <input v-model="form.password" type="password" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Min 8 chars, uppercase, number" />
+              <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Password</label>
+              <input v-model="form.password" type="password" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" placeholder="Min 8 chars, uppercase, number" />
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-sm font-medium text-gray-600 mb-1">Phone</label>
-                <input v-model="form.phone" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Phone</label>
+                <input v-model="form.phone" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-600 mb-1">Status</label>
-                <select v-model="form.status" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Status</label>
+                <select v-model="form.status" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
                   <option value="active">Active</option>
                   <option value="suspended">Suspended</option>
                 </select>
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-600 mb-1">Subscription Plan</label>
-              <select v-model="form.plan_id" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+              <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Subscription Plan</label>
+              <select v-model="form.plan_id" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
                 <option :value="null">— Trial (default) —</option>
                 <option v-for="p in availablePlans" :key="p.id" :value="p.id">{{ p.name }} — Rp {{ Number(p.price).toLocaleString('id-ID') }}</option>
               </select>
@@ -103,7 +103,7 @@
           </div>
           <p v-if="formError" class="text-xs text-red-600">{{ formError }}</p>
           <div class="flex gap-3">
-            <button @click="showModal = false" class="flex-1 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">Cancel</button>
+            <button @click="showModal = false" class="flex-1 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Cancel</button>
             <button @click="submitForm" :disabled="submitting" class="flex-1 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50">
               {{ submitting ? 'Saving...' : 'Save' }}
             </button>
@@ -115,11 +115,11 @@
     <!-- Delete Confirm -->
     <Teleport to="body">
       <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" @click.self="showDeleteConfirm = false">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 space-y-4">
-          <h3 class="text-lg font-semibold text-gray-900">Delete Tenant</h3>
-          <p class="text-sm text-gray-600">Are you sure you want to delete <strong>{{ deleteTarget?.name }}</strong>? This will deactivate the tenant and all associated subscriptions.</p>
+        <div class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm p-6 space-y-4">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Delete Tenant</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Are you sure you want to delete <strong>{{ deleteTarget?.name }}</strong>? This will deactivate the tenant and all associated subscriptions.</p>
           <div class="flex gap-3">
-            <button @click="showDeleteConfirm = false" class="flex-1 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">Cancel</button>
+            <button @click="showDeleteConfirm = false" class="flex-1 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Cancel</button>
             <button @click="doDelete" :disabled="deleting" class="flex-1 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50">
               {{ deleting ? 'Deleting...' : 'Delete' }}
             </button>
@@ -221,12 +221,12 @@ async function doDelete() {
 
 function tenantStatusClass(s) {
   const map = { active: 'bg-green-100 text-green-700', suspended: 'bg-red-100 text-red-700' }
-  return map[s] || 'bg-gray-100 text-gray-600'
+  return map[s] || 'bg-gray-100 text-gray-600 dark:text-gray-400'
 }
 
 function subStatusClass(s) {
   const map = { active: 'bg-green-100 text-green-700', trial: 'bg-amber-100 text-amber-700', expired: 'bg-red-100 text-red-700' }
-  return map[s] || 'bg-gray-100 text-gray-600'
+  return map[s] || 'bg-gray-100 text-gray-600 dark:text-gray-400'
 }
 
 function daysClass(d) {

@@ -1,34 +1,34 @@
 <template>
   <div>
-    <h1 class="text-2xl font-semibold text-gray-800 mb-4">Inventory</h1>
+    <h1 class="text-2xl font-semibold text-gray-800 dark:text-white mb-4">Inventory</h1>
 
-    <p v-if="loading" class="text-gray-600">Loading inventory...</p>
-    <p v-else-if="error" class="text-red-600">{{ error }}</p>
+    <p v-if="loading" class="text-gray-600 dark:text-gray-400">Loading inventory...</p>
+    <p v-else-if="error" class="text-red-600 dark:text-red-400">{{ error }}</p>
 
-    <div v-else class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden divide-y divide-gray-200">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+    <div v-else class="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-hidden divide-y divide-gray-200 dark:divide-gray-700">
+      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead class="bg-gray-50 dark:bg-gray-800">
           <tr>
-            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product Name</th>
-            <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Stock</th>
-            <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Inventory Value</th>
-            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-            <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
+            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Product Name</th>
+            <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Stock</th>
+            <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Inventory Value</th>
+            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
+            <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Action</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-200">
-          <tr v-for="(row, i) in inventory" :key="row.product_id || i" class="hover:bg-gray-50">
-            <td class="px-4 py-2 text-sm text-gray-800">{{ row.product_name }}</td>
-            <td class="px-4 py-2 text-sm text-gray-600 text-right">{{ row.stock }}</td>
-            <td class="px-4 py-2 text-sm text-gray-600 text-right">{{ formatCurrency(inventoryValue(row)) }}</td>
+        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+          <tr v-for="(row, i) in inventory" :key="row.product_id || i" class="hover:bg-gray-50 dark:hover:bg-gray-800">
+            <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.product_name }}</td>
+            <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 text-right">{{ row.stock }}</td>
+            <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 text-right">{{ formatCurrency(inventoryValue(row)) }}</td>
             <td class="px-4 py-2">
-              <span v-if="(row.stock ?? 0) < 10" class="text-red-600 font-semibold">LOW STOCK</span>
-              <span v-else class="text-green-600">OK</span>
+              <span v-if="(row.stock ?? 0) < 10" class="text-red-600 dark:text-red-400 font-semibold">LOW STOCK</span>
+              <span v-else class="text-green-600 dark:text-green-400">OK</span>
             </td>
             <td class="px-4 py-2 text-right">
               <button
                 type="button"
-                class="text-sm text-slate-600 hover:text-slate-800 font-medium"
+                class="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium"
                 @click="openAdjustModal(row)"
               >
                 Adjust
@@ -36,7 +36,7 @@
             </td>
           </tr>
           <tr v-if="!inventory?.length">
-            <td colspan="5" class="px-4 py-4 text-sm text-gray-500 text-center">No inventory data.</td>
+            <td colspan="5" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No inventory data.</td>
           </tr>
         </tbody>
       </table>
@@ -48,32 +48,32 @@
       class="fixed inset-0 z-10 flex items-center justify-center bg-black/50"
       @click.self="showAdjustModal = false"
     >
-      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
-        <h2 class="text-lg font-semibold text-gray-800 mb-2">Koreksi stok (pengurangan)</h2>
-        <p v-if="adjustProductName" class="text-sm text-gray-600 mb-4">{{ adjustProductName }}</p>
-        <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5 mb-4">Penambahan stok hanya melalui menu Purchase. Adjust hanya untuk pengurangan.</p>
+      <div class="bg-white dark:bg-gray-900 rounded-lg shadow-xl p-6 w-full max-w-sm border border-gray-200 dark:border-gray-800">
+        <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Koreksi stok (pengurangan)</h2>
+        <p v-if="adjustProductName" class="text-sm text-gray-600 dark:text-gray-400 mb-4">{{ adjustProductName }}</p>
+        <p class="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded px-2 py-1.5 mb-4">Penambahan stok hanya melalui menu Purchase. Adjust hanya untuk pengurangan.</p>
         <form @submit.prevent="handleAdjustStock">
           <div class="space-y-4">
             <div>
-              <label for="adj-quantity" class="block text-sm font-medium text-gray-700 mb-1">Jumlah pengurangan</label>
+              <label for="adj-quantity" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Jumlah pengurangan</label>
               <input
                 id="adj-quantity"
                 v-model.number="adjustForm.quantity"
                 type="number"
                 required
                 min="1"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-slate-500"
                 placeholder="contoh: 8"
               />
-              <p class="text-xs text-gray-500 mt-1">Isi angka jumlah yang akan dikurangi (misal 8).</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Isi angka jumlah yang akan dikurangi (misal 8).</p>
             </div>
             <div>
-              <label for="adj-type" class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+              <label for="adj-type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
               <select
                 id="adj-type"
                 v-model="adjustForm.type"
                 required
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-slate-500"
               >
                 <option value="adjustment">Adjustment</option>
                 <option value="purchase">Purchase</option>
@@ -81,11 +81,11 @@
               </select>
             </div>
             <div>
-              <label for="adj-reason" class="block text-sm font-medium text-gray-700 mb-1">Alasan (audit)</label>
+              <label for="adj-reason" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Alasan (audit)</label>
               <select
                 id="adj-reason"
                 v-model="adjustForm.reason"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-slate-500"
               >
                 <option value="">— Pilih alasan —</option>
                 <option value="expired product">Kadaluarsa</option>
@@ -95,24 +95,24 @@
               </select>
             </div>
             <div>
-              <label for="adj-reference" class="block text-sm font-medium text-gray-700 mb-1">Reference</label>
+              <label for="adj-reference" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reference</label>
               <input
                 id="adj-reference"
                 v-model="adjustForm.reference"
                 type="text"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-slate-500"
                 placeholder="e.g. manual adjustment"
               />
             </div>
           </div>
           <p v-if="adjustError" class="text-sm text-red-600 mt-2">{{ adjustError }}</p>
           <div class="flex gap-2 justify-end mt-4">
-            <button v-if="!showAdjustConfirm" type="button" class="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-md" @click="showAdjustModal = false">
+            <button v-if="!showAdjustConfirm" type="button" class="px-3 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md" @click="showAdjustModal = false">
               Batal
             </button>
             <template v-if="showAdjustConfirm">
-              <p class="text-sm text-gray-700 mr-auto">Yakin kurangi stok <strong>{{ adjustProductName }}</strong> sebanyak <strong>{{ adjustForm.quantity }}</strong>?</p>
-              <button type="button" class="px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-md" @click="showAdjustConfirm = false">
+              <p class="text-sm text-gray-700 dark:text-gray-300 mr-auto">Yakin kurangi stok <strong>{{ adjustProductName }}</strong> sebanyak <strong>{{ adjustForm.quantity }}</strong>?</p>
+              <button type="button" class="px-3 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md" @click="showAdjustConfirm = false">
                 Batal
               </button>
               <button type="button" class="px-3 py-2 bg-slate-600 text-white rounded-md hover:bg-slate-700" @click="confirmAdjustStock">

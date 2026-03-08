@@ -1,14 +1,14 @@
 <template>
-  <div id="receipt-print" class="receipt bg-white text-black p-4 max-w-sm mx-auto font-mono text-sm">
-    <div class="text-center border-b border-dashed border-gray-400 pb-2 mb-2">
+  <div id="receipt-print" class="receipt bg-white dark:bg-gray-900 text-black dark:text-gray-100 p-4 max-w-sm mx-auto font-mono text-sm print:bg-white print:text-black">
+    <div class="text-center border-b border-dashed border-gray-400 dark:border-gray-600 pb-2 mb-2">
       <div class="font-bold text-base">{{ storeName }}</div>
-      <div class="text-xs text-gray-600">{{ dateFormatted }}</div>
-      <div v-if="transactionId" class="text-xs text-gray-500 mt-1">Transaction: #{{ transactionId }}</div>
+      <div class="text-xs text-gray-600 dark:text-gray-400">{{ dateFormatted }}</div>
+      <div v-if="transactionId" class="text-xs text-gray-500 dark:text-gray-400 mt-1">Transaction: #{{ transactionId }}</div>
       <div v-if="cashier" class="text-sm mt-1">Cashier: {{ cashier }}</div>
     </div>
-    <table class="w-full text-left border-b border-dashed border-gray-400 mb-2">
+    <table class="w-full text-left border-b border-dashed border-gray-400 dark:border-gray-600 mb-2">
       <thead>
-        <tr class="border-b border-gray-300">
+        <tr class="border-b border-gray-300 dark:border-gray-600">
           <th class="py-1 pr-2">Product</th>
           <th class="py-1 text-right w-12">Qty</th>
           <th class="py-1 text-right">Price</th>
@@ -16,7 +16,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="item in items" :key="item.product_id" class="border-b border-gray-200">
+        <tr v-for="item in items" :key="item.product_id" class="border-b border-gray-200 dark:border-gray-700">
           <td class="py-1 pr-2">{{ item.name }}</td>
           <td class="py-1 text-right">{{ item.quantity }}</td>
           <td class="py-1 text-right">{{ formatPrice(item.price) }}</td>
@@ -38,7 +38,7 @@
         <span>{{ formatPrice(change) }}</span>
       </div>
     </div>
-    <div class="text-center text-xs text-gray-500 mt-4 pt-2 border-t border-dashed border-gray-400">
+    <div class="text-center text-xs text-gray-500 dark:text-gray-400 mt-4 pt-2 border-t border-dashed border-gray-400 dark:border-gray-600">
       Thank you
     </div>
   </div>

@@ -1,19 +1,19 @@
 <template>
   <div>
-    <h1 class="text-2xl font-bold text-gray-800 mb-6">Subscriptions</h1>
-    <div v-if="loading" class="text-gray-500">Loading...</div>
-    <table v-else class="w-full bg-white rounded-lg shadow text-sm">
-      <thead class="bg-gray-50">
+    <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6">Subscriptions</h1>
+    <div v-if="loading" class="text-gray-500 dark:text-gray-400">Loading...</div>
+    <table v-else class="w-full bg-white dark:bg-gray-900 rounded-lg shadow text-sm">
+      <thead class="bg-gray-50 dark:bg-gray-800">
         <tr>
-          <th class="px-4 py-3 text-left text-gray-600">Tenant</th>
-          <th class="px-4 py-3 text-left text-gray-600">Plan</th>
-          <th class="px-4 py-3 text-center text-gray-600">Status</th>
-          <th class="px-4 py-3 text-left text-gray-600">End Date</th>
-          <th class="px-4 py-3 text-center text-gray-600">Days Left</th>
+          <th class="px-4 py-3 text-left text-gray-600 dark:text-gray-400">Tenant</th>
+          <th class="px-4 py-3 text-left text-gray-600 dark:text-gray-400">Plan</th>
+          <th class="px-4 py-3 text-center text-gray-600 dark:text-gray-400">Status</th>
+          <th class="px-4 py-3 text-left text-gray-600 dark:text-gray-400">End Date</th>
+          <th class="px-4 py-3 text-center text-gray-600 dark:text-gray-400">Days Left</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="s in subs" :key="s.id" class="border-t hover:bg-gray-50">
+        <tr v-for="s in subs" :key="s.id" class="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
           <td class="px-4 py-3 font-medium">{{ s.tenant_name }}</td>
           <td class="px-4 py-3">{{ s.plan_name }}</td>
           <td class="px-4 py-3 text-center">

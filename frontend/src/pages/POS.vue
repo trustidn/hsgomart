@@ -120,23 +120,93 @@
       </div>
     </div>
 
-    <!-- Mobile cart drawer -->
-    <div v-if="cartItems.length" class="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-4 py-3 z-10 safe-bottom">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ cartItems.length }} item</span>
-        <span class="text-lg font-bold text-gray-900 dark:text-white">{{ formatPrice(totalAmount) }}</span>
+    <!-- Mobile bottom bar: always fixed at bottom -->
+    <Teleport to="body">
+      <div v-if="cartItems.length" class="lg:hidden fixed inset-x-0 bottom-0 z-30 safe-bottom">
+        <!-- Cart list overlay (animated slide up/down) -->
+        <Transition
+          enter-active-class="transition-all duration-300 ease-out"
+          enter-from-class="translate-y-full opacity-0"
+          enter-to-class="translate-y-0 opacity-100"
+          leave-active-class="transition-all duration-200 ease-in"
+          leave-from-class="translate-y-0 opacity-100"
+          leave-to-class="translate-y-full opacity-0"
+        >
+          <div v-if="mobileCartExpanded" class="fixed inset-x-0 bottom-0 z-30" style="bottom: 0">
+            <!-- Backdrop -->
+            <div class="fixed inset-0 bg-black/50 -z-10" @click="mobileCartExpanded = false" />
+            <!-- Cart list panel, positioned above the fixed bottom bar -->
+            <div class="bg-indigo-50 dark:bg-gray-800 border-t border-indigo-200 dark:border-gray-700 rounded-t-2xl shadow-2xl max-h-[60vh] flex flex-col" style="margin-bottom: 140px">
+              <!-- Handle bar + header -->
+              <button type="button" class="flex justify-center pt-2.5 pb-1 w-full touch-none" @click="mobileCartExpanded = false">
+                <span class="w-10 h-1 rounded-full bg-indigo-300 dark:bg-gray-500" />
+              </button>
+              <div class="px-4 py-2 flex items-center justify-between border-b border-indigo-200/60 dark:border-gray-700 shrink-0">
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-indigo-500 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
+                  <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Keranjang</span>
+                  <span class="text-[10px] bg-indigo-200 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded-full font-medium">{{ cartItems.length }}</span>
+                </div>
+                <button type="button" class="text-[10px] text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 uppercase font-semibold tracking-wide" @click="confirmClearCart">Clear</button>
+              </div>
+              <!-- Scrollable cart items -->
+              <div class="flex-1 overflow-auto overscroll-contain">
+                <div class="divide-y divide-indigo-100 dark:divide-gray-700">
+                  <div v-for="item in cartItems" :key="item.product_id" class="px-4 py-3 bg-white/60 dark:bg-gray-800/80">
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="min-w-0">
+                        <div class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{{ item.name }}</div>
+                        <div class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{{ formatPrice(item.price) }} × {{ item.quantity }}</div>
+                      </div>
+                      <div class="text-sm font-semibold text-gray-900 dark:text-white shrink-0">{{ formatPrice(item.price * item.quantity) }}</div>
+                    </div>
+                    <div class="flex items-center gap-1 mt-2">
+                      <button type="button" class="w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-sm transition-colors bg-white dark:bg-gray-900" :disabled="item.quantity <= 1" @click="changeQuantity(item.product_id, -1)">−</button>
+                      <span class="w-8 text-center text-sm font-medium text-gray-800 dark:text-gray-200">{{ item.quantity }}</span>
+                      <button type="button" class="w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-sm transition-colors bg-white dark:bg-gray-900" @click="changeQuantity(item.product_id, 1)">+</button>
+                      <button type="button" class="px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 text-[10px] font-medium transition-colors bg-white dark:bg-gray-900" @click="changeQuantity(item.product_id, 5)">+5</button>
+                      <button type="button" class="px-2 py-1 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 text-[10px] font-medium transition-colors bg-white dark:bg-gray-900" @click="changeQuantity(item.product_id, 10)">+10</button>
+                      <div class="flex-1" />
+                      <button type="button" class="p-1.5 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors" @click="removeFromCart(item.product_id)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Transition>
+
+        <!-- Always-visible bottom bar: summary + payment buttons -->
+        <div class="bg-indigo-50 dark:bg-gray-800 border-t border-indigo-200 dark:border-gray-700 rounded-t-2xl shadow-2xl">
+          <!-- Tap to expand cart list -->
+          <button type="button" class="w-full px-4 py-2.5 flex items-center justify-between touch-none" @click="mobileCartExpanded = !mobileCartExpanded">
+            <div class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-indigo-500 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
+              <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">{{ cartItems.length }} item</span>
+              <span class="text-base font-bold text-gray-900 dark:text-white">{{ formatPrice(totalAmount) }}</span>
+            </div>
+            <svg :class="['w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform', mobileCartExpanded ? 'rotate-180' : '']" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+          </button>
+          <!-- Payment buttons (always visible) -->
+          <div class="px-4 pb-4 pt-1">
+            <p v-if="isCashier && !currentShift" class="text-xs text-amber-600 dark:text-amber-400 mb-2">Buka shift untuk mulai transaksi</p>
+            <div class="grid grid-cols-5 gap-1.5">
+              <button v-for="pm in paymentMethods" :key="pm.value" type="button"
+                class="flex flex-col items-center justify-center py-2.5 rounded-xl text-[10px] font-semibold transition-all disabled:opacity-30 active:scale-95"
+                :class="pm.class"
+                :disabled="!canCheckout"
+                @click="openCheckoutModal(pm.value)"
+                :title="pm.label">
+                <svg class="w-5 h-5 mb-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" v-html="pm.icon" />
+                <span>{{ pm.label }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="grid grid-cols-5 gap-1.5">
-        <button v-for="pm in paymentMethods" :key="pm.value" type="button"
-          class="flex flex-col items-center justify-center py-2 rounded-xl text-[10px] font-semibold transition-all disabled:opacity-30 active:scale-95"
-          :class="pm.class"
-          :disabled="!canCheckout"
-          @click="openCheckoutModal(pm.value)">
-          <svg class="w-5 h-5 mb-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" v-html="pm.icon" />
-          <span>{{ pm.label }}</span>
-        </button>
-      </div>
-    </div>
+    </Teleport>
 
     <!-- Checkout modal -->
     <Teleport to="body">
@@ -244,6 +314,7 @@ const checkoutError = ref('')
 const checkoutSubmitting = ref(false)
 const showReceiptModal = ref(false)
 const receiptData = ref(null)
+const mobileCartExpanded = ref(false)
 let scanDebounceTimer = null
 
 function productId(p) { return p?.id ?? p?.ID ?? '' }

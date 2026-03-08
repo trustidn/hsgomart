@@ -1,34 +1,34 @@
 <template>
   <div class="space-y-4">
     <div class="flex flex-wrap items-center justify-between gap-4">
-      <h1 class="text-2xl font-semibold text-gray-800">Reports</h1>
+      <h1 class="text-2xl font-semibold text-gray-800 dark:text-gray-200">Reports</h1>
       <div class="flex flex-wrap items-center gap-2">
-        <span class="text-sm text-gray-600">Period:</span>
+        <span class="text-sm text-gray-600 dark:text-gray-400">Period:</span>
         <button
           v-for="opt in dateFilterOptions"
           :key="opt.value"
           type="button"
-          :class="[dateFilter === opt.value ? 'bg-slate-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200']"
+          :class="[dateFilter === opt.value ? 'bg-slate-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700']"
           class="px-3 py-1.5 rounded text-sm font-medium"
           @click="setDateFilter(opt.value)"
         >
           {{ opt.label }}
         </button>
         <template v-if="dateFilter === 'custom'">
-          <input v-model="customFrom" type="date" class="px-2 py-1.5 border rounded text-sm" />
-          <span class="text-gray-400">to</span>
-          <input v-model="customTo" type="date" class="px-2 py-1.5 border rounded text-sm" />
+          <input v-model="customFrom" type="date" class="px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
+          <span class="text-gray-400 dark:text-gray-400">to</span>
+          <input v-model="customTo" type="date" class="px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
         </template>
       </div>
     </div>
 
-    <div class="border-b border-gray-200">
+    <div class="border-b border-gray-200 dark:border-gray-700">
       <nav class="flex gap-4">
         <button
           v-for="t in tabs"
           :key="t.id"
           type="button"
-          :class="[activeTab === t.id ? 'border-slate-600 text-slate-600' : 'border-transparent text-gray-500 hover:text-gray-700']"
+          :class="[activeTab === t.id ? 'border-slate-600 text-slate-600' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700']"
           class="py-2 px-1 border-b-2 font-medium text-sm"
           @click="activeTab = t.id"
         >
@@ -37,120 +37,120 @@
       </nav>
     </div>
 
-    <div v-if="loading" class="text-gray-500 py-8">Loading...</div>
+    <div v-if="loading" class="text-gray-500 dark:text-gray-400 py-8">Loading...</div>
     <div v-else-if="error" class="text-red-600 py-4">{{ error }}</div>
 
     <!-- Sales -->
     <template v-else-if="activeTab === 'sales'">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-        <div class="bg-white rounded-lg border border-gray-200 p-4">
-          <div class="text-sm text-gray-500">Total Revenue</div>
-          <div class="text-xl font-semibold text-gray-800">{{ formatPrice(salesSummary?.total_sales ?? 0) }}</div>
+        <div class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+          <div class="text-sm text-gray-500 dark:text-gray-400">Total Revenue</div>
+          <div class="text-xl font-semibold text-gray-800 dark:text-gray-200">{{ formatPrice(salesSummary?.total_sales ?? 0) }}</div>
         </div>
-        <div class="bg-white rounded-lg border border-gray-200 p-4">
-          <div class="text-sm text-gray-500">Total Transactions</div>
-          <div class="text-xl font-semibold text-gray-800">{{ salesSummary?.total_transactions ?? 0 }}</div>
+        <div class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+          <div class="text-sm text-gray-500 dark:text-gray-400">Total Transactions</div>
+          <div class="text-xl font-semibold text-gray-800 dark:text-gray-200">{{ salesSummary?.total_transactions ?? 0 }}</div>
         </div>
       </div>
 
-      <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden mb-6">
-        <div class="p-3 border-b border-gray-200 flex items-center justify-between">
-          <span class="font-medium text-gray-800">Payment Methods</span>
+      <div class="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-hidden mb-6">
+        <div class="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <span class="font-medium text-gray-800 dark:text-gray-200">Payment Methods</span>
           <div class="flex gap-2">
             <button type="button" class="px-2 py-1.5 bg-green-600 text-white rounded text-xs hover:bg-green-700" @click="exportCardExcel(['Method', 'Transactions', 'Revenue'], paymentsTableRows, 'payment-methods')">Export Excel</button>
             <button type="button" class="px-2 py-1.5 bg-red-600 text-white rounded text-xs hover:bg-red-700" @click="exportCardPdf('Payment Methods', ['Method', 'Transactions', 'Revenue'], paymentsTableRows, 'payment-methods')">Export PDF</button>
           </div>
         </div>
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Transactions</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Method</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Transactions</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Revenue</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200">
-            <tr v-for="(row, i) in paymentsReport" :key="i" class="hover:bg-gray-50">
-              <td class="px-4 py-2 text-sm text-gray-800">{{ row.method }}</td>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <tr v-for="(row, i) in paymentsReport" :key="i" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
+              <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.method }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ row.transactions }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.revenue) }}</td>
             </tr>
             <tr v-if="!paymentsReport?.length">
-              <td colspan="3" class="px-4 py-4 text-sm text-gray-500 text-center">No data for this period.</td>
+              <td colspan="3" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No data for this period.</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden mb-6">
-        <div class="p-3 border-b border-gray-200 flex items-center justify-between flex-wrap gap-2">
-          <span class="font-medium text-gray-800">Ringkasan per Hari</span>
+      <div class="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-hidden mb-6">
+        <div class="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-wrap gap-2">
+          <span class="font-medium text-gray-800 dark:text-gray-200">Ringkasan per Hari</span>
           <div class="flex gap-2">
             <button type="button" class="px-2 py-1.5 bg-green-600 text-white rounded text-xs hover:bg-green-700" @click="exportCardExcel(salesDailyHeaders, salesDailyRows, 'ringkasan-per-hari')">Export Excel</button>
             <button type="button" class="px-2 py-1.5 bg-red-600 text-white rounded text-xs hover:bg-red-700" @click="exportCardPdf('Ringkasan per Hari', salesDailyHeaders, salesDailyRows, 'ringkasan-per-hari')">Export PDF</button>
           </div>
         </div>
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Transactions</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Transactions</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Revenue</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200">
-            <tr v-for="row in salesDaily" :key="row.date" class="hover:bg-gray-50">
-              <td class="px-4 py-2 text-sm text-gray-800">{{ row.date }}</td>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <tr v-for="row in salesDaily" :key="row.date" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
+              <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.date }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ row.total_transactions }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.total_sales) }}</td>
             </tr>
             <tr v-if="!salesDaily?.length">
-              <td colspan="3" class="px-4 py-4 text-sm text-gray-500 text-center">No data for this period.</td>
+              <td colspan="3" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No data for this period.</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden mb-6">
-        <div class="p-3 border-b border-gray-200 flex items-center justify-between flex-wrap gap-2">
-          <span class="font-medium text-gray-800">Penjualan per Jam</span>
+      <div class="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-hidden mb-6">
+        <div class="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-wrap gap-2">
+          <span class="font-medium text-gray-800 dark:text-gray-200">Penjualan per Jam</span>
           <div class="flex items-center gap-2">
-            <label class="text-sm text-gray-600">Tanggal:</label>
-            <input v-model="hourlyDate" type="date" class="px-2 py-1.5 border rounded text-sm" @change="loadSalesHourly" />
+            <label class="text-sm text-gray-600 dark:text-gray-400">Tanggal:</label>
+            <input v-model="hourlyDate" type="date" class="px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" @change="loadSalesHourly" />
           </div>
         </div>
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Hour</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Transactions</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Hour</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Transactions</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Revenue</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200">
-            <tr v-for="row in salesHourly" :key="row.hour" class="hover:bg-gray-50">
-              <td class="px-4 py-2 text-sm text-gray-800">{{ row.hour }}:00</td>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <tr v-for="row in salesHourly" :key="row.hour" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
+              <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.hour }}:00</td>
               <td class="px-4 py-2 text-sm text-right">{{ row.transactions }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.revenue) }}</td>
             </tr>
             <tr v-if="hourlyDate && !salesHourly?.length">
-              <td colspan="3" class="px-4 py-4 text-sm text-gray-500 text-center">No data for this date.</td>
+              <td colspan="3" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No data for this date.</td>
             </tr>
             <tr v-if="!hourlyDate">
-              <td colspan="3" class="px-4 py-4 text-sm text-gray-500 text-center">Pilih tanggal untuk melihat penjualan per jam.</td>
+              <td colspan="3" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">Pilih tanggal untuk melihat penjualan per jam.</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-        <div class="p-3 border-b border-gray-200 flex items-center justify-between flex-wrap gap-2">
-          <span class="font-medium text-gray-800">Detail Transaksi</span>
+      <div class="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <div class="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between flex-wrap gap-2">
+          <span class="font-medium text-gray-800 dark:text-gray-200">Detail Transaksi</span>
           <div class="flex items-center gap-2">
-            <span class="text-sm text-gray-500">Showing {{ salesTransactionsShowing.from }}–{{ salesTransactionsShowing.to }} of {{ salesTransactionsShowing.total }} transactions</span>
+            <span class="text-sm text-gray-500 dark:text-gray-400">Showing {{ salesTransactionsShowing.from }}–{{ salesTransactionsShowing.to }} of {{ salesTransactionsShowing.total }} transactions</span>
             <div class="flex gap-1">
-              <button type="button" class="px-2 py-1 border rounded text-sm disabled:opacity-50" :disabled="salesTransactionsPage <= 1" @click="loadSalesTransactionsPage(salesTransactionsPage - 1)">Prev</button>
-              <button type="button" class="px-2 py-1 border rounded text-sm disabled:opacity-50" :disabled="salesTransactionsPage >= Math.ceil((salesTransactionsTotal || 0) / TRANSACTION_PAGE_SIZE)" @click="loadSalesTransactionsPage(salesTransactionsPage + 1)">Next</button>
+              <button type="button" class="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 disabled:opacity-50" :disabled="salesTransactionsPage <= 1" @click="loadSalesTransactionsPage(salesTransactionsPage - 1)">Prev</button>
+              <button type="button" class="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 disabled:opacity-50" :disabled="salesTransactionsPage >= Math.ceil((salesTransactionsTotal || 0) / TRANSACTION_PAGE_SIZE)" @click="loadSalesTransactionsPage(salesTransactionsPage + 1)">Next</button>
             </div>
             <div class="flex gap-2">
               <button type="button" class="px-2 py-1.5 bg-green-600 text-white rounded text-xs hover:bg-green-700" @click="exportDetailTransaksiExcel">Export Excel</button>
@@ -158,28 +158,28 @@
             </div>
           </div>
         </div>
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date & Time</th>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Transaction ID</th>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cashier</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Receipt</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date & Time</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Transaction ID</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cashier</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Amount</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Receipt</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200">
-            <tr v-for="row in salesTransactions" :key="row.id" class="hover:bg-gray-50">
-              <td class="px-4 py-2 text-sm text-gray-800">{{ row.created_at }}</td>
-              <td class="px-4 py-2 text-sm text-gray-600">{{ row.id }}</td>
-              <td class="px-4 py-2 text-sm text-gray-600">{{ row.cashier || '—' }}</td>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <tr v-for="row in salesTransactions" :key="row.id" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
+              <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.created_at }}</td>
+              <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ row.id }}</td>
+              <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ row.cashier || '—' }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.total_amount) }}</td>
               <td class="px-4 py-2 text-right">
                 <button type="button" class="text-sm text-slate-600 hover:underline" @click="openReceiptModal(row.id)">View</button>
               </td>
             </tr>
             <tr v-if="!salesTransactions?.length">
-              <td colspan="5" class="px-4 py-4 text-sm text-gray-500 text-center">No transactions for this period.</td>
+              <td colspan="5" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No transactions for this period.</td>
             </tr>
           </tbody>
         </table>
@@ -189,47 +189,47 @@
     <!-- Profit & Loss -->
     <template v-else-if="activeTab === 'profit'">
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-        <div class="bg-white rounded-lg border border-gray-200 p-4">
-          <div class="text-sm text-gray-500">Revenue</div>
-          <div class="text-xl font-semibold text-gray-800">{{ formatPrice(profitSummary?.revenue ?? 0) }}</div>
+        <div class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+          <div class="text-sm text-gray-500 dark:text-gray-400">Revenue</div>
+          <div class="text-xl font-semibold text-gray-800 dark:text-gray-200">{{ formatPrice(profitSummary?.revenue ?? 0) }}</div>
         </div>
-        <div class="bg-white rounded-lg border border-gray-200 p-4">
-          <div class="text-sm text-gray-500">Cost</div>
-          <div class="text-xl font-semibold text-gray-800">{{ formatPrice(profitSummary?.cost ?? 0) }}</div>
+        <div class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+          <div class="text-sm text-gray-500 dark:text-gray-400">Cost</div>
+          <div class="text-xl font-semibold text-gray-800 dark:text-gray-200">{{ formatPrice(profitSummary?.cost ?? 0) }}</div>
         </div>
-        <div class="bg-white rounded-lg border border-gray-200 p-4">
-          <div class="text-sm text-gray-500">Profit</div>
+        <div class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+          <div class="text-sm text-gray-500 dark:text-gray-400">Profit</div>
           <div class="text-xl font-semibold" :class="(profitSummary?.profit ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'">{{ formatPrice(profitSummary?.profit ?? 0) }}</div>
         </div>
       </div>
-      <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-        <div class="p-3 border-b border-gray-200 flex items-center justify-between">
-          <span class="font-medium text-gray-800">Tabel Produk</span>
+      <div class="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <div class="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <span class="font-medium text-gray-800 dark:text-gray-200">Tabel Produk</span>
           <div class="flex gap-2">
             <button type="button" class="px-2 py-1.5 bg-green-600 text-white rounded text-xs hover:bg-green-700" @click="exportCardExcel(profitTableHeaders, profitTableRows, 'profit-produk')">Export Excel</button>
             <button type="button" class="px-2 py-1.5 bg-red-600 text-white rounded text-xs hover:bg-red-700" @click="exportCardPdf('Profit - Tabel Produk', profitTableHeaders, profitTableRows, 'profit-produk')">Export PDF</button>
           </div>
         </div>
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Quantity</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Cost</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Profit</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Product</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Quantity</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Revenue</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cost</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Profit</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200">
-            <tr v-for="(row, i) in profitRows" :key="i" class="hover:bg-gray-50">
-              <td class="px-4 py-2 text-sm text-gray-800">{{ row.product_name }}</td>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <tr v-for="(row, i) in profitRows" :key="i" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
+              <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.product_name }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ row.quantity_sold }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.revenue) }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.cost) }}</td>
               <td class="px-4 py-2 text-sm text-right" :class="row.profit >= 0 ? 'text-green-600' : 'text-red-600'">{{ formatPrice(row.profit) }}</td>
             </tr>
             <tr v-if="!profitRows?.length">
-              <td colspan="5" class="px-4 py-4 text-sm text-gray-500 text-center">No data for this period.</td>
+              <td colspan="5" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No data for this period.</td>
             </tr>
           </tbody>
         </table>
@@ -238,30 +238,30 @@
 
     <!-- Top Products -->
     <template v-else-if="activeTab === 'products'">
-      <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-        <div class="p-3 border-b border-gray-200 flex items-center justify-between">
-          <span class="font-medium text-gray-800">Top Products</span>
+      <div class="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <div class="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <span class="font-medium text-gray-800 dark:text-gray-200">Top Products</span>
           <div class="flex gap-2">
             <button type="button" class="px-2 py-1.5 bg-green-600 text-white rounded text-xs hover:bg-green-700" @click="exportCardExcel(['Product', 'Quantity Sold', 'Revenue'], topProductsRows, 'top-products')">Export Excel</button>
             <button type="button" class="px-2 py-1.5 bg-red-600 text-white rounded text-xs hover:bg-red-700" @click="exportCardPdf('Top Products', ['Product', 'Quantity Sold', 'Revenue'], topProductsRows, 'top-products')">Export PDF</button>
           </div>
         </div>
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Quantity Sold</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Product</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Quantity Sold</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Revenue</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200">
-            <tr v-for="(row, i) in topProducts" :key="i" class="hover:bg-gray-50">
-              <td class="px-4 py-2 text-sm text-gray-800">{{ row.product_name }}</td>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <tr v-for="(row, i) in topProducts" :key="i" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
+              <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.product_name }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ row.quantity_sold }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.revenue) }}</td>
             </tr>
             <tr v-if="!topProducts?.length">
-              <td colspan="3" class="px-4 py-4 text-sm text-gray-500 text-center">No data for this period.</td>
+              <td colspan="3" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No data for this period.</td>
             </tr>
           </tbody>
         </table>
@@ -270,26 +270,26 @@
 
     <!-- Product Margin -->
     <template v-else-if="activeTab === 'margin'">
-      <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+      <div class="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">COGS</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Margin</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Margin %</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Product</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Revenue</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">COGS</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Margin</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Margin %</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200">
-            <tr v-for="r in marginRows" :key="r.product_id" class="hover:bg-gray-50">
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <tr v-for="r in marginRows" :key="r.product_id" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
               <td class="px-4 py-2 text-sm">{{ r.product_name }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ formatPrice(r.revenue) }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ formatPrice(r.cogs) }}</td>
               <td class="px-4 py-2 text-sm text-right" :class="r.margin >= 0 ? 'text-green-600' : 'text-red-600'">{{ formatPrice(r.margin) }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ r.margin_pct }}%</td>
             </tr>
-            <tr v-if="!marginRows.length"><td colspan="5" class="px-4 py-4 text-sm text-gray-500 text-center">No data</td></tr>
+            <tr v-if="!marginRows.length"><td colspan="5" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No data</td></tr>
           </tbody>
         </table>
       </div>
@@ -297,30 +297,30 @@
 
     <!-- Inventory -->
     <template v-else-if="activeTab === 'inventory'">
-      <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-        <div class="p-3 border-b border-gray-200 flex items-center justify-between">
-          <span class="font-medium text-gray-800">Inventory</span>
+      <div class="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <div class="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <span class="font-medium text-gray-800 dark:text-gray-200">Inventory</span>
           <div class="flex gap-2">
             <button type="button" class="px-2 py-1.5 bg-green-600 text-white rounded text-xs hover:bg-green-700" @click="exportCardExcel(inventoryTableHeaders, inventoryTableRows, 'inventory')">Export Excel</button>
             <button type="button" class="px-2 py-1.5 bg-red-600 text-white rounded text-xs hover:bg-red-700" @click="exportCardPdf('Inventory', inventoryTableHeaders, inventoryTableRows, 'inventory')">Export PDF</button>
           </div>
         </div>
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Stock</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Inventory Value</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Product</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Stock</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Inventory Value</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200">
-            <tr v-for="row in inventoryRows" :key="row.product_id" class="hover:bg-gray-50">
-              <td class="px-4 py-2 text-sm text-gray-800">{{ row.product_name }}</td>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <tr v-for="row in inventoryRows" :key="row.product_id" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
+              <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.product_name }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ row.stock }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.inventory_value ?? 0) }}</td>
             </tr>
             <tr v-if="!inventoryRows?.length">
-              <td colspan="3" class="px-4 py-4 text-sm text-gray-500 text-center">No inventory data.</td>
+              <td colspan="3" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No inventory data.</td>
             </tr>
           </tbody>
         </table>
@@ -329,30 +329,30 @@
 
     <!-- Cashiers -->
     <template v-else-if="activeTab === 'cashiers'">
-      <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-        <div class="p-3 border-b border-gray-200 flex items-center justify-between">
-          <span class="font-medium text-gray-800">Cashiers</span>
+      <div class="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <div class="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <span class="font-medium text-gray-800 dark:text-gray-200">Cashiers</span>
           <div class="flex gap-2">
             <button type="button" class="px-2 py-1.5 bg-green-600 text-white rounded text-xs hover:bg-green-700" @click="exportCardExcel(['Cashier', 'Transactions', 'Revenue'], cashiersTableRows, 'cashiers')">Export Excel</button>
             <button type="button" class="px-2 py-1.5 bg-red-600 text-white rounded text-xs hover:bg-red-700" @click="exportCardPdf('Cashiers', ['Cashier', 'Transactions', 'Revenue'], cashiersTableRows, 'cashiers')">Export PDF</button>
           </div>
         </div>
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cashier</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Transactions</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Revenue</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cashier</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Transactions</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Revenue</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200">
-            <tr v-for="(row, i) in cashiersRows" :key="i" class="hover:bg-gray-50">
-              <td class="px-4 py-2 text-sm text-gray-800">{{ row.cashier }}</td>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <tr v-for="(row, i) in cashiersRows" :key="i" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
+              <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.cashier }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ row.transactions }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.revenue) }}</td>
             </tr>
             <tr v-if="!cashiersRows?.length">
-              <td colspan="3" class="px-4 py-4 text-sm text-gray-500 text-center">No data for this period.</td>
+              <td colspan="3" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No data for this period.</td>
             </tr>
           </tbody>
         </table>
@@ -361,26 +361,26 @@
 
     <!-- Shifts (cash reconciliation) -->
     <template v-else-if="activeTab === 'shifts'">
-      <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-        <div class="p-3 border-b border-gray-200">
-          <span class="font-medium text-gray-800">Shift reconciliation</span>
+      <div class="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <div class="p-3 border-b border-gray-200 dark:border-gray-700">
+          <span class="font-medium text-gray-800 dark:text-gray-200">Shift reconciliation</span>
         </div>
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cashier</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Opening</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Sales</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Expected</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Actual</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Difference</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cashier</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Opening</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Sales</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Expected</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actual</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Difference</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200">
-            <tr v-for="(row, i) in shiftsRows" :key="i" class="hover:bg-gray-50">
-              <td class="px-4 py-2 text-sm text-gray-800">{{ row.date }}</td>
-              <td class="px-4 py-2 text-sm text-gray-800">{{ row.cashier }}</td>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <tr v-for="(row, i) in shiftsRows" :key="i" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
+              <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.date }}</td>
+              <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.cashier }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.opening) }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.sales) }}</td>
               <td class="px-4 py-2 text-sm text-right">{{ formatPrice(row.expected) }}</td>
@@ -388,7 +388,7 @@
               <td class="px-4 py-2 text-sm text-right" :class="row.difference !== 0 ? 'text-amber-600 font-medium' : ''">{{ formatPrice(row.difference) }}</td>
             </tr>
             <tr v-if="!shiftsRows?.length">
-              <td colspan="7" class="px-4 py-4 text-sm text-gray-500 text-center">No closed shifts for this period.</td>
+              <td colspan="7" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No closed shifts for this period.</td>
             </tr>
           </tbody>
         </table>
@@ -401,9 +401,9 @@
       class="fixed inset-0 z-20 flex items-center justify-center bg-black/50 p-4"
       @click.self="showReceipt = false"
     >
-      <div class="bg-white rounded-lg shadow-xl max-w-sm w-full max-h-[90vh] overflow-auto">
+      <div class="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-sm w-full max-h-[90vh] overflow-auto">
         <div class="p-4" v-if="receiptLoading">
-          <p class="text-gray-500 text-center py-8">Loading receipt...</p>
+          <p class="text-gray-500 dark:text-gray-400 text-center py-8">Loading receipt...</p>
         </div>
         <div class="p-4" v-else-if="receiptError">
           <p class="text-red-600 text-center py-4">{{ receiptError }}</p>
@@ -420,9 +420,9 @@
             :change="Math.max(0, receiptObj.payments.reduce((s, p) => s + p.amount, 0) - receiptObj.transaction.total_amount)"
           />
         </div>
-        <div class="p-4 border-t border-gray-200 flex flex-wrap gap-2 justify-end">
-          <button type="button" class="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-sm" @click="printReceiptFromReport">Print</button>
-          <button type="button" class="px-3 py-2 border border-green-500 text-green-700 rounded-md hover:bg-green-50 text-sm" @click="downloadReceiptPdfFromReport">PDF</button>
+        <div class="p-4 border-t border-gray-200 dark:border-gray-700 flex flex-wrap gap-2 justify-end">
+          <button type="button" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 text-sm" @click="printReceiptFromReport">Print</button>
+          <button type="button" class="px-3 py-2 border border-green-500 dark:border-green-600 text-green-700 dark:text-green-400 rounded-md hover:bg-green-50 dark:hover:bg-green-900/20 text-sm" @click="downloadReceiptPdfFromReport">PDF</button>
           <button type="button" class="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm" @click="shareWhatsAppFromReport">WhatsApp</button>
           <button type="button" class="px-3 py-2 bg-slate-600 text-white rounded-md hover:bg-slate-700 text-sm" @click="showReceipt = false">Close</button>
         </div>

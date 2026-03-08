@@ -1,19 +1,19 @@
 <template>
   <div class="max-w-3xl mx-auto space-y-6">
-    <h1 class="text-2xl font-bold text-gray-800">Platform Settings</h1>
+    <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Platform Settings</h1>
 
     <div v-if="loading" class="text-gray-400 py-8 text-center">Loading...</div>
     <template v-else>
       <!-- Logo -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 class="text-base font-semibold text-gray-800 mb-4">Platform Logo</h2>
+      <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+        <h2 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-4">Platform Logo</h2>
         <div class="flex items-center gap-6">
-          <div class="w-20 h-20 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden shrink-0">
+          <div class="w-20 h-20 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center overflow-hidden shrink-0">
             <img v-if="form.logo_url" :src="logoSrc" class="w-full h-full object-cover" alt="Logo" />
             <span v-else class="text-2xl font-bold text-gray-400">{{ (form.saas_name || 'S').charAt(0) }}</span>
           </div>
           <div>
-            <label class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            <label class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
               Upload Logo
               <input type="file" class="hidden" accept=".png,.jpg,.jpeg,.webp" @change="handleLogo" />
             </label>
@@ -23,51 +23,51 @@
       </div>
 
       <!-- General -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 class="text-base font-semibold text-gray-800 mb-4">General</h2>
+      <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+        <h2 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-4">General</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-600 mb-1">Platform Name</label>
-            <input v-model="form.saas_name" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Platform Name</label>
+            <input v-model="form.saas_name" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-600 mb-1">Tagline</label>
-            <input v-model="form.tagline" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Tagline</label>
+            <input v-model="form.tagline" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
           </div>
         </div>
       </div>
 
       <!-- Bank Info -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 class="text-base font-semibold text-gray-800 mb-4">Payment Information</h2>
+      <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+        <h2 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-4">Payment Information</h2>
         <p class="text-xs text-gray-400 mb-4">This will be displayed to tenants on the subscription payment page.</p>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-600 mb-1">Bank Name</label>
-            <input v-model="form.bank_name" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="BCA" />
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Bank Name</label>
+            <input v-model="form.bank_name" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" placeholder="BCA" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-600 mb-1">Account Number</label>
-            <input v-model="form.bank_account" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="1234567890" />
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Account Number</label>
+            <input v-model="form.bank_account" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" placeholder="1234567890" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-600 mb-1">Account Holder</label>
-            <input v-model="form.bank_holder" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="PT Example" />
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Account Holder</label>
+            <input v-model="form.bank_holder" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" placeholder="PT Example" />
           </div>
         </div>
       </div>
 
       <!-- Contact -->
-      <div class="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 class="text-base font-semibold text-gray-800 mb-4">Contact Information</h2>
+      <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+        <h2 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-4">Contact Information</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-600 mb-1">Email</label>
-            <input v-model="form.contact_email" type="email" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Email</label>
+            <input v-model="form.contact_email" type="email" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-600 mb-1">Phone</label>
-            <input v-model="form.contact_phone" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Phone</label>
+            <input v-model="form.contact_phone" class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
           </div>
         </div>
       </div>
