@@ -36,7 +36,12 @@ client.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 402) {
-      window.location.href = '/subscription'
+      if (error.response?.data?.read_only) {
+        return Promise.reject(error)
+      }
+      if (!window.location.pathname.startsWith('/subscription')) {
+        window.location.href = '/subscription'
+      }
       return Promise.reject(error)
     }
     const originalRequest = error.config

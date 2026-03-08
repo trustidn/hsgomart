@@ -14,7 +14,8 @@ type SubscriptionChecker interface {
 }
 
 // Subscription ensures the tenant has a valid (active or trial) subscription.
-// Use after Auth and Tenant middleware. Returns 402 with error message if subscription required/expired.
+// For expired subscriptions: GET requests are allowed (read-only), non-GET requests return 402.
+// Missing subscriptions always return 402.
 func Subscription(checker SubscriptionChecker) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tenantID, ok := utils.GetTenantID(c)
@@ -26,13 +27,13 @@ func Subscription(checker SubscriptionChecker) gin.HandlerFunc {
 
 		_, err := checker.CheckSubscription(tenantID)
 		if err != nil {
-			if err == subscription.ErrSubscriptionRequired {
-				c.JSON(http.StatusPaymentRequired, gin.H{"error": "subscription required"})
-				c.Abort()
-				return
-			}
-			if err == subscription.ErrSubscriptionExpired {
-				c.JSON(http.StatusPaymentRequired, gin.H{"error": "subscription expired"})
+			if err == subscription.ErrSubscriptionExpired || err == subscription.ErrSubscriptionRequired {
+				if c.Request.Method == http.MethodGet {
+					c.Set("subscription_expired", true)
+					c.Next()
+					return
+				}
+				c.JSON(http.StatusPaymentRequired, gin.H{"error": "subscription required", "read_only": true})
 				c.Abort()
 				return
 			}
