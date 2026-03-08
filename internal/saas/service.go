@@ -37,8 +37,9 @@ type UpdateInput struct {
 	BankName     *string `json:"bank_name"`
 	BankAccount  *string `json:"bank_account"`
 	BankHolder   *string `json:"bank_holder"`
-	ContactEmail *string `json:"contact_email"`
-	ContactPhone *string `json:"contact_phone"`
+	ContactEmail   *string `json:"contact_email"`
+	ContactPhone   *string `json:"contact_phone"`
+	WhatsappNumber *string `json:"whatsapp_number"`
 }
 
 func (s *Service) UpdateSettings(in UpdateInput) (*Settings, error) {
@@ -63,6 +64,9 @@ func (s *Service) UpdateSettings(in UpdateInput) (*Settings, error) {
 	}
 	if in.ContactPhone != nil {
 		updates["contact_phone"] = strings.TrimSpace(*in.ContactPhone)
+	}
+	if in.WhatsappNumber != nil {
+		updates["whatsapp_number"] = strings.TrimSpace(*in.WhatsappNumber)
 	}
 	if len(updates) > 0 {
 		if err := s.db.Model(&Settings{}).Where("id = 1").Updates(updates).Error; err != nil {

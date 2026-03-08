@@ -59,11 +59,12 @@ func (h *Handler) PublicInfo(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"saas_name":    s.SaasName,
-		"logo_url":     s.LogoURL,
-		"tagline":      s.Tagline,
-		"bank_name":    s.BankName,
-		"bank_account": s.BankAccount,
-		"bank_holder":  s.BankHolder,
+		"saas_name":       s.SaasName,
+		"logo_url":        s.LogoURL,
+		"tagline":         s.Tagline,
+		"bank_name":       s.BankName,
+		"bank_account":    s.BankAccount,
+		"bank_holder":     s.BankHolder,
+		"whatsapp_number": s.WhatsappNumber,
 	})
 }

@@ -121,8 +121,67 @@ export async function getStats() {
   return data
 }
 
+// Documentation (admin CRUD)
+export async function listDocumentation() {
+  const { data } = await client.get('/admin/documentation')
+  return data
+}
+
+export async function createDocumentation(payload) {
+  const { data } = await client.post('/admin/documentation', payload)
+  return data
+}
+
+export async function updateDocumentation(id, payload) {
+  const { data } = await client.put(`/admin/documentation/${id}`, payload)
+  return data
+}
+
+export async function deleteDocumentation(id) {
+  const { data } = await client.delete(`/admin/documentation/${id}`)
+  return data
+}
+
+// Platform Updates (admin CRUD)
+export async function listAdminUpdates() {
+  const { data } = await client.get('/admin/updates')
+  return data
+}
+
+export async function createPlatformUpdate(payload) {
+  const { data } = await client.post('/admin/updates', payload)
+  return data
+}
+
+export async function editPlatformUpdate(id, payload) {
+  const { data } = await client.put(`/admin/updates/${id}`, payload)
+  return data
+}
+
+export async function deletePlatformUpdate(id) {
+  const { data } = await client.delete(`/admin/updates/${id}`)
+  return data
+}
+
 // Public SaaS Info (no auth)
 export async function getSaasInfo() {
   const { data } = await client.get('/api/saas-info')
+  return data
+}
+
+// Public documentation (published only)
+export async function getPublicDocumentation() {
+  const { data } = await client.get('/api/documentation')
+  return data
+}
+
+// Public updates
+export async function getRecentUpdates() {
+  const { data } = await client.get('/api/updates')
+  return data
+}
+
+export async function getAllUpdates() {
+  const { data } = await client.get('/api/updates/all')
   return data
 }

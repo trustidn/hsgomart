@@ -53,6 +53,12 @@
         Don't have an account?
         <router-link to="/register" class="text-indigo-600 hover:text-indigo-500 font-medium">Create one</router-link>
       </p>
+      <div class="text-center mt-3">
+        <router-link to="/" class="inline-flex items-center gap-1 text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+          Kembali ke Beranda
+        </router-link>
+      </div>
     </div>
   </div>
 </template>

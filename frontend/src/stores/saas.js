@@ -11,8 +11,8 @@ export const useSaasStore = defineStore('saas', () => {
   const info = ref(null)
   const loaded = ref(false)
 
-  async function load() {
-    if (loaded.value) return info.value
+  async function load(force = false) {
+    if (loaded.value && !force) return info.value
     try {
       info.value = await getSaasInfo()
     } catch {
@@ -44,6 +44,7 @@ export const useSaasStore = defineStore('saas', () => {
     if (!logoUrl.value) return ''
     return logoUrl.value.startsWith('http') ? logoUrl.value : `${baseURL}${logoUrl.value}`
   })
+  const whatsappNumber = computed(() => info.value?.whatsapp_number || '')
 
-  return { info, loaded, load, applyBranding, platformName, tagline, logoUrl, logoSrc }
+  return { info, loaded, load, applyBranding, platformName, tagline, logoUrl, logoSrc, whatsappNumber }
 })

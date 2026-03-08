@@ -19,11 +19,11 @@
     >
       <!-- Logo + Collapse toggle -->
       <div class="h-14 flex items-center px-3 border-b border-slate-800 dark:border-gray-800 shrink-0">
-        <div class="flex items-center gap-2 flex-1 min-w-0">
+        <router-link to="/" class="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80 transition-opacity">
           <img v-if="tenantStore.logoUrl()" :src="logoSrc" class="w-8 h-8 rounded-lg object-cover shrink-0" alt="" />
           <div v-else class="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center text-sm font-bold shrink-0">{{ tenantStore.storeName().charAt(0) }}</div>
           <span v-show="!collapsed" class="font-semibold text-base tracking-tight truncate">{{ tenantStore.storeName() }}</span>
-        </div>
+        </router-link>
         <button
           class="hidden lg:flex items-center justify-center w-7 h-7 rounded-md text-slate-400 hover:text-white hover:bg-slate-700 transition-colors shrink-0"
           @click="collapsed = !collapsed"
@@ -84,6 +84,37 @@
             <!-- Moon icon (shown in light mode) -->
             <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
           </button>
+
+          <!-- WhatsApp Contact -->
+          <div class="relative">
+            <button @click="showContactForm = !showContactForm" class="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title="Hubungi Admin">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            </button>
+            <Transition
+              enter-active-class="transition ease-out duration-150"
+              enter-from-class="opacity-0 -translate-y-1"
+              enter-to-class="opacity-100 translate-y-0"
+              leave-active-class="transition ease-in duration-100"
+              leave-from-class="opacity-100 translate-y-0"
+              leave-to-class="opacity-0 -translate-y-1"
+            >
+              <div v-if="showContactForm" class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 font-medium text-sm text-gray-800 dark:text-gray-200">Hubungi Admin</div>
+                <div v-if="saasStore.whatsappNumber" class="p-4 space-y-3">
+                  <textarea v-model="contactMessage" rows="3" placeholder="Tulis pesan atau pertanyaan Anda..."
+                    class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 outline-none resize-none" />
+                  <button @click="sendWhatsApp" :disabled="!contactMessage.trim()"
+                    class="w-full py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    Kirim via WhatsApp
+                  </button>
+                </div>
+                <div v-else class="p-4 text-sm text-gray-500 dark:text-gray-400 text-center">
+                  <p>Nomor WhatsApp admin belum dikonfigurasi.</p>
+                </div>
+              </div>
+            </Transition>
+          </div>
 
           <!-- Notifications -->
           <div class="relative">
@@ -163,8 +194,20 @@ const auth = useAuthStore()
 const sidebarOpen = ref(false)
 const collapsed = ref(false)
 const showNotif = ref(false)
+const showContactForm = ref(false)
+const contactMessage = ref('')
 const notifications = ref([])
 const trialDaysLeft = ref(null)
+
+function sendWhatsApp() {
+  const msg = contactMessage.value.trim()
+  if (!msg) return
+  const raw = saasStore.whatsappNumber.replace(/\D/g, '')
+  const phone = raw.startsWith('62') ? raw : '62' + raw.replace(/^0+/, '')
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank')
+  contactMessage.value = ''
+  showContactForm.value = false
+}
 
 const IconDashboard = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' })]) }
 const IconBox = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' })]) }
@@ -179,6 +222,7 @@ const IconUsers = { render: () => h('svg', { fill: 'none', stroke: 'currentColor
 const IconCredit = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' })]) }
 const IconCart = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z' })]) }
 const IconSettings = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z' }), h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z' })]) }
+const IconBook = { render: () => h('svg', { fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' })]) }
 
 const menu = [
   { group: 'Main', items: [
@@ -201,6 +245,9 @@ const menu = [
     { path: '/users', label: 'Users', icon: IconUsers, roles: ['owner'] },
     { path: '/subscription', label: 'Subscription', icon: IconCredit, roles: ['owner'] },
     { path: '/settings', label: 'Settings', icon: IconSettings, roles: ['owner'] },
+  ]},
+  { group: 'Help', items: [
+    { path: '/documentation', label: 'Dokumentasi', icon: IconBook, roles: ['owner', 'cashier'] },
   ]},
 ]
 
@@ -238,7 +285,7 @@ function goToNotif(n) {
 }
 
 onMounted(async () => {
-  await saasStore.load()
+  await saasStore.load(true)
   tenantStore.load()
 
   try {

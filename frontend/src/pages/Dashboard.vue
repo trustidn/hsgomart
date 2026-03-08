@@ -37,6 +37,33 @@
         </router-link>
       </div>
 
+      <!-- Latest Updates (right below subscription) -->
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-semibold text-gray-800 dark:text-white">Update Terbaru</h2>
+          <router-link v-if="recentUpdates.length" to="/updates" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">Lihat Semua</router-link>
+        </div>
+        <div v-if="recentUpdates.length" class="space-y-3">
+          <div v-for="u in recentUpdates" :key="u.id" class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/40 flex items-center justify-center shrink-0 mt-0.5">
+                <svg class="w-4 h-4 text-indigo-500 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-2">
+                  <h3 class="font-medium text-sm text-gray-900 dark:text-white">{{ u.title }}</h3>
+                  <span class="text-xs text-gray-400 dark:text-gray-500 shrink-0">{{ u.created_at }}</span>
+                </div>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{{ u.content }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 text-center">
+          <p class="text-sm text-gray-400 dark:text-gray-500">Belum ada update terbaru dari admin.</p>
+        </div>
+      </div>
+
       <!-- Low Stock Alert -->
       <div v-if="lowStock.length > 0" class="mb-6">
         <router-link to="/inventory" class="block bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition">
@@ -156,6 +183,7 @@ import { Chart, registerables } from 'chart.js'
 import { getSalesSummary, getTopProducts, getInventorySummary, getSalesDaily, getSalesCompare } from '../api/reports'
 import { getLowStock } from '../api/inventory'
 import { getSubscription } from '../api/subscription'
+import { getRecentUpdates } from '../api/admin'
 import { formatCurrency } from '../utils'
 import client from '../api/client'
 
@@ -172,6 +200,7 @@ const compare = ref(null)
 const sub = ref(null)
 const subPlan = ref(null)
 const subDays = ref(null)
+const recentUpdates = ref([])
 
 const salesChartRef = ref(null)
 const productsChartRef = ref(null)
@@ -180,7 +209,7 @@ onMounted(async () => {
   loading.value = true
   error.value = null
   try {
-    const [sales, products, inventory, low, expData, cmp, subData] = await Promise.all([
+    const [sales, products, inventory, low, expData, cmp, subData, updatesData] = await Promise.all([
       getSalesSummary(),
       getTopProducts(),
       getInventorySummary(),
@@ -188,6 +217,7 @@ onMounted(async () => {
       client.get('/api/inventory/expiring', { params: { days: 30 } }).then(r => r.data).catch(() => []),
       getSalesCompare().catch(() => null),
       getSubscription().catch(() => null),
+      getRecentUpdates().catch(() => []),
     ])
     salesSummary.value = sales
     topProducts.value = Array.isArray(products) ? products : []
@@ -195,6 +225,7 @@ onMounted(async () => {
     lowStock.value = Array.isArray(low) ? low : []
     expiring.value = Array.isArray(expData) ? expData : []
     compare.value = cmp
+    recentUpdates.value = Array.isArray(updatesData) ? updatesData : []
     if (subData) {
       sub.value = subData.subscription
       subPlan.value = subData.plan

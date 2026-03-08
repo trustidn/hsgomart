@@ -1,0 +1,4 @@
+INSERT INTO platform_updates (title, content, created_at) VALUES
+('Sistem POS Diluncurkan', 'Selamat datang di sistem POS terbaru kami! Sistem ini dirancang khusus untuk membantu UMKM mengelola toko secara digital. Fitur utama meliputi: Point of Sale, Manajemen Produk, Inventory, Laporan Penjualan, dan Multi-User.', NOW() - INTERVAL '7 days'),
+('Fitur Stock Opname Tersedia', 'Anda sekarang dapat melakukan stock opname untuk mencocokkan stok fisik dengan stok di sistem. Buka menu Stock Opname untuk memulai. Fitur ini membantu memastikan akurasi data inventory Anda.', NOW() - INTERVAL '3 days'),
+('Dukungan WhatsApp untuk Struk', 'Kirim struk belanja langsung ke WhatsApp pelanggan! Cukup masukkan nomor HP pelanggan saat checkout, dan struk akan dikirim otomatis melalui WhatsApp.', NOW() - INTERVAL '1 day');

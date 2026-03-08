@@ -13,8 +13,11 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg config.Config) {
 	svc := NewServiceRegistry(db, cfg)
 	h := NewHandlerRegistry(svc, db)
 
-	// Public endpoint (no auth) for SaaS platform info (bank details, name, etc.)
+	// Public endpoints (no auth)
 	r.GET("/api/saas-info", h.Saas.PublicInfo)
+	r.GET("/api/documentation", h.Admin.ListPublishedDocumentation)
+	r.GET("/api/updates", h.Admin.ListRecentUpdates)
+	r.GET("/api/updates/all", h.Admin.ListUpdates)
 
 	registerAuthRoutes(r, h, svc)
 	registerAPIRoutes(r, h, svc)
@@ -179,5 +182,17 @@ func registerAdminRoutes(r *gin.Engine, h *HandlerRegistry, svc *ServiceRegistry
 
 		// Dashboard Stats
 		g.GET("/stats", h.Admin.Stats)
+
+		// Documentation CRUD
+		g.GET("/documentation", h.Admin.ListDocumentation)
+		g.POST("/documentation", h.Admin.CreateDocumentation)
+		g.PUT("/documentation/:id", h.Admin.UpdateDocumentation)
+		g.DELETE("/documentation/:id", h.Admin.DeleteDocumentation)
+
+		// Platform Updates CRUD
+		g.GET("/updates", h.Admin.ListUpdates)
+		g.POST("/updates", h.Admin.CreateUpdate)
+		g.PUT("/updates/:id", h.Admin.EditUpdate)
+		g.DELETE("/updates/:id", h.Admin.DeleteUpdate)
 	}
 }
