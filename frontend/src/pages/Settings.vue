@@ -57,12 +57,53 @@
         </div>
       </form>
     </div>
+
+    <!-- Danger Zone -->
+    <div class="bg-white dark:bg-gray-900 rounded-xl border-2 border-red-200 dark:border-red-900 divide-y divide-red-100 dark:divide-red-900">
+      <div class="p-6">
+        <h2 class="text-base font-semibold text-red-700 dark:text-red-400 mb-1">Danger Zone</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Reset semua data operasional (produk, transaksi, inventory, dll). Data user dan subscription tetap dipertahankan.</p>
+        <button type="button" @click="showResetModal = true" class="mt-4 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors">
+          Reset Semua Data
+        </button>
+      </div>
+    </div>
+
+    <!-- Reset Confirmation Modal -->
+    <Teleport to="body">
+      <div v-if="showResetModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" @click.self="closeResetModal">
+        <div class="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-md p-6 space-y-4">
+          <h3 class="text-lg font-semibold text-red-700 dark:text-red-400">Reset Semua Data</h3>
+          <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-800 dark:text-red-300">
+            <strong>Peringatan:</strong> Semua data operasional (produk, kategori, transaksi, inventory, pembelian, shift, refund, stock opname) akan dihapus permanen. Data user dan subscription tidak terpengaruh.
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ketik <code class="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-red-600 dark:text-red-400 font-mono text-xs">RESET-SEMUA-DATA</code> untuk konfirmasi</label>
+            <input v-model="resetCode" type="text" placeholder="RESET-SEMUA-DATA"
+              class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none font-mono" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password Owner</label>
+            <input v-model="resetPassword" type="password" placeholder="Masukkan password anda"
+              class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none" />
+          </div>
+          <p v-if="resetError" class="text-xs text-red-600">{{ resetError }}</p>
+          <div class="flex gap-3">
+            <button @click="closeResetModal" class="flex-1 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Batal</button>
+            <button @click="executeReset" :disabled="resetCode !== 'RESET-SEMUA-DATA' || !resetPassword || resetting"
+              class="flex-1 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50">
+              {{ resetting ? 'Menghapus...' : 'Reset Data' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { getTenantProfile, updateTenantProfile, uploadLogo } from '../api/tenant'
+import { getTenantProfile, updateTenantProfile, uploadLogo, resetTenantData } from '../api/tenant'
 
 const loading = ref(true)
 const saving = ref(false)
@@ -128,6 +169,34 @@ async function saveProfile() {
     saveError.value = err.response?.data?.error || 'Failed to save'
   } finally {
     saving.value = false
+  }
+}
+
+const showResetModal = ref(false)
+const resetCode = ref('')
+const resetPassword = ref('')
+const resetError = ref('')
+const resetting = ref(false)
+
+function closeResetModal() {
+  showResetModal.value = false
+  resetCode.value = ''
+  resetPassword.value = ''
+  resetError.value = ''
+}
+
+async function executeReset() {
+  if (resetCode.value !== 'RESET-SEMUA-DATA' || !resetPassword.value) return
+  resetting.value = true
+  resetError.value = ''
+  try {
+    await resetTenantData(resetCode.value, resetPassword.value)
+    closeResetModal()
+    alert('Semua data operasional telah direset.')
+  } catch (err) {
+    resetError.value = err.response?.data?.error || 'Reset gagal'
+  } finally {
+    resetting.value = false
   }
 }
 </script>

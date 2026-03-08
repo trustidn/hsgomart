@@ -1,10 +1,10 @@
 import axios from 'axios'
 import { useAuthStore } from '../stores/auth'
 
-const baseURL =
-  typeof window !== 'undefined' && window.location.port === '8080'
+const baseURL = import.meta.env.VITE_API_URL ||
+  (typeof window !== 'undefined' && window.location.port === '8080'
     ? ''
-    : 'http://localhost:8080'
+    : 'http://localhost:8080')
 
 const client = axios.create({
   baseURL,

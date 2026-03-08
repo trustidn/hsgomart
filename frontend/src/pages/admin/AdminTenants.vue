@@ -50,6 +50,7 @@
             <td class="px-4 py-3 text-right text-gray-800 dark:text-gray-200">{{ t.user_count }}</td>
             <td class="px-4 py-3 text-center space-x-1">
               <button @click="openEdit(t)" class="text-indigo-600 dark:text-indigo-400 hover:underline text-xs">Edit</button>
+              <button @click="openResetPw(t)" class="text-amber-600 dark:text-amber-400 hover:underline text-xs">Reset PW</button>
               <button @click="confirmDelete(t)" class="text-red-600 dark:text-red-400 hover:underline text-xs">Delete</button>
             </td>
           </tr>
@@ -127,12 +128,34 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- Reset Password Modal -->
+    <Teleport to="body">
+      <div v-if="showResetPwModal" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" @click.self="showResetPwModal = false">
+        <div class="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm p-6 space-y-4">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Reset Owner Password</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Reset password for <strong>{{ resetPwTarget?.name }}</strong></p>
+          <div>
+            <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">New Password</label>
+            <input v-model="resetPwValue" type="password" placeholder="Min 8 chars, letters + numbers"
+              class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
+          </div>
+          <p v-if="resetPwError" class="text-xs text-red-600">{{ resetPwError }}</p>
+          <div class="flex gap-3">
+            <button @click="showResetPwModal = false" class="flex-1 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Cancel</button>
+            <button @click="doResetPw" :disabled="resettingPw || !resetPwValue" class="flex-1 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors disabled:opacity-50">
+              {{ resettingPw ? 'Resetting...' : 'Reset Password' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { listTenants, createTenant, updateTenant, deleteTenant, listPlans } from '../../api/admin'
+import { listTenants, createTenant, updateTenant, deleteTenant, listPlans, resetOwnerPassword } from '../../api/admin'
 
 const loading = ref(true)
 const tenants = ref([])
@@ -154,6 +177,33 @@ const form = ref({ name: '', email: '', password: '', phone: '', status: 'active
 const showDeleteConfirm = ref(false)
 const deleteTarget = ref(null)
 const deleting = ref(false)
+
+const showResetPwModal = ref(false)
+const resetPwTarget = ref(null)
+const resetPwValue = ref('')
+const resetPwError = ref('')
+const resettingPw = ref(false)
+
+function openResetPw(t) {
+  resetPwTarget.value = t
+  resetPwValue.value = ''
+  resetPwError.value = ''
+  showResetPwModal.value = true
+}
+
+async function doResetPw() {
+  if (!resetPwValue.value || !resetPwTarget.value) return
+  resettingPw.value = true
+  resetPwError.value = ''
+  try {
+    await resetOwnerPassword(resetPwTarget.value.id, resetPwValue.value)
+    showResetPwModal.value = false
+  } catch (e) {
+    resetPwError.value = e.response?.data?.error ?? 'Failed to reset password'
+  } finally {
+    resettingPw.value = false
+  }
+}
 
 async function load() {
   loading.value = true

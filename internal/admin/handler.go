@@ -269,6 +269,44 @@ func (h *Handler) DeleteTenant(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "tenant deleted"})
 }
 
+func (h *Handler) ResetOwnerPassword(c *gin.Context) {
+	tenantID := c.Param("id")
+
+	var in struct {
+		NewPassword string `json:"new_password" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := utils.ValidatePasswordStrength(in.NewPassword); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(in.NewPassword), 10)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
+		return
+	}
+
+	res := h.db.Exec("UPDATE users SET password_hash = ? WHERE tenant_id = ? AND role = 'owner'", string(hash), tenantID)
+	if res.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update password"})
+		return
+	}
+	if res.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "owner not found for this tenant"})
+		return
+	}
+
+	adminID, _ := utils.GetUserID(c)
+	utils.LogAudit(h.db, tenantID, adminID, "reset_owner_password", "user", tenantID, nil)
+
+	c.JSON(http.StatusOK, gin.H{"message": "owner password has been reset"})
+}
+
 // ─── Subscriptions ──────────────────────────────────────────────────────────
 
 func (h *Handler) ListSubscriptions(c *gin.Context) {

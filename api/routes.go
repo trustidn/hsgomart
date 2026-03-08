@@ -34,9 +34,11 @@ func registerAuthRoutes(r *gin.Engine, h *HandlerRegistry, svc *ServiceRegistry)
 }
 
 func registerAPIRoutes(r *gin.Engine, h *HandlerRegistry, svc *ServiceRegistry) {
+	apiLimiter := middleware.NewRateLimiter(60, 1*time.Minute)
+
 	// Routes that bypass subscription middleware (so expired tenants can still upgrade)
 	bypass := r.Group("/api")
-	bypass.Use(middleware.Auth(svc.Auth), middleware.Tenant())
+	bypass.Use(middleware.RateLimit(apiLimiter), middleware.Auth(svc.Auth), middleware.Tenant())
 	{
 		bypass.GET("/subscription", h.Subscription.GetSubscription)
 		bypass.GET("/subscription/plans", h.Subscription.ListPlans)
@@ -48,10 +50,11 @@ func registerAPIRoutes(r *gin.Engine, h *HandlerRegistry, svc *ServiceRegistry) 
 		bypass.GET("/tenant/profile", h.Tenant.GetProfile)
 		bypass.PUT("/tenant/profile", h.Tenant.UpdateProfile)
 		bypass.POST("/tenant/logo", h.Tenant.UploadLogo)
+		bypass.POST("/tenant/reset-data", middleware.Role("owner"), h.Tenant.ResetData)
 	}
 
 	api := r.Group("/api")
-	api.Use(middleware.Auth(svc.Auth), middleware.Tenant(), middleware.Subscription(svc.Subscription))
+	api.Use(middleware.RateLimit(apiLimiter), middleware.Auth(svc.Auth), middleware.Tenant(), middleware.Subscription(svc.Subscription))
 
 	registerCashierRoutes(api, h)
 	registerOwnerRoutes(api, h)
@@ -138,8 +141,9 @@ func registerOwnerRoutes(api *gin.RouterGroup, h *HandlerRegistry) {
 }
 
 func registerAdminRoutes(r *gin.Engine, h *HandlerRegistry, svc *ServiceRegistry) {
+	adminLimiter := middleware.NewRateLimiter(30, 1*time.Minute)
 	g := r.Group("/admin")
-	g.Use(middleware.Auth(svc.Auth), middleware.Role("superadmin"))
+	g.Use(middleware.RateLimit(adminLimiter), middleware.Auth(svc.Auth), middleware.Role("superadmin"))
 	{
 		// SaaS Settings
 		g.GET("/settings", h.Saas.GetSettings)
@@ -158,6 +162,7 @@ func registerAdminRoutes(r *gin.Engine, h *HandlerRegistry, svc *ServiceRegistry
 		g.POST("/tenants", h.Admin.CreateTenant)
 		g.PUT("/tenants/:id", h.Admin.UpdateTenant)
 		g.DELETE("/tenants/:id", h.Admin.DeleteTenant)
+		g.PUT("/tenants/:id/reset-password", h.Admin.ResetOwnerPassword)
 
 		// Subscriptions
 		g.GET("/subscriptions", h.Admin.ListSubscriptions)

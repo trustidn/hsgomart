@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/trustidn/hsmart-saas/api"
 	"github.com/trustidn/hsmart-saas/pkg/config"
 	"github.com/trustidn/hsmart-saas/pkg/database"
+	"github.com/trustidn/hsmart-saas/pkg/middleware"
 	"gorm.io/gorm"
 )
 
@@ -29,10 +31,23 @@ func main() {
 		log.Fatalf("database connection failed: %v", err)
 	}
 
+	if cfg.AppEnv == "production" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	r := gin.Default()
 
+	r.Use(middleware.SecurityHeaders())
+
+	corsOrigins := []string{"http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174"}
+	if envOrigins := os.Getenv("CORS_ORIGINS"); envOrigins != "" {
+		corsOrigins = strings.Split(envOrigins, ",")
+		for i := range corsOrigins {
+			corsOrigins[i] = strings.TrimSpace(corsOrigins[i])
+		}
+	}
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174"},
+		AllowOrigins:     corsOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},

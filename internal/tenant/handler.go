@@ -15,6 +15,39 @@ func NewHandler(svc *Service) *Handler {
 	return &Handler{svc: svc}
 }
 
+func (h *Handler) ResetData(c *gin.Context) {
+	tenantID, ok := utils.GetTenantID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context required"})
+		return
+	}
+	userID, ok := utils.GetUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user context required"})
+		return
+	}
+
+	var in ResetDataInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.svc.ResetData(tenantID, userID, in); err != nil {
+		switch err {
+		case ErrInvalidConfirmationCode:
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		case ErrInvalidPassword:
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "reset failed"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "all operational data has been reset"})
+}
+
 func (h *Handler) GetProfile(c *gin.Context) {
 	tenantID, ok := utils.GetTenantID(c)
 	if !ok {

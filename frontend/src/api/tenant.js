@@ -18,3 +18,11 @@ export async function uploadLogo(file) {
   })
   return data
 }
+
+export async function resetTenantData(confirmationCode, password) {
+  const { data } = await client.post('/api/tenant/reset-data', {
+    confirmation_code: confirmationCode,
+    password,
+  })
+  return data
+}

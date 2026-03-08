@@ -25,4 +25,15 @@ function spaFallback() {
 export default defineConfig({
   plugins: [vue(), tailwindcss(), spaFallback()],
   appType: 'spa',
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vue: ['vue', 'vue-router', 'pinia'],
+          xlsx: ['xlsx'],
+          jspdf: ['jspdf'],
+        },
+      },
+    },
+  },
 })

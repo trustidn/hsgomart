@@ -27,6 +27,11 @@ export async function deleteTenant(id) {
   return data
 }
 
+export async function resetOwnerPassword(tenantId, newPassword) {
+  const { data } = await client.put(`/admin/tenants/${tenantId}/reset-password`, { new_password: newPassword })
+  return data
+}
+
 // Subscriptions
 export async function listSubscriptions() {
   const { data } = await client.get('/admin/subscriptions')
