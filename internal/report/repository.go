@@ -101,17 +101,19 @@ func GetSalesDaily(db *gorm.DB, tenantID string, fromDate, toDate time.Time) ([]
 
 // SalesTransactionRow holds one transaction for detail list.
 type SalesTransactionRow struct {
-	ID          string  `json:"id"`
-	CreatedAt   string  `json:"created_at"`
-	TotalAmount float64 `json:"total_amount"`
-	Cashier     string  `json:"cashier"`
+	ID            string  `json:"id"`
+	CreatedAt     string  `json:"created_at"`
+	TotalAmount   float64 `json:"total_amount"`
+	Cashier       string  `json:"cashier"`
+	CustomerName  string  `json:"customer_name"`
+	CustomerPhone string  `json:"customer_phone"`
 }
 
 // GetSalesTransactions returns paginated transactions. Use limit=0 for no limit (export).
 func GetSalesTransactions(db *gorm.DB, tenantID string, fromDate, toDate time.Time, limit, offset int) ([]SalesTransactionRow, error) {
 	var rows []SalesTransactionRow
 	q := db.Table("transactions").
-		Select("transactions.id as id, to_char(transactions.created_at, 'YYYY-MM-DD HH24:MI') as created_at, transactions.total_amount as total_amount, COALESCE(NULLIF(TRIM(users.name), ''), users.email, '') as cashier").
+		Select("transactions.id as id, to_char(transactions.created_at, 'YYYY-MM-DD HH24:MI') as created_at, transactions.total_amount as total_amount, COALESCE(NULLIF(TRIM(users.name), ''), users.email, '') as cashier, COALESCE(NULLIF(TRIM(transactions.customer_name), ''), '') as customer_name, COALESCE(NULLIF(TRIM(transactions.customer_phone), ''), '') as customer_phone").
 		Joins("LEFT JOIN users ON users.id = transactions.user_id AND users.tenant_id = transactions.tenant_id").
 		Where("transactions.tenant_id = ? AND transactions.status = ?", tenantID, "completed").
 		Where("transactions.created_at >= ? AND transactions.created_at <= ?", fromDate, toDate).

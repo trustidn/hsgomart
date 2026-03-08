@@ -164,6 +164,8 @@
               <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date & Time</th>
               <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Transaction ID</th>
               <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cashier</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Customer</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">No HP</th>
               <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Amount</th>
               <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Receipt</th>
             </tr>
@@ -173,13 +175,15 @@
               <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.created_at }}</td>
               <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ row.id }}</td>
               <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ row.cashier || '—' }}</td>
+              <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.customer_name || '—' }}</td>
+              <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.customer_phone || '—' }}</td>
               <td class="px-4 py-2 text-sm text-right text-gray-800 dark:text-gray-200">{{ formatPrice(row.total_amount) }}</td>
               <td class="px-4 py-2 text-right">
                 <button type="button" class="text-sm text-slate-600 dark:text-slate-400 hover:underline dark:hover:text-slate-300" @click="openReceiptModal(row.id)">View</button>
               </td>
             </tr>
             <tr v-if="!salesTransactions?.length">
-              <td colspan="5" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No transactions for this period.</td>
+              <td colspan="7" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No transactions for this period.</td>
             </tr>
           </tbody>
         </table>
@@ -531,8 +535,8 @@ const activeTabLabel = computed(() => tabs.find((t) => t.id === activeTab.value)
 const salesDailyHeaders = ['Date', 'Transactions', 'Revenue']
 const salesDailyRows = computed(() => (salesDaily.value || []).map((r) => [r.date, r.total_transactions, formatPrice(r.total_sales)]))
 
-const salesTransactionsHeaders = ['Date & Time', 'Transaction ID', 'Cashier', 'Amount']
-const salesTransactionsRows = computed(() => (salesTransactions.value || []).map((r) => [r.created_at, r.id, r.cashier || '—', formatPrice(r.total_amount)]))
+const salesTransactionsHeaders = ['Date & Time', 'Transaction ID', 'Cashier', 'Customer', 'No HP', 'Amount']
+const salesTransactionsRows = computed(() => (salesTransactions.value || []).map((r) => [r.created_at, r.id, r.cashier || '—', r.customer_name || '—', r.customer_phone || '—', formatPrice(r.total_amount)]))
 const salesTransactionsShowing = computed(() => {
   const total = salesTransactionsTotal.value
   const page = salesTransactionsPage.value
