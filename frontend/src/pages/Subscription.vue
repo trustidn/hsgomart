@@ -22,6 +22,7 @@
                 }">{{ subscription.status }}</span>
             </p>
             <p v-if="trialDaysLeft !== null" class="text-sm text-amber-600 mt-1">Trial ends in {{ trialDaysLeft }} days</p>
+            <p v-else-if="daysRemaining !== null" class="text-sm mt-1" :class="daysRemaining <= 7 ? 'text-red-600' : 'text-gray-500'">{{ daysRemaining }} days remaining</p>
           </div>
           <div class="text-right text-sm text-gray-500">
             <p>Max Users: {{ plan?.max_users }}</p>
@@ -100,8 +101,8 @@
             </div>
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
               <p class="font-medium mb-1">Transfer to:</p>
-              <p>Bank BCA — 1234567890</p>
-              <p>a/n HSMart Payment</p>
+              <p>{{ bankInfo.bank_name || 'Bank' }} — {{ bankInfo.bank_account || '-' }}</p>
+              <p>a/n {{ bankInfo.bank_holder || '-' }}</p>
             </div>
             <p class="text-xs text-gray-500">After creating the order, please transfer and upload the payment proof.</p>
             <div class="flex gap-3">
@@ -148,6 +149,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getSubscription, listPlans, createOrder, uploadPaymentProof, getOrders } from '../api/subscription'
+import { getSaasInfo } from '../api/admin'
 
 const loading = ref(true)
 const error = ref('')
@@ -156,6 +158,8 @@ const plan = ref(null)
 const plans = ref([])
 const orders = ref([])
 const trialDaysLeft = ref(null)
+const daysRemaining = ref(null)
+const bankInfo = ref({ bank_name: '', bank_account: '', bank_holder: '' })
 
 const showOrderModal = ref(false)
 const selectedPlan = ref(null)
@@ -169,16 +173,19 @@ const uploadError = ref('')
 
 async function load() {
   try {
-    const [subData, plansData, ordersData] = await Promise.all([
+    const [subData, plansData, ordersData, saasData] = await Promise.all([
       getSubscription(),
       listPlans(),
       getOrders().catch(() => []),
+      getSaasInfo().catch(() => ({})),
     ])
     subscription.value = subData.subscription
     plan.value = subData.plan
     trialDaysLeft.value = subData.trial_days_left ?? null
+    daysRemaining.value = subData.days_remaining ?? null
     plans.value = Array.isArray(plansData) ? plansData : []
     orders.value = Array.isArray(ordersData) ? ordersData : []
+    if (saasData.bank_name) bankInfo.value = saasData
   } catch (e) {
     error.value = e.response?.data?.error ?? 'Failed to load subscription'
   } finally {

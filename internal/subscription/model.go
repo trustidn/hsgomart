@@ -8,6 +8,8 @@ type Plan struct {
 	Price       float64   `gorm:"type:numeric" json:"price"`
 	MaxUsers    int       `gorm:"column:max_users" json:"max_users"`
 	MaxProducts int       `gorm:"column:max_products" json:"max_products"`
+	Description string    `gorm:"type:text" json:"description"`
+	IsActive    *bool     `gorm:"column:is_active;default:true" json:"is_active"`
 	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
 }
 

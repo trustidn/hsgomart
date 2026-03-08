@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getTenantProfile } from '../api/tenant'
+import { useSaasStore } from './saas'
 
 const baseURL =
   typeof window !== 'undefined' && window.location.port === '8080'
@@ -24,16 +25,19 @@ export const useTenantStore = defineStore('tenant', () => {
   }
 
   function applyBranding() {
-    if (!profile.value) return
-    const name = profile.value.name
+    const saas = useSaasStore()
+
+    const name = profile.value?.name || saas.platformName
     if (name) {
       document.title = name
     }
-    const logo = profile.value.logo_url
+
+    const logo = profile.value?.logo_url || saas.logoUrl
     if (logo) {
       const favicon = document.getElementById('app-favicon')
       if (favicon) {
-        favicon.href = `${baseURL}${logo}`
+        const src = logo.startsWith('http') ? logo : `${baseURL}${logo}`
+        favicon.href = src
         favicon.type = 'image/png'
       }
     }
@@ -44,8 +48,17 @@ export const useTenantStore = defineStore('tenant', () => {
     loaded.value = false
   }
 
-  const storeName = () => profile.value?.name || 'HSMart'
-  const logoUrl = () => profile.value?.logo_url || ''
+  const storeName = () => {
+    if (profile.value?.name) return profile.value.name
+    const saas = useSaasStore()
+    return saas.platformName || 'HSMart'
+  }
+
+  const logoUrl = () => {
+    if (profile.value?.logo_url) return profile.value.logo_url
+    const saas = useSaasStore()
+    return saas.logoUrl || ''
+  }
 
   return { profile, loaded, load, reset, storeName, logoUrl, applyBranding }
 })

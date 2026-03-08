@@ -13,6 +13,9 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg config.Config) {
 	svc := NewServiceRegistry(db, cfg)
 	h := NewHandlerRegistry(svc, db)
 
+	// Public endpoint (no auth) for SaaS platform info (bank details, name, etc.)
+	r.GET("/api/saas-info", h.Saas.PublicInfo)
+
 	registerAuthRoutes(r, h, svc)
 	registerAPIRoutes(r, h, svc)
 	registerAdminRoutes(r, h, svc)
@@ -82,19 +85,16 @@ func registerOwnerRoutes(api *gin.RouterGroup, h *HandlerRegistry) {
 	g := api.Group("")
 	g.Use(middleware.Role("owner"))
 	{
-		// User management
 		g.GET("/users", h.User.List)
 		g.POST("/users", h.User.Create)
 		g.PUT("/users/:id", h.User.Update)
 		g.DELETE("/users/:id", h.User.Delete)
 
-		// Categories
 		g.GET("/categories", h.Product.ListCategories)
 		g.POST("/categories", h.Product.CreateCategory)
 		g.PUT("/categories/:id", h.Product.UpdateCategory)
 		g.DELETE("/categories/:id", h.Product.DeleteCategory)
 
-		// Products
 		g.POST("/products", h.Product.CreateProduct)
 		g.GET("/products/:id", h.Product.GetProduct)
 		g.PUT("/products/:id", h.Product.UpdateProduct)
@@ -103,17 +103,14 @@ func registerOwnerRoutes(api *gin.RouterGroup, h *HandlerRegistry) {
 		g.GET("/products/:id/barcodes", h.Product.ListBarcodes)
 		g.DELETE("/products/:id/barcodes/:barcode", h.Product.DeleteBarcode)
 
-		// Inventory
 		g.GET("/inventory", h.Inventory.List)
 		g.GET("/inventory/movements", h.Inventory.ListMovements)
 		g.POST("/products/:id/adjust-stock", h.Inventory.AdjustStock)
 
-		// Purchases
 		g.GET("/purchases", h.Purchase.List)
 		g.GET("/purchases/:id", h.Purchase.GetByID)
 		g.POST("/purchases", h.Purchase.Create)
 
-		// Reports
 		g.GET("/reports/sales/daily", h.Report.SalesDaily)
 		g.GET("/reports/sales/hourly", h.Report.SalesHourly)
 		g.GET("/reports/sales/transactions", h.Report.SalesTransactions)
@@ -124,17 +121,13 @@ func registerOwnerRoutes(api *gin.RouterGroup, h *HandlerRegistry) {
 		g.GET("/reports/shifts", h.Report.ShiftsReport)
 		g.GET("/reports/products/margin", h.Report.ProductMargin)
 
-		// Shifts
 		g.GET("/shifts", h.Shift.ListShifts)
 
-		// Subscription (upgrade plan directly without order flow)
 		g.PUT("/subscription", h.Subscription.ChangePlan)
 
-		// Refunds
 		g.POST("/pos/refund", h.Refund.CreateRefund)
 		g.GET("/refunds", h.Refund.ListRefunds)
 
-		// Stock opname
 		g.POST("/inventory/opname", h.Opname.Start)
 		g.PUT("/inventory/opname/:id", h.Opname.SubmitItems)
 		g.POST("/inventory/opname/:id/approve", h.Opname.Approve)
@@ -147,16 +140,38 @@ func registerAdminRoutes(r *gin.Engine, h *HandlerRegistry, svc *ServiceRegistry
 	g := r.Group("/admin")
 	g.Use(middleware.Auth(svc.Auth), middleware.Role("superadmin"))
 	{
+		// SaaS Settings
+		g.GET("/settings", h.Saas.GetSettings)
+		g.PUT("/settings", h.Saas.UpdateSettings)
+		g.POST("/settings/logo", h.Saas.UploadLogo)
+
+		// Plans CRUD
+		g.GET("/plans", h.Admin.ListPlans)
+		g.POST("/plans", h.Admin.CreatePlan)
+		g.PUT("/plans/:id", h.Admin.UpdatePlan)
+		g.DELETE("/plans/:id", h.Admin.DeletePlan)
+
+		// Tenants
 		g.GET("/tenants", h.Admin.ListTenants)
 		g.GET("/tenants/:id", h.Admin.GetTenant)
+		g.POST("/tenants", h.Admin.CreateTenant)
 		g.PUT("/tenants/:id", h.Admin.UpdateTenant)
+		g.DELETE("/tenants/:id", h.Admin.DeleteTenant)
+
+		// Subscriptions
 		g.GET("/subscriptions", h.Admin.ListSubscriptions)
 		g.PUT("/subscriptions/:id", h.Admin.UpdateSubscription)
-		g.GET("/stats", h.Admin.Stats)
 
+		// Orders
 		g.GET("/orders", h.Admin.ListOrders)
 		g.GET("/orders/:id", h.Admin.GetOrderDetail)
 		g.PUT("/orders/:id/approve", h.Admin.ApproveOrder)
 		g.PUT("/orders/:id/reject", h.Admin.RejectOrder)
+
+		// Revenue Report
+		g.GET("/reports/revenue", h.Admin.RevenueReport)
+
+		// Dashboard Stats
+		g.GET("/stats", h.Admin.Stats)
 	}
 }

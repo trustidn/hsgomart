@@ -35,12 +35,16 @@ func (h *Handler) GetSubscription(c *gin.Context) {
 	}
 
 	var trialDaysLeft *int
-	if sub.Subscription.Status == "trial" && sub.Subscription.EndDate != nil {
+	var daysRemaining *int
+	if sub.Subscription.EndDate != nil {
 		days := int(math.Ceil(time.Until(*sub.Subscription.EndDate).Hours() / 24))
 		if days < 0 {
 			days = 0
 		}
-		trialDaysLeft = &days
+		daysRemaining = &days
+		if sub.Subscription.Status == "trial" {
+			trialDaysLeft = &days
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -60,12 +64,13 @@ func (h *Handler) GetSubscription(c *gin.Context) {
 			"max_products": sub.Plan.MaxProducts,
 		},
 		"trial_days_left": trialDaysLeft,
+		"days_remaining":  daysRemaining,
 	})
 }
 
 func (h *Handler) ListPlans(c *gin.Context) {
 	var plans []Plan
-	if err := h.service.db.Order("price ASC").Find(&plans).Error; err != nil {
+	if err := h.service.db.Where("is_active = true OR is_active IS NULL").Order("price ASC").Find(&plans).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list plans"})
 		return
 	}

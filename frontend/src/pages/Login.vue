@@ -2,9 +2,10 @@
   <div class="min-h-screen flex items-center justify-center bg-slate-50 px-4">
     <div class="w-full max-w-sm">
       <div class="text-center mb-8">
-        <div class="w-12 h-12 rounded-xl bg-indigo-500 flex items-center justify-center text-white text-xl font-bold mx-auto mb-4">H</div>
-        <h1 class="text-2xl font-bold text-gray-900">Welcome back</h1>
-        <p class="text-sm text-gray-500 mt-1">Sign in to your HSMart POS account</p>
+        <img v-if="saas.logoSrc" :src="saas.logoSrc" class="w-14 h-14 rounded-xl object-cover mx-auto mb-4" alt="" />
+        <div v-else class="w-14 h-14 rounded-xl bg-indigo-500 flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4">{{ saas.platformName.charAt(0) }}</div>
+        <h1 class="text-2xl font-bold text-gray-900">{{ saas.platformName }}</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ saas.tagline || 'Sign in to your account' }}</p>
       </div>
 
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -57,18 +58,25 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useSaasStore } from '../stores/saas'
 import { login as apiLogin, getProfile } from '../api/auth'
 
 const router = useRouter()
 const auth = useAuthStore()
+const saas = useSaasStore()
 
 const email = ref('')
 const password = ref('')
 const loading = ref(false)
 const errorMessage = ref('')
+
+onMounted(async () => {
+  await saas.load()
+  saas.applyBranding()
+})
 
 async function handleSubmit() {
   errorMessage.value = ''

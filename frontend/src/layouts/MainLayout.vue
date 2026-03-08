@@ -135,9 +135,11 @@ import { ref, computed, onMounted, h } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useTenantStore } from '../stores/tenant'
+import { useSaasStore } from '../stores/saas'
 import client from '../api/client'
 
 const tenantStore = useTenantStore()
+const saasStore = useSaasStore()
 
 const router = useRouter()
 const route = useRoute()
@@ -221,6 +223,7 @@ function goToNotif(n) {
 }
 
 onMounted(async () => {
+  await saasStore.load()
   tenantStore.load()
 
   try {

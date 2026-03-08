@@ -2,18 +2,26 @@
   <div>
     <h1 class="text-2xl font-bold text-gray-800 mb-6">Admin Dashboard</h1>
     <div v-if="loading" class="text-gray-500">Loading...</div>
-    <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="bg-white rounded-lg shadow p-5">
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="bg-white rounded-xl border border-gray-200 p-5">
         <p class="text-sm text-gray-500">Total Tenants</p>
         <p class="text-3xl font-bold text-gray-800">{{ stats.total_tenants }}</p>
       </div>
-      <div class="bg-white rounded-lg shadow p-5">
-        <p class="text-sm text-gray-500">Total Transactions</p>
-        <p class="text-3xl font-bold text-gray-800">{{ stats.total_transactions }}</p>
+      <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <p class="text-sm text-gray-500">Active Tenants</p>
+        <p class="text-3xl font-bold text-green-600">{{ stats.active_tenants }}</p>
       </div>
-      <div class="bg-white rounded-lg shadow p-5">
-        <p class="text-sm text-gray-500">Total Revenue</p>
-        <p class="text-3xl font-bold text-gray-800">Rp {{ Number(stats.total_revenue || 0).toLocaleString() }}</p>
+      <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <p class="text-sm text-gray-500">Subscription Revenue</p>
+        <p class="text-3xl font-bold text-gray-800">Rp {{ Number(stats.total_revenue || 0).toLocaleString('id-ID') }}</p>
+      </div>
+      <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <p class="text-sm text-gray-500">Pending Orders</p>
+        <p class="text-3xl font-bold" :class="stats.pending_orders > 0 ? 'text-amber-600' : 'text-gray-800'">{{ stats.pending_orders }}</p>
+      </div>
+      <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <p class="text-sm text-gray-500">Expiring in 7 Days</p>
+        <p class="text-3xl font-bold" :class="stats.expiring_in_7d > 0 ? 'text-red-600' : 'text-gray-800'">{{ stats.expiring_in_7d }}</p>
       </div>
     </div>
   </div>

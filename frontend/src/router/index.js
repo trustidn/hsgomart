@@ -45,7 +45,10 @@ const routes = [
       { path: 'dashboard', name: 'AdminDashboard', component: () => import('../pages/admin/AdminDashboard.vue'), meta: { roles: ['superadmin'] } },
       { path: 'tenants', name: 'AdminTenants', component: () => import('../pages/admin/AdminTenants.vue'), meta: { roles: ['superadmin'] } },
       { path: 'subscriptions', name: 'AdminSubscriptions', component: () => import('../pages/admin/AdminSubscriptions.vue'), meta: { roles: ['superadmin'] } },
+      { path: 'plans', name: 'AdminPlans', component: () => import('../pages/admin/AdminPlans.vue'), meta: { roles: ['superadmin'] } },
       { path: 'orders', name: 'AdminOrders', component: () => import('../pages/admin/AdminOrders.vue'), meta: { roles: ['superadmin'] } },
+      { path: 'revenue', name: 'AdminRevenue', component: () => import('../pages/admin/AdminRevenue.vue'), meta: { roles: ['superadmin'] } },
+      { path: 'settings', name: 'AdminSettings', component: () => import('../pages/admin/AdminSettings.vue'), meta: { roles: ['superadmin'] } },
     ],
   },
 ]

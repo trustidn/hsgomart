@@ -11,6 +11,7 @@ import (
 	"github.com/trustidn/hsmart-saas/internal/purchase"
 	"github.com/trustidn/hsmart-saas/internal/refund"
 	"github.com/trustidn/hsmart-saas/internal/report"
+	"github.com/trustidn/hsmart-saas/internal/saas"
 	"github.com/trustidn/hsmart-saas/internal/shift"
 	"github.com/trustidn/hsmart-saas/internal/subscription"
 	"github.com/trustidn/hsmart-saas/internal/tenant"
@@ -33,6 +34,7 @@ type ServiceRegistry struct {
 	Subscription *subscription.Service
 	Tenant       *tenant.Service
 	Order        *order.Service
+	Saas         *saas.Service
 }
 
 type HandlerRegistry struct {
@@ -50,6 +52,7 @@ type HandlerRegistry struct {
 	Tenant       *tenant.Handler
 	Order        *order.Handler
 	Admin        *admin.Handler
+	Saas         *saas.Handler
 }
 
 func NewServiceRegistry(db *gorm.DB, cfg config.Config) *ServiceRegistry {
@@ -68,6 +71,7 @@ func NewServiceRegistry(db *gorm.DB, cfg config.Config) *ServiceRegistry {
 		Subscription: subscriptionSvc,
 		Tenant:       tenant.NewService(db),
 		Order:        order.NewService(db),
+		Saas:         saas.NewService(db),
 	}
 }
 
@@ -87,5 +91,6 @@ func NewHandlerRegistry(svc *ServiceRegistry, db *gorm.DB) *HandlerRegistry {
 		Tenant:       tenant.NewHandler(svc.Tenant),
 		Order:        order.NewHandler(svc.Order),
 		Admin:        admin.NewHandler(db),
+		Saas:         saas.NewHandler(svc.Saas),
 	}
 }
