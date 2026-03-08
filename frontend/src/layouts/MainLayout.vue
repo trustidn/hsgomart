@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex bg-gray-50">
+  <div class="min-h-screen flex bg-gray-50 dark:bg-gray-950 transition-colors">
     <!-- Mobile overlay -->
     <div
       v-if="sidebarOpen"
@@ -10,18 +10,27 @@
     <!-- Sidebar -->
     <aside
       :class="[
-        'fixed inset-y-0 left-0 z-40 flex flex-col bg-slate-900 text-white border-r border-slate-800 transition-all duration-200 ease-in-out',
+        'fixed inset-y-0 left-0 z-40 flex flex-col bg-slate-900 dark:bg-gray-900 text-white border-r border-slate-800 dark:border-gray-800 transition-all duration-200 ease-in-out',
         sidebarOpen ? 'translate-x-0' : '-translate-x-full',
         'lg:translate-x-0 lg:static lg:z-auto',
         collapsed ? 'lg:w-16' : 'lg:w-60',
         'w-60',
       ]"
     >
-      <!-- Logo -->
-      <div class="h-14 flex items-center gap-2 px-4 border-b border-slate-800 shrink-0">
-        <img v-if="tenantStore.logoUrl()" :src="logoSrc" class="w-8 h-8 rounded-lg object-cover shrink-0" alt="" />
-        <div v-else class="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center text-sm font-bold shrink-0">{{ tenantStore.storeName().charAt(0) }}</div>
-        <span v-show="!collapsed" class="font-semibold text-base tracking-tight truncate">{{ tenantStore.storeName() }}</span>
+      <!-- Logo + Collapse toggle -->
+      <div class="h-14 flex items-center px-3 border-b border-slate-800 dark:border-gray-800 shrink-0">
+        <div class="flex items-center gap-2 flex-1 min-w-0">
+          <img v-if="tenantStore.logoUrl()" :src="logoSrc" class="w-8 h-8 rounded-lg object-cover shrink-0" alt="" />
+          <div v-else class="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center text-sm font-bold shrink-0">{{ tenantStore.storeName().charAt(0) }}</div>
+          <span v-show="!collapsed" class="font-semibold text-base tracking-tight truncate">{{ tenantStore.storeName() }}</span>
+        </div>
+        <button
+          class="hidden lg:flex items-center justify-center w-7 h-7 rounded-md text-slate-400 hover:text-white hover:bg-slate-700 transition-colors shrink-0"
+          @click="collapsed = !collapsed"
+          :title="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+        >
+          <svg :class="['w-4 h-4 transition-transform', collapsed ? 'rotate-180' : '']" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
+        </button>
       </div>
 
       <!-- Navigation -->
@@ -45,14 +54,6 @@
           </router-link>
         </template>
       </nav>
-
-      <!-- Collapse toggle (desktop) -->
-      <button
-        class="hidden lg:flex items-center justify-center h-10 border-t border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-        @click="collapsed = !collapsed"
-      >
-        <svg :class="['w-4 h-4 transition-transform', collapsed ? 'rotate-180' : '']" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
-      </button>
     </aside>
 
     <!-- Main content -->
@@ -64,17 +65,29 @@
       </div>
 
       <!-- Top bar -->
-      <header class="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 shrink-0 sticky top-0 z-20">
+      <header class="h-14 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-4 shrink-0 sticky top-0 z-20 transition-colors">
         <div class="flex items-center gap-3">
-          <button class="lg:hidden text-gray-500 hover:text-gray-700 -ml-1 p-1" @click="sidebarOpen = true">
+          <button class="lg:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 -ml-1 p-1" @click="sidebarOpen = true">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>
-          <h2 class="text-sm font-medium text-gray-700 truncate">{{ pageTitle }}</h2>
+          <h2 class="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{{ pageTitle }}</h2>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5">
+          <!-- Dark mode toggle -->
+          <button
+            @click="themeStore.toggle()"
+            class="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            :title="themeStore.dark ? 'Light mode' : 'Dark mode'"
+          >
+            <!-- Sun icon (shown in dark mode) -->
+            <svg v-if="themeStore.dark" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" stroke-width="2"/><path stroke-linecap="round" stroke-width="2" d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <!-- Moon icon (shown in light mode) -->
+            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+          </button>
+
           <!-- Notifications -->
           <div class="relative">
-            <button @click="showNotif = !showNotif" class="relative p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+            <button @click="showNotif = !showNotif" class="relative p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
               <span v-if="notifCount > 0" class="absolute top-0 right-0 bg-red-500 text-white text-[10px] min-w-[16px] h-4 rounded-full flex items-center justify-center px-1 font-medium">{{ notifCount > 9 ? '9+' : notifCount }}</span>
             </button>
@@ -86,20 +99,20 @@
               leave-from-class="opacity-100 translate-y-0"
               leave-to-class="opacity-0 -translate-y-1"
             >
-              <div v-if="showNotif" class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden">
-                <div class="px-4 py-3 border-b font-medium text-sm text-gray-800">Notifications</div>
-                <div class="max-h-64 overflow-auto divide-y divide-gray-100">
+              <div v-if="showNotif" class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 font-medium text-sm text-gray-800 dark:text-gray-200">Notifications</div>
+                <div class="max-h-64 overflow-auto divide-y divide-gray-100 dark:divide-gray-800">
                   <div v-if="!notifications.length" class="px-4 py-6 text-sm text-gray-400 text-center">No alerts</div>
                   <button
                     v-for="n in notifications"
                     :key="n.id"
-                    class="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors flex items-start gap-3"
+                    class="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-start gap-3"
                     @click="goToNotif(n)"
                   >
-                    <span :class="[n.type === 'low_stock' ? 'bg-amber-100 text-amber-600' : 'bg-red-100 text-red-600', 'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5']">{{ n.type === 'low_stock' ? '!' : '⏰' }}</span>
+                    <span :class="[n.type === 'low_stock' ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400' : 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400', 'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5']">{{ n.type === 'low_stock' ? '!' : '⏰' }}</span>
                     <div>
-                      <div class="text-sm font-medium text-gray-800">{{ n.type === 'low_stock' ? 'Low Stock' : 'Expiring Soon' }}</div>
-                      <div class="text-xs text-gray-500 mt-0.5">{{ n.label }}</div>
+                      <div class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ n.type === 'low_stock' ? 'Low Stock' : 'Expiring Soon' }}</div>
+                      <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ n.label }}</div>
                     </div>
                   </button>
                 </div>
@@ -108,12 +121,12 @@
           </div>
 
           <!-- User menu -->
-          <div class="flex items-center gap-2 pl-2 border-l border-gray-200">
-            <div class="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-xs font-medium text-slate-600 uppercase">{{ userInitials }}</div>
-            <span class="text-sm text-gray-600 hidden sm:block max-w-[140px] truncate">{{ userEmail }}</span>
+          <div class="flex items-center gap-2 pl-2 border-l border-gray-200 dark:border-gray-700">
+            <div class="w-7 h-7 rounded-full bg-slate-200 dark:bg-gray-700 flex items-center justify-center text-xs font-medium text-slate-600 dark:text-gray-300 uppercase">{{ userInitials }}</div>
+            <span class="text-sm text-gray-600 dark:text-gray-400 hidden sm:block max-w-[140px] truncate">{{ userEmail }}</span>
             <button
               type="button"
-              class="text-xs text-gray-400 hover:text-red-600 transition-colors p-1"
+              class="text-xs text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors p-1"
               title="Logout"
               @click="handleLogout"
             >
@@ -136,10 +149,12 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useTenantStore } from '../stores/tenant'
 import { useSaasStore } from '../stores/saas'
+import { useThemeStore } from '../stores/theme'
 import client from '../api/client'
 
 const tenantStore = useTenantStore()
 const saasStore = useSaasStore()
+const themeStore = useThemeStore()
 
 const router = useRouter()
 const route = useRoute()
