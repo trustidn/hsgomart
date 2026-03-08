@@ -46,6 +46,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { parseDate, formatPrice } from '../utils'
 
 const props = defineProps({
   storeName: { type: String, default: 'HSMart' },
@@ -59,13 +60,10 @@ const props = defineProps({
 })
 
 const dateFormatted = computed(() => {
-  const d = props.date instanceof Date ? props.date : new Date(props.date)
+  const d = parseDate(props.date)
+  if (!d || isNaN(d)) return '—'
   return d.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
 })
-
-function formatPrice(value) {
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value ?? 0)
-}
 </script>
 
 <style scoped>

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/trustidn/hsmart-saas/internal/seed"
 	"github.com/trustidn/hsmart-saas/internal/subscription"
 	"github.com/trustidn/hsmart-saas/internal/tenant"
 	"github.com/trustidn/hsmart-saas/internal/user"
@@ -120,7 +121,11 @@ func (s *Service) Register(in RegisterInput) (*TokenPair, error) {
 	}
 
 	now := time.Now()
-	end := now.AddDate(0, 1, 0)
+	days := plan.DurationDays
+	if days <= 0 {
+		days = 7
+	}
+	end := now.AddDate(0, 0, days)
 	sub := subscription.Subscription{
 		TenantID:  t.ID,
 		PlanID:    plan.ID,
@@ -131,6 +136,8 @@ func (s *Service) Register(in RegisterInput) (*TokenPair, error) {
 	if err := s.db.Create(&sub).Error; err != nil {
 		return nil, err
 	}
+
+	_ = seed.SeedTenantData(s.db, t.ID, u.ID)
 
 	return s.generateTokenPair(u.ID, t.ID, u.Role)
 }
@@ -145,10 +152,11 @@ func (s *Service) getOrCreateTrialPlan() (subscription.Plan, error) {
 		return subscription.Plan{}, err
 	}
 	plan = subscription.Plan{
-		Name:        "Trial",
-		Price:       0,
-		MaxUsers:    5,
-		MaxProducts: 100,
+		Name:         "Trial",
+		Price:        0,
+		DurationDays: 7,
+		MaxUsers:     5,
+		MaxProducts:  100,
 	}
 	if err := s.db.Create(&plan).Error; err != nil {
 		return subscription.Plan{}, err

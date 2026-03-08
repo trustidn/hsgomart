@@ -1,10 +1,12 @@
 import { jsPDF } from 'jspdf'
+import { parseDate } from './index'
 
 const FMT = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 })
 function fmt(v) { return FMT.format(v ?? 0) }
 
 function fmtDate(d) {
-  const dt = d instanceof Date ? d : new Date(d)
+  const dt = parseDate(d)
+  if (!dt || isNaN(dt)) return '—'
   return dt.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
 }
 

@@ -31,10 +31,12 @@
     <p class="text-xs text-gray-500 mb-3">
       <span class="font-medium text-gray-600">Shortcuts:</span>
       <kbd class="px-1.5 py-0.5 rounded bg-gray-100 border border-gray-300 font-mono text-xs">F1</kbd> Cash
-      <span class="mx-1.5 text-gray-400">·</span>
       <kbd class="px-1.5 py-0.5 rounded bg-gray-100 border border-gray-300 font-mono text-xs">F2</kbd> Card
-      <span class="mx-1.5 text-gray-400">·</span>
-      <kbd class="px-1.5 py-0.5 rounded bg-gray-100 border border-gray-300 font-mono text-xs">Esc</kbd> Clear cart
+      <kbd class="px-1.5 py-0.5 rounded bg-gray-100 border border-gray-300 font-mono text-xs">F3</kbd> QRIS
+      <kbd class="px-1.5 py-0.5 rounded bg-gray-100 border border-gray-300 font-mono text-xs">F4</kbd> E-Wallet
+      <kbd class="px-1.5 py-0.5 rounded bg-gray-100 border border-gray-300 font-mono text-xs">F5</kbd> Transfer
+      <span class="mx-1 text-gray-400">·</span>
+      <kbd class="px-1.5 py-0.5 rounded bg-gray-100 border border-gray-300 font-mono text-xs">Esc</kbd> Clear
     </p>
 
     <div class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -118,22 +120,15 @@
             <span>{{ formatPrice(totalAmount) }}</span>
           </div>
           <p v-if="isCashier && !currentShift" class="text-sm text-amber-700 mb-2">Open a shift to enable checkout.</p>
-          <div class="flex gap-2">
-            <button
-              type="button"
-              class="flex-1 py-2.5 bg-slate-600 text-white rounded-md hover:bg-slate-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          <div class="grid grid-cols-5 gap-1.5">
+            <button v-for="pm in paymentMethods" :key="pm.value" type="button"
+              class="flex flex-col items-center justify-center py-2 rounded-lg font-medium text-xs transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              :class="pm.class"
               :disabled="!cartItems.length || !canCheckout"
-              @click="openCheckoutModal('cash')"
-            >
-              CASH
-            </button>
-            <button
-              type="button"
-              class="flex-1 py-2.5 bg-slate-700 text-white rounded-md hover:bg-slate-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="!cartItems.length || !canCheckout"
-              @click="openCheckoutModal('card')"
-            >
-              CARD
+              @click="openCheckoutModal(pm.value)"
+              :title="pm.label">
+              <svg class="w-6 h-6 mb-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" v-html="pm.icon" />
+              <span>{{ pm.label }}</span>
             </button>
           </div>
         </div>
@@ -259,6 +254,14 @@ const shiftModalMode = ref(null) // 'open' | 'close' | null
 const lowStockList = ref([])
 const lowStockMessage = ref('')
 const canCheckout = computed(() => !isCashier.value || !!currentShift.value)
+
+const paymentMethods = [
+  { value: 'cash',     label: 'Cash',     class: 'bg-emerald-600 hover:bg-emerald-700 text-white',  icon: '<rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="12" x2="6.01" y2="12" stroke-width="2"/><circle cx="12" cy="12" r="2"/><line x1="18" y1="12" x2="18.01" y2="12" stroke-width="2"/>' },
+  { value: 'card',     label: 'Card',     class: 'bg-blue-600 hover:bg-blue-700 text-white',        icon: '<rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>' },
+  { value: 'qris',     label: 'QRIS',     class: 'bg-violet-600 hover:bg-violet-700 text-white',    icon: '<rect x="2" y="2" width="6" height="6" rx="1"/><rect x="16" y="2" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="12" y="12" width="4" height="4" rx="0.5"/><rect x="18" y="18" width="4" height="4" rx="0.5"/><rect x="12" y="18" width="4" height="4" rx="0.5"/><rect x="18" y="12" width="4" height="4" rx="0.5"/>' },
+  { value: 'ewallet',  label: 'E-Wallet', class: 'bg-amber-500 hover:bg-amber-600 text-white',      icon: '<path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7"/><path d="M13 17l3 3 5-5"/>' },
+  { value: 'transfer', label: 'Transfer', class: 'bg-slate-600 hover:bg-slate-700 text-white',      icon: '<path d="M3 7h14l-4-4"/><path d="M21 17H7l4 4"/><line x1="3" y1="12" x2="21" y2="12" stroke-dasharray="2 2"/>' },
+]
 
 const SCAN_DEBOUNCE_MS = 200
 const MIN_BARCODE_LENGTH = 8
@@ -534,14 +537,13 @@ function confirmClearCart() {
   }
 }
 
+const shortcutMap = { F1: 'cash', F2: 'card', F3: 'qris', F4: 'ewallet', F5: 'transfer' }
 function handleKeyShortcuts(e) {
   if (showCheckoutModal.value || showReceiptModal.value) return
-  if (e.key === 'F1') {
+  const method = shortcutMap[e.key]
+  if (method) {
     e.preventDefault()
-    if (cartItems.value.length) openCheckoutModal('cash')
-  } else if (e.key === 'F2') {
-    e.preventDefault()
-    if (cartItems.value.length) openCheckoutModal('card')
+    if (cartItems.value.length && canCheckout.value) openCheckoutModal(method)
   } else if (e.key === 'Escape') {
     confirmClearCart()
   }

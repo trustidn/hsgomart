@@ -20,6 +20,10 @@ export async function getOpname(opnameId) {
   return data
 }
 
+export async function deleteOpname(opnameId) {
+  await client.delete(`/api/inventory/opname/${opnameId}`)
+}
+
 export async function listOpnames(limit = 50, offset = 0) {
   const { data } = await client.get('/api/inventory/opnames', { params: { limit, offset } })
   return data

@@ -3,14 +3,15 @@ package subscription
 import "time"
 
 type Plan struct {
-	ID          int       `gorm:"primaryKey;autoIncrement" json:"id"`
-	Name        string    `gorm:"type:varchar(100)" json:"name"`
-	Price       float64   `gorm:"type:numeric" json:"price"`
-	MaxUsers    int       `gorm:"column:max_users" json:"max_users"`
-	MaxProducts int       `gorm:"column:max_products" json:"max_products"`
-	Description string    `gorm:"type:text" json:"description"`
-	IsActive    *bool     `gorm:"column:is_active;default:true" json:"is_active"`
-	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
+	ID           int       `gorm:"primaryKey;autoIncrement" json:"id"`
+	Name         string    `gorm:"type:varchar(100)" json:"name"`
+	Price        float64   `gorm:"type:numeric" json:"price"`
+	DurationDays int       `gorm:"column:duration_days;not null;default:30" json:"duration_days"`
+	MaxUsers     int       `gorm:"column:max_users" json:"max_users"`
+	MaxProducts  int       `gorm:"column:max_products" json:"max_products"`
+	Description  string    `gorm:"type:text" json:"description"`
+	IsActive     *bool     `gorm:"column:is_active;default:true" json:"is_active"`
+	CreatedAt    time.Time `gorm:"autoCreateTime" json:"created_at"`
 }
 
 func (Plan) TableName() string {

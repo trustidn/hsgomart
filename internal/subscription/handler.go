@@ -1,7 +1,6 @@
 package subscription
 
 import (
-	"math"
 	"net/http"
 	"time"
 
@@ -37,7 +36,11 @@ func (h *Handler) GetSubscription(c *gin.Context) {
 	var trialDaysLeft *int
 	var daysRemaining *int
 	if sub.Subscription.EndDate != nil {
-		days := int(math.Ceil(time.Until(*sub.Subscription.EndDate).Hours() / 24))
+		now := time.Now()
+		end := *sub.Subscription.EndDate
+		today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+		endDay := time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0, time.UTC)
+		days := int(endDay.Sub(today).Hours() / 24)
 		if days < 0 {
 			days = 0
 		}
@@ -57,11 +60,12 @@ func (h *Handler) GetSubscription(c *gin.Context) {
 			"end_date":   sub.Subscription.EndDate,
 		},
 		"plan": gin.H{
-			"id":           sub.Plan.ID,
-			"name":         sub.Plan.Name,
-			"price":        sub.Plan.Price,
-			"max_users":    sub.Plan.MaxUsers,
-			"max_products": sub.Plan.MaxProducts,
+			"id":            sub.Plan.ID,
+			"name":          sub.Plan.Name,
+			"price":         sub.Plan.Price,
+			"duration_days": sub.Plan.DurationDays,
+			"max_users":     sub.Plan.MaxUsers,
+			"max_products":  sub.Plan.MaxProducts,
 		},
 		"trial_days_left": trialDaysLeft,
 		"days_remaining":  daysRemaining,
@@ -100,9 +104,21 @@ func (h *Handler) ChangePlan(c *gin.Context) {
 		return
 	}
 
+	now := time.Now()
+	days := plan.DurationDays
+	if days <= 0 {
+		days = 30
+	}
+	endDate := now.AddDate(0, 0, days)
+
 	res := h.service.db.Model(&Subscription{}).
 		Where("tenant_id = ? AND status IN ?", tenantID, []string{"active", "trial"}).
-		Updates(map[string]interface{}{"plan_id": in.PlanID, "status": "active"})
+		Updates(map[string]interface{}{
+			"plan_id":    in.PlanID,
+			"status":     "active",
+			"start_date": now,
+			"end_date":   endDate,
+		})
 	if res.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to change plan"})
 		return

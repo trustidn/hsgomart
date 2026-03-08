@@ -121,9 +121,11 @@ func ListMovementRows(db *gorm.DB, tenantID, productID string) ([]MovementRow, e
 func listMovementRows(db *gorm.DB, tenantID, productID, movementType, fromDate, toDate string, limit, offset int) ([]MovementRow, error) {
 	// Window: SUM(quantity) OVER (PARTITION BY product_id ORDER BY created_at) = running balance after each movement.
 	sql := `WITH running AS (
-  SELECT sm.tenant_id, sm.product_id, sm.type, sm.quantity, sm.reference, COALESCE(sm.reason,'') AS reason, sm.created_at,
+  SELECT sm.tenant_id, sm.product_id, sm.type,
+         CASE WHEN sm.type = 'sale' THEN -ABS(sm.quantity) ELSE sm.quantity END AS quantity,
+         sm.reference, COALESCE(sm.reason,'') AS reason, sm.created_at,
          p.name AS product_name,
-         (SUM(sm.quantity) OVER (PARTITION BY sm.product_id ORDER BY sm.created_at))::integer AS stock_after
+         (SUM(CASE WHEN sm.type = 'sale' THEN -ABS(sm.quantity) ELSE sm.quantity END) OVER (PARTITION BY sm.product_id ORDER BY sm.created_at, sm.id))::integer AS stock_after
   FROM stock_movements sm
   LEFT JOIN products p ON p.id = sm.product_id
   WHERE sm.tenant_id = ?

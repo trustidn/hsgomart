@@ -3,7 +3,6 @@ package inventory
 import (
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/trustidn/hsmart-saas/pkg/utils"
@@ -61,7 +60,7 @@ func (h *Handler) ListMovements(c *gin.Context) {
 	for _, r := range rows {
 		createdAt := ""
 		if !r.CreatedAt.IsZero() {
-			createdAt = r.CreatedAt.Format(time.RFC3339)
+			createdAt = r.CreatedAt.Format("2006-01-02T15:04:05")
 		}
 		res = append(res, MovementResponse{
 			ProductName: r.ProductName,

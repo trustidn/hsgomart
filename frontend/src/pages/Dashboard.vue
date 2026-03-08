@@ -9,6 +9,34 @@
     <p v-else-if="error" class="text-red-600 py-4">{{ error }}</p>
 
     <template v-else>
+      <!-- Subscription Info -->
+      <div v-if="sub" class="mb-6">
+        <router-link to="/subscription" class="block bg-white rounded-xl border border-gray-200 p-6 hover:border-indigo-300 transition-colors">
+          <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <p class="text-sm text-gray-500">Current Plan</p>
+              <h2 class="text-lg font-semibold text-gray-900">{{ sub.plan_name }}</h2>
+              <p class="text-sm mt-1">
+                Status:
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                  :class="{
+                    'bg-amber-100 text-amber-700': sub.status === 'trial',
+                    'bg-green-100 text-green-700': sub.status === 'active',
+                    'bg-red-100 text-red-700': sub.status === 'expired',
+                  }">{{ sub.status }}</span>
+              </p>
+              <p v-if="subDays !== null" class="text-sm mt-1" :class="subDays <= 7 ? 'text-red-600' : 'text-gray-500'">
+                {{ subDays }} days remaining
+              </p>
+            </div>
+            <div class="text-right text-sm text-gray-500">
+              <p>Max Users: {{ subPlan?.max_users }}</p>
+              <p>Max Products: {{ subPlan?.max_products }}</p>
+            </div>
+          </div>
+        </router-link>
+      </div>
+
       <!-- Low Stock Alert -->
       <div v-if="lowStock.length > 0" class="mb-6">
         <router-link to="/inventory" class="block bg-amber-50 border border-amber-200 rounded-lg p-4 hover:bg-amber-100 transition">
@@ -127,6 +155,7 @@ import { ref, onMounted, nextTick } from 'vue'
 import { Chart, registerables } from 'chart.js'
 import { getSalesSummary, getTopProducts, getInventorySummary, getSalesDaily, getSalesCompare } from '../api/reports'
 import { getLowStock } from '../api/inventory'
+import { getSubscription } from '../api/subscription'
 import { formatCurrency } from '../utils'
 import client from '../api/client'
 
@@ -140,6 +169,9 @@ const inventorySummary = ref([])
 const lowStock = ref([])
 const expiring = ref([])
 const compare = ref(null)
+const sub = ref(null)
+const subPlan = ref(null)
+const subDays = ref(null)
 
 const salesChartRef = ref(null)
 const productsChartRef = ref(null)
@@ -148,13 +180,14 @@ onMounted(async () => {
   loading.value = true
   error.value = null
   try {
-    const [sales, products, inventory, low, expData, cmp] = await Promise.all([
+    const [sales, products, inventory, low, expData, cmp, subData] = await Promise.all([
       getSalesSummary(),
       getTopProducts(),
       getInventorySummary(),
       getLowStock().catch(() => []),
       client.get('/api/inventory/expiring', { params: { days: 30 } }).then(r => r.data).catch(() => []),
       getSalesCompare().catch(() => null),
+      getSubscription().catch(() => null),
     ])
     salesSummary.value = sales
     topProducts.value = Array.isArray(products) ? products : []
@@ -162,6 +195,11 @@ onMounted(async () => {
     lowStock.value = Array.isArray(low) ? low : []
     expiring.value = Array.isArray(expData) ? expData : []
     compare.value = cmp
+    if (subData) {
+      sub.value = subData.subscription
+      subPlan.value = subData.plan
+      subDays.value = subData.days_remaining ?? subData.trial_days_left ?? null
+    }
 
     await nextTick()
     renderCharts(products)

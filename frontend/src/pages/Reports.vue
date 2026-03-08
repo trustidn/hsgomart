@@ -446,7 +446,7 @@ import {
   getShiftsReport,
   getProductMargin,
 } from '../api/reports'
-import { formatPrice } from '../utils'
+import { formatPrice, formatDate, formatDateTime } from '../utils'
 import { getReceipt } from '../api/receipt'
 import { generateReceiptPDF, buildReceiptText } from '../utils/receipt-pdf'
 import { useTenantStore } from '../stores/tenant'

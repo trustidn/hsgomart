@@ -47,7 +47,7 @@ func (h *Handler) ListTenants(c *gin.Context) {
 		       COALESCE(s.sub_status, '') AS sub_status,
 		       s.end_date,
 		       CASE WHEN s.end_date IS NOT NULL
-		            THEN GREATEST(0, EXTRACT(DAY FROM (s.end_date::timestamp - NOW())))::int
+		            THEN GREATEST(0, s.end_date::date - CURRENT_DATE)
 		            ELSE NULL END AS days_remaining
 		FROM tenants t
 		LEFT JOIN LATERAL (
@@ -86,7 +86,7 @@ func (h *Handler) GetTenant(c *gin.Context) {
 		       COALESCE(s.sub_status, '') AS sub_status,
 		       s.end_date,
 		       CASE WHEN s.end_date IS NOT NULL
-		            THEN GREATEST(0, EXTRACT(DAY FROM (s.end_date::timestamp - NOW())))::int
+		            THEN GREATEST(0, s.end_date::date - CURRENT_DATE)
 		            ELSE NULL END AS days_remaining
 		FROM tenants t
 		LEFT JOIN LATERAL (
@@ -156,32 +156,42 @@ func (h *Handler) CreateTenant(c *gin.Context) {
 	}
 
 	planID := 0
+	durationDays := 30
 	subStatus := "trial"
 	if in.PlanID != nil && *in.PlanID > 0 {
 		var plan struct {
-			ID    int
-			Price float64
+			ID           int
+			Price        float64
+			DurationDays int
 		}
-		if err := tx.Raw("SELECT id, price FROM plans WHERE id = ?", *in.PlanID).Scan(&plan).Error; err != nil || plan.ID == 0 {
+		if err := tx.Raw("SELECT id, price, duration_days FROM plans WHERE id = ?", *in.PlanID).Scan(&plan).Error; err != nil || plan.ID == 0 {
 			tx.Rollback()
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid plan"})
 			return
 		}
 		planID = plan.ID
+		durationDays = plan.DurationDays
 		if plan.Price > 0 {
 			subStatus = "active"
 		}
 	} else {
-		var trialPlan struct{ ID int }
-		if err := tx.Raw("SELECT id FROM plans WHERE name = 'Trial' LIMIT 1").Scan(&trialPlan).Error; err != nil || trialPlan.ID == 0 {
-			tx.Exec("INSERT INTO plans (name, price, max_users, max_products) VALUES ('Trial', 0, 5, 100)")
-			tx.Raw("SELECT id FROM plans WHERE name = 'Trial' LIMIT 1").Scan(&trialPlan)
+		var trialPlan struct {
+			ID           int
+			DurationDays int
+		}
+		if err := tx.Raw("SELECT id, duration_days FROM plans WHERE name = 'Trial' LIMIT 1").Scan(&trialPlan).Error; err != nil || trialPlan.ID == 0 {
+			tx.Exec("INSERT INTO plans (name, price, max_users, max_products, duration_days) VALUES ('Trial', 0, 5, 100, 7)")
+			tx.Raw("SELECT id, duration_days FROM plans WHERE name = 'Trial' LIMIT 1").Scan(&trialPlan)
 		}
 		planID = trialPlan.ID
+		durationDays = trialPlan.DurationDays
+		if durationDays <= 0 {
+			durationDays = 7
+		}
 	}
 
 	now := time.Now()
-	endDate := now.AddDate(0, 1, 0)
+	endDate := now.AddDate(0, 0, durationDays)
 	if err := tx.Exec(`INSERT INTO subscriptions (tenant_id, plan_id, status, start_date, end_date) VALUES (?, ?, ?, ?, ?)`, tenantID, planID, subStatus, now, endDate).Error; err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create subscription"})
@@ -232,8 +242,14 @@ func (h *Handler) UpdateTenant(c *gin.Context) {
 	}
 
 	if in.PlanID != nil {
+		var planDuration struct{ DurationDays int }
+		tx.Raw("SELECT duration_days FROM plans WHERE id = ?", *in.PlanID).Scan(&planDuration)
+		days := planDuration.DurationDays
+		if days <= 0 {
+			days = 30
+		}
 		now := time.Now()
-		endDate := now.AddDate(0, 1, 0)
+		endDate := now.AddDate(0, 0, days)
 		res := tx.Exec(`UPDATE subscriptions SET plan_id = ?, status = 'active', start_date = ?, end_date = ? WHERE tenant_id = ? AND status IN ('active','trial')`, *in.PlanID, now, endDate, id)
 		if res.RowsAffected == 0 {
 			tx.Exec(`INSERT INTO subscriptions (tenant_id, plan_id, status, start_date, end_date) VALUES (?, ?, 'active', ?, ?)`, id, *in.PlanID, now, endDate)
@@ -269,7 +285,7 @@ func (h *Handler) ListSubscriptions(c *gin.Context) {
 		SELECT s.id, s.tenant_id, t.name AS tenant_name, p.name AS plan_name, s.status,
 		       TO_CHAR(s.end_date, 'YYYY-MM-DD') AS end_date,
 		       CASE WHEN s.end_date IS NOT NULL
-		            THEN GREATEST(0, EXTRACT(DAY FROM (s.end_date::timestamp - NOW())))::int
+		            THEN GREATEST(0, s.end_date::date - CURRENT_DATE)
 		            ELSE NULL END AS days_remaining
 		FROM subscriptions s
 		JOIN tenants t ON t.id = s.tenant_id
@@ -317,20 +333,21 @@ func (h *Handler) UpdateSubscription(c *gin.Context) {
 // ─── Plan CRUD ──────────────────────────────────────────────────────────────
 
 type planRow struct {
-	ID          int     `json:"id"`
-	Name        string  `json:"name"`
-	Price       float64 `json:"price"`
-	MaxUsers    int     `json:"max_users"`
-	MaxProducts int     `json:"max_products"`
-	Description string  `json:"description"`
-	IsActive    bool    `json:"is_active"`
-	TenantCount int     `json:"tenant_count"`
+	ID           int     `json:"id"`
+	Name         string  `json:"name"`
+	Price        float64 `json:"price"`
+	DurationDays int     `json:"duration_days"`
+	MaxUsers     int     `json:"max_users"`
+	MaxProducts  int     `json:"max_products"`
+	Description  string  `json:"description"`
+	IsActive     bool    `json:"is_active"`
+	TenantCount  int     `json:"tenant_count"`
 }
 
 func (h *Handler) ListPlans(c *gin.Context) {
 	var rows []planRow
 	err := h.db.Raw(`
-		SELECT p.id, p.name, p.price, p.max_users, p.max_products,
+		SELECT p.id, p.name, p.price, p.duration_days, p.max_users, p.max_products,
 		       COALESCE(p.description, '') AS description,
 		       COALESCE(p.is_active, true) AS is_active,
 		       (SELECT COUNT(*) FROM subscriptions s WHERE s.plan_id = p.id AND s.status IN ('active','trial')) AS tenant_count
@@ -345,11 +362,12 @@ func (h *Handler) ListPlans(c *gin.Context) {
 }
 
 type CreatePlanInput struct {
-	Name        string  `json:"name" binding:"required"`
-	Price       float64 `json:"price"`
-	MaxUsers    int     `json:"max_users" binding:"required"`
-	MaxProducts int     `json:"max_products" binding:"required"`
-	Description string  `json:"description"`
+	Name         string  `json:"name" binding:"required"`
+	Price        float64 `json:"price"`
+	DurationDays int     `json:"duration_days"`
+	MaxUsers     int     `json:"max_users" binding:"required"`
+	MaxProducts  int     `json:"max_products" binding:"required"`
+	Description  string  `json:"description"`
 }
 
 func (h *Handler) CreatePlan(c *gin.Context) {
@@ -358,9 +376,12 @@ func (h *Handler) CreatePlan(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	if in.DurationDays <= 0 {
+		in.DurationDays = 30
+	}
 	var id int
-	err := h.db.Raw(`INSERT INTO plans (name, price, max_users, max_products, description, is_active) VALUES (?, ?, ?, ?, ?, true) RETURNING id`,
-		in.Name, in.Price, in.MaxUsers, in.MaxProducts, in.Description).Scan(&id).Error
+	err := h.db.Raw(`INSERT INTO plans (name, price, duration_days, max_users, max_products, description, is_active) VALUES (?, ?, ?, ?, ?, ?, true) RETURNING id`,
+		in.Name, in.Price, in.DurationDays, in.MaxUsers, in.MaxProducts, in.Description).Scan(&id).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create plan"})
 		return
@@ -369,12 +390,13 @@ func (h *Handler) CreatePlan(c *gin.Context) {
 }
 
 type UpdatePlanInput struct {
-	Name        *string  `json:"name"`
-	Price       *float64 `json:"price"`
-	MaxUsers    *int     `json:"max_users"`
-	MaxProducts *int     `json:"max_products"`
-	Description *string  `json:"description"`
-	IsActive    *bool    `json:"is_active"`
+	Name         *string  `json:"name"`
+	Price        *float64 `json:"price"`
+	DurationDays *int     `json:"duration_days"`
+	MaxUsers     *int     `json:"max_users"`
+	MaxProducts  *int     `json:"max_products"`
+	Description  *string  `json:"description"`
+	IsActive     *bool    `json:"is_active"`
 }
 
 func (h *Handler) UpdatePlan(c *gin.Context) {
@@ -390,6 +412,9 @@ func (h *Handler) UpdatePlan(c *gin.Context) {
 	}
 	if in.Price != nil {
 		updates["price"] = *in.Price
+	}
+	if in.DurationDays != nil {
+		updates["duration_days"] = *in.DurationDays
 	}
 	if in.MaxUsers != nil {
 		updates["max_users"] = *in.MaxUsers
@@ -550,8 +575,15 @@ func (h *Handler) ApproveOrder(c *gin.Context) {
 		return
 	}
 
+	var planDuration struct{ DurationDays int }
+	tx.Raw("SELECT duration_days FROM plans WHERE id = ?", order.PlanID).Scan(&planDuration)
+	days := planDuration.DurationDays
+	if days <= 0 {
+		days = 30
+	}
+
 	now := time.Now()
-	endDate := now.AddDate(0, 1, 0)
+	endDate := now.AddDate(0, 0, days)
 	if err := tx.Exec(`
 		UPDATE subscription_orders SET status = 'approved', admin_notes = ?, reviewed_by = ?, reviewed_at = ? WHERE id = ?
 	`, in.AdminNotes, userID, now, id).Error; err != nil {

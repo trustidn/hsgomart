@@ -11,6 +11,7 @@
         <tr>
           <th class="px-4 py-3 text-left text-gray-600">Name</th>
           <th class="px-4 py-3 text-right text-gray-600">Price</th>
+          <th class="px-4 py-3 text-center text-gray-600">Duration</th>
           <th class="px-4 py-3 text-right text-gray-600">Max Users</th>
           <th class="px-4 py-3 text-right text-gray-600">Max Products</th>
           <th class="px-4 py-3 text-center text-gray-600">Tenants</th>
@@ -25,6 +26,7 @@
             <div v-if="p.description" class="text-xs text-gray-400 mt-0.5">{{ p.description }}</div>
           </td>
           <td class="px-4 py-3 text-right">{{ p.price === 0 ? 'Free' : 'Rp ' + Number(p.price).toLocaleString('id-ID') }}</td>
+          <td class="px-4 py-3 text-center">{{ formatDuration(p.duration_days) }}</td>
           <td class="px-4 py-3 text-right">{{ p.max_users }}</td>
           <td class="px-4 py-3 text-right">{{ p.max_products }}</td>
           <td class="px-4 py-3 text-center">{{ p.tenant_count }}</td>
@@ -52,9 +54,15 @@
               <label class="block text-sm font-medium text-gray-600 mb-1">Name</label>
               <input v-model="form.name" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-600 mb-1">Price (IDR)</label>
-              <input v-model.number="form.price" type="number" min="0" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm font-medium text-gray-600 mb-1">Price (IDR)</label>
+                <input v-model.number="form.price" type="number" min="0" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-600 mb-1">Duration (days)</label>
+                <input v-model.number="form.duration_days" type="number" min="1" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+              </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div>
@@ -95,7 +103,7 @@ const editing = ref(null)
 const submitting = ref(false)
 const formError = ref('')
 
-const form = ref({ name: '', price: 0, max_users: 5, max_products: 100, description: '' })
+const form = ref({ name: '', price: 0, duration_days: 30, max_users: 5, max_products: 100, description: '' })
 
 async function load() {
   loading.value = true
@@ -106,14 +114,14 @@ async function load() {
 
 function openCreate() {
   editing.value = null
-  form.value = { name: '', price: 0, max_users: 5, max_products: 100, description: '' }
+  form.value = { name: '', price: 0, duration_days: 30, max_users: 5, max_products: 100, description: '' }
   formError.value = ''
   showModal.value = true
 }
 
 function openEdit(p) {
   editing.value = p.id
-  form.value = { name: p.name, price: p.price, max_users: p.max_users, max_products: p.max_products, description: p.description || '' }
+  form.value = { name: p.name, price: p.price, duration_days: p.duration_days || 30, max_users: p.max_users, max_products: p.max_products, description: p.description || '' }
   formError.value = ''
   showModal.value = true
 }
@@ -133,6 +141,16 @@ async function submitForm() {
   } catch (e) {
     formError.value = e.response?.data?.error || 'Failed to save'
   } finally { submitting.value = false }
+}
+
+function formatDuration(days) {
+  if (!days) return '30 days'
+  if (days === 365) return '1 year'
+  if (days === 180) return '6 months'
+  if (days === 90) return '3 months'
+  if (days === 60) return '2 months'
+  if (days === 30) return '1 month'
+  return `${days} days`
 }
 
 async function toggleActive(id, active) {

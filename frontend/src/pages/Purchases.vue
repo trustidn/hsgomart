@@ -182,7 +182,7 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { listPurchases, createPurchase, getPurchase } from '../api/purchases'
 import { getProducts } from '../api/products'
-import { formatPrice } from '../utils'
+import { formatPrice, formatDate } from '../utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -206,11 +206,7 @@ const form = ref({
   items: [{ product_id: '', quantity: 1, cost_price: 0 }],
 })
 
-function formatDate(val) {
-  if (!val) return '—'
-  const d = new Date(val)
-  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
-}
+// formatDate imported from utils
 
 const totalPurchaseValue = computed(() => {
   return form.value.items.reduce((sum, row) => sum + (row.quantity || 0) * (row.cost_price || 0), 0)

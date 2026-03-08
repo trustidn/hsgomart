@@ -62,6 +62,25 @@ func (h *Handler) Approve(c *gin.Context) {
 	c.JSON(http.StatusOK, op)
 }
 
+func (h *Handler) Delete(c *gin.Context) {
+	tenantID, _ := utils.GetTenantID(c)
+	opnameID := c.Param("id")
+	err := h.service.DeleteOpname(tenantID, opnameID)
+	if err != nil {
+		if err == ErrOpnameNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		if err == ErrOpnameNotDraft {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "hanya opname berstatus draft yang dapat dihapus"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal menghapus opname"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "opname deleted"})
+}
+
 func (h *Handler) Get(c *gin.Context) {
 	tenantID, _ := utils.GetTenantID(c)
 	opnameID := c.Param("id")
@@ -70,7 +89,21 @@ func (h *Handler) Get(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"opname": op, "items": items})
+
+	type itemWithName struct {
+		StockOpnameItem
+		ProductName string `json:"product_name"`
+	}
+	enriched := make([]itemWithName, 0, len(items))
+	for _, it := range items {
+		name := it.ProductID
+		var pName string
+		if err := h.service.DB().Raw("SELECT name FROM products WHERE id = ?", it.ProductID).Scan(&pName).Error; err == nil && pName != "" {
+			name = pName
+		}
+		enriched = append(enriched, itemWithName{StockOpnameItem: it, ProductName: name})
+	}
+	c.JSON(http.StatusOK, gin.H{"opname": op, "items": enriched})
 }
 
 func (h *Handler) List(c *gin.Context) {

@@ -38,7 +38,7 @@
                 {{ statusLabel(o.status) }}
               </span>
             </td>
-            <td class="px-4 py-3 text-gray-500">{{ o.created_at }}</td>
+            <td class="px-4 py-3 text-gray-500">{{ formatDateTime(o.created_at) }}</td>
             <td class="px-4 py-3 text-center">
               <button @click="openDetail(o)" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">View</button>
             </td>
@@ -59,9 +59,9 @@
             <div><span class="text-gray-500">Tenant:</span> {{ detail.tenant_name }}</div>
             <div><span class="text-gray-500">Plan:</span> {{ detail.plan_name }}</div>
             <div><span class="text-gray-500">Amount:</span> Rp {{ Number(detail.amount).toLocaleString('id-ID') }}</div>
-            <div><span class="text-gray-500">Created:</span> {{ detail.created_at }}</div>
-            <div v-if="detail.paid_at"><span class="text-gray-500">Paid:</span> {{ detail.paid_at }}</div>
-            <div v-if="detail.reviewed_at"><span class="text-gray-500">Reviewed:</span> {{ detail.reviewed_at }}</div>
+            <div><span class="text-gray-500">Created:</span> {{ formatDateTime(detail.created_at) }}</div>
+            <div v-if="detail.paid_at"><span class="text-gray-500">Paid:</span> {{ formatDateTime(detail.paid_at) }}</div>
+            <div v-if="detail.reviewed_at"><span class="text-gray-500">Reviewed:</span> {{ formatDateTime(detail.reviewed_at) }}</div>
           </div>
 
           <div v-if="detail.notes" class="bg-gray-50 rounded-lg p-3 text-xs text-gray-700">
@@ -107,6 +107,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import client from '../../api/client'
+import { formatDateTime } from '../../utils'
 
 const loading = ref(true)
 const orders = ref([])

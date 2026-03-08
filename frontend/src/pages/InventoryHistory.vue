@@ -114,6 +114,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { getMovements, getInventory } from '../api/inventory'
+import { formatDate } from '../utils'
 
 const movements = ref([])
 const total = ref(0)
@@ -132,15 +133,7 @@ const filters = ref({
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
 
-function formatDate(iso) {
-  if (!iso) return '—'
-  try {
-    const d = new Date(iso)
-    return d.toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })
-  } catch {
-    return iso
-  }
-}
+// formatDate imported from utils
 
 function formatQuantity(q) {
   const n = Number(q)

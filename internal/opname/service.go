@@ -22,6 +22,10 @@ func NewService(db *gorm.DB) *Service {
 	return &Service{db: db}
 }
 
+func (s *Service) DB() *gorm.DB {
+	return s.db
+}
+
 func (s *Service) StartOpname(tenantID, userID string) (*StockOpname, error) {
 	op := &StockOpname{
 		TenantID: tenantID,
@@ -119,6 +123,20 @@ func (s *Service) ApproveOpname(tenantID, opnameID string) (*StockOpname, error)
 			"status":       "completed",
 			"completed_at": now,
 		}).Error
+	})
+}
+
+func (s *Service) DeleteOpname(tenantID, opnameID string) error {
+	var op StockOpname
+	if err := s.db.Where("id = ? AND tenant_id = ?", opnameID, tenantID).First(&op).Error; err != nil {
+		return ErrOpnameNotFound
+	}
+	if op.Status != "draft" {
+		return ErrOpnameNotDraft
+	}
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		tx.Where("opname_id = ?", opnameID).Delete(&StockOpnameItem{})
+		return tx.Where("id = ? AND tenant_id = ?", opnameID, tenantID).Delete(&StockOpname{}).Error
 	})
 }
 

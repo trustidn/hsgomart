@@ -132,6 +132,7 @@ func registerOwnerRoutes(api *gin.RouterGroup, h *HandlerRegistry) {
 		g.PUT("/inventory/opname/:id", h.Opname.SubmitItems)
 		g.POST("/inventory/opname/:id/approve", h.Opname.Approve)
 		g.GET("/inventory/opname/:id", h.Opname.Get)
+		g.DELETE("/inventory/opname/:id", h.Opname.Delete)
 		g.GET("/inventory/opnames", h.Opname.List)
 	}
 }

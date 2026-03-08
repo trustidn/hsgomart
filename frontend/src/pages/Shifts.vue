@@ -17,11 +17,11 @@
         </thead>
         <tbody class="divide-y divide-gray-200">
           <tr v-for="s in shifts" :key="s.id" class="hover:bg-gray-50">
-            <td class="px-4 py-2 text-sm text-gray-800">{{ formatDate(s.opened_at) }}</td>
+            <td class="px-4 py-2 text-sm text-gray-800">{{ formatDateTime(s.opened_at) }}</td>
             <td class="px-4 py-2 text-sm text-gray-600">{{ s.user_id }}</td>
             <td class="px-4 py-2 text-sm text-gray-600 text-right">{{ formatPrice(s.opening_cash) }}</td>
             <td class="px-4 py-2 text-sm text-gray-600 text-right">{{ s.closing_cash != null ? formatPrice(s.closing_cash) : '—' }}</td>
-            <td class="px-4 py-2 text-sm text-gray-600">{{ s.closed_at ? formatDate(s.closed_at) : '—' }}</td>
+            <td class="px-4 py-2 text-sm text-gray-600">{{ s.closed_at ? formatDateTime(s.closed_at) : '—' }}</td>
             <td class="px-4 py-2">
               <span :class="s.status === 'open' ? 'text-green-600' : 'text-gray-600'" class="font-medium">{{ s.status }}</span>
             </td>
@@ -43,24 +43,12 @@
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { listShifts } from '../api/shifts'
+import { formatDateTime, formatPrice } from '../utils'
 
 const auth = useAuthStore()
 const shifts = ref([])
 const loading = ref(true)
 const error = ref(null)
-
-function formatDate(iso) {
-  if (!iso) return '—'
-  try {
-    return new Date(iso).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })
-  } catch {
-    return iso
-  }
-}
-
-function formatPrice(v) {
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(v ?? 0)
-}
 
 async function load() {
   if (!auth.token) {

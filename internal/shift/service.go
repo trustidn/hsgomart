@@ -53,7 +53,7 @@ func (s *Service) OpenShift(tenantID, userID string, in OpenShiftInput) (*OpenSh
 	}
 	return &OpenShiftResult{
 		ShiftID:     sh.ID,
-		OpenedAt:    now.Format(time.RFC3339),
+		OpenedAt:    now.Format("2006-01-02T15:04:05"),
 		OpeningCash: sh.OpeningCash,
 	}, nil
 }

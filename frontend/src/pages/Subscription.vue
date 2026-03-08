@@ -40,9 +40,10 @@
             <h3 class="text-base font-bold text-gray-900">{{ p.name }}</h3>
             <p class="text-2xl font-bold text-gray-800 mt-2">
               {{ p.price === 0 ? 'Free' : 'Rp ' + p.price.toLocaleString('id-ID') }}
-              <span class="text-sm font-normal text-gray-400">/mo</span>
+              <span class="text-sm font-normal text-gray-400">/ {{ formatDuration(p.duration_days) }}</span>
             </p>
             <ul class="text-sm text-gray-600 mt-3 space-y-1">
+              <li>{{ formatDuration(p.duration_days) }} access</li>
               <li>{{ p.max_users }} Users</li>
               <li>{{ p.max_products }} Products</li>
             </ul>
@@ -97,7 +98,7 @@
             <h3 class="text-lg font-semibold text-gray-900">Order Subscription</h3>
             <div class="bg-gray-50 rounded-lg p-4 text-sm space-y-1">
               <p><span class="text-gray-500">Plan:</span> <strong>{{ selectedPlan?.name }}</strong></p>
-              <p><span class="text-gray-500">Price:</span> <strong>Rp {{ Number(selectedPlan?.price).toLocaleString('id-ID') }}</strong> / month</p>
+              <p><span class="text-gray-500">Price:</span> <strong>Rp {{ Number(selectedPlan?.price).toLocaleString('id-ID') }}</strong> / {{ formatDuration(selectedPlan?.duration_days) }}</p>
             </div>
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
               <p class="font-medium mb-1">Transfer to:</p>
@@ -249,6 +250,16 @@ function statusClass(status) {
     rejected: 'bg-red-100 text-red-700',
   }
   return map[status] || 'bg-gray-100 text-gray-700'
+}
+
+function formatDuration(days) {
+  if (!days) return '30 days'
+  if (days === 365) return '1 year'
+  if (days === 180) return '6 months'
+  if (days === 90) return '3 months'
+  if (days === 60) return '2 months'
+  if (days === 30) return '1 month'
+  return `${days} days`
 }
 
 function statusLabel(status) {

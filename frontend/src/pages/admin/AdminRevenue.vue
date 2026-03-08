@@ -65,7 +65,7 @@
               <td class="px-4 py-3">{{ o.tenant_name }}</td>
               <td class="px-4 py-3">{{ o.plan_name }}</td>
               <td class="px-4 py-3 text-right font-medium">Rp {{ Number(o.amount).toLocaleString('id-ID') }}</td>
-              <td class="px-4 py-3 text-gray-500">{{ o.approved_at }}</td>
+              <td class="px-4 py-3 text-gray-500">{{ formatDateTime(o.approved_at) }}</td>
             </tr>
           </tbody>
         </table>
@@ -77,6 +77,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getRevenueReport } from '../../api/admin'
+import { formatDateTime } from '../../utils'
 
 const loading = ref(true)
 const fromDate = ref('')
