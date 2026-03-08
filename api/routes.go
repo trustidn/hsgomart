@@ -26,12 +26,14 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB, cfg config.Config) {
 
 func registerAuthRoutes(r *gin.Engine, h *HandlerRegistry, svc *ServiceRegistry) {
 	loginLimiter := middleware.NewRateLimiter(5, 1*time.Minute)
+	registerLimiter := middleware.NewRateLimiter(3, 1*time.Minute)
+	refreshLimiter := middleware.NewRateLimiter(10, 1*time.Minute)
 
 	auth := r.Group("/auth")
 	{
-		auth.POST("/register", h.Auth.Register)
+		auth.POST("/register", middleware.RateLimit(registerLimiter), h.Auth.Register)
 		auth.POST("/login", middleware.RateLimit(loginLimiter), h.Auth.Login)
-		auth.POST("/refresh", h.Auth.Refresh)
+		auth.POST("/refresh", middleware.RateLimit(refreshLimiter), h.Auth.Refresh)
 		auth.GET("/profile", middleware.Auth(svc.Auth), h.Auth.Profile)
 	}
 }

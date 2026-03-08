@@ -13,13 +13,14 @@ type docRow struct {
 	Content     string `json:"content"`
 	SortOrder   int    `json:"sort_order"`
 	IsPublished bool   `json:"is_published"`
+	Visibility  string `json:"visibility"`
 	UpdatedAt   string `json:"updated_at"`
 }
 
 func (h *Handler) ListDocumentation(c *gin.Context) {
 	rows := make([]docRow, 0)
 	err := h.db.Raw(`
-		SELECT id, title, content, sort_order, is_published,
+		SELECT id, title, content, sort_order, is_published, visibility,
 		       TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI') AS updated_at
 		FROM documentation ORDER BY sort_order ASC, id ASC
 	`).Scan(&rows).Error
@@ -33,9 +34,10 @@ func (h *Handler) ListDocumentation(c *gin.Context) {
 func (h *Handler) ListPublishedDocumentation(c *gin.Context) {
 	rows := make([]docRow, 0)
 	err := h.db.Raw(`
-		SELECT id, title, content, sort_order, is_published,
+		SELECT id, title, content, sort_order, is_published, visibility,
 		       TO_CHAR(updated_at, 'YYYY-MM-DD HH24:MI') AS updated_at
-		FROM documentation WHERE is_published = true ORDER BY sort_order ASC, id ASC
+		FROM documentation WHERE is_published = true AND visibility = 'all'
+		ORDER BY sort_order ASC, id ASC
 	`).Scan(&rows).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list documentation"})
@@ -49,6 +51,7 @@ type createDocInput struct {
 	Content     string `json:"content"`
 	SortOrder   int    `json:"sort_order"`
 	IsPublished *bool  `json:"is_published"`
+	Visibility  string `json:"visibility"`
 }
 
 func (h *Handler) CreateDocumentation(c *gin.Context) {
@@ -61,11 +64,15 @@ func (h *Handler) CreateDocumentation(c *gin.Context) {
 	if in.IsPublished != nil {
 		published = *in.IsPublished
 	}
+	vis := "all"
+	if in.Visibility == "admin" {
+		vis = "admin"
+	}
 	var id int
 	err := h.db.Raw(`
-		INSERT INTO documentation (title, content, sort_order, is_published, updated_at)
-		VALUES (?, ?, ?, ?, ?) RETURNING id
-	`, in.Title, in.Content, in.SortOrder, published, time.Now()).Scan(&id).Error
+		INSERT INTO documentation (title, content, sort_order, is_published, visibility, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?) RETURNING id
+	`, in.Title, in.Content, in.SortOrder, published, vis, time.Now()).Scan(&id).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create documentation"})
 		return
@@ -78,6 +85,7 @@ type updateDocInput struct {
 	Content     *string `json:"content"`
 	SortOrder   *int    `json:"sort_order"`
 	IsPublished *bool   `json:"is_published"`
+	Visibility  *string `json:"visibility"`
 }
 
 func (h *Handler) UpdateDocumentation(c *gin.Context) {
@@ -99,6 +107,9 @@ func (h *Handler) UpdateDocumentation(c *gin.Context) {
 	}
 	if in.IsPublished != nil {
 		updates["is_published"] = *in.IsPublished
+	}
+	if in.Visibility != nil && (*in.Visibility == "all" || *in.Visibility == "admin") {
+		updates["visibility"] = *in.Visibility
 	}
 	res := h.db.Table("documentation").Where("id = ?", id).Updates(updates)
 	if res.Error != nil || res.RowsAffected == 0 {

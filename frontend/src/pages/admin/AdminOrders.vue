@@ -106,7 +106,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import client from '../../api/client'
+import client, { baseURL } from '../../api/client'
 import { formatDateTime } from '../../utils'
 
 const loading = ref(true)
@@ -130,7 +130,6 @@ const filteredOrders = computed(() => {
   return orders.value.filter(o => o.status === filterStatus.value)
 })
 
-const baseURL = typeof window !== 'undefined' && window.location.port === '8080' ? '' : 'http://localhost:8080'
 function proofSrc(url) {
   return url ? `${baseURL}${url}` : ''
 }

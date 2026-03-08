@@ -2,11 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getTenantProfile } from '../api/tenant'
 import { useSaasStore } from './saas'
-
-const baseURL =
-  typeof window !== 'undefined' && window.location.port === '8080'
-    ? ''
-    : 'http://localhost:8080'
+import { baseURL } from '../api/client'
 
 export const useTenantStore = defineStore('tenant', () => {
   const profile = ref(null)

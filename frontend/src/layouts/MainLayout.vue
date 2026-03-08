@@ -181,7 +181,7 @@ import { useAuthStore } from '../stores/auth'
 import { useTenantStore } from '../stores/tenant'
 import { useSaasStore } from '../stores/saas'
 import { useThemeStore } from '../stores/theme'
-import client from '../api/client'
+import client, { baseURL } from '../api/client'
 
 const tenantStore = useTenantStore()
 const saasStore = useSaasStore()
@@ -271,7 +271,6 @@ const userInitials = computed(() => {
 })
 
 const notifCount = computed(() => notifications.value.length)
-const baseURL = typeof window !== 'undefined' && window.location.port === '8080' ? '' : 'http://localhost:8080'
 const logoSrc = computed(() => tenantStore.logoUrl() ? `${baseURL}${tenantStore.logoUrl()}` : '')
 
 function handleLogout() {

@@ -26,6 +26,18 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
+	if cfg.AppEnv == "production" {
+		if cfg.JWTSecret == "" {
+			log.Fatalf("FATAL: JWT_SECRET is not set. Set the JWT_SECRET environment variable.")
+		}
+		if len(cfg.JWTSecret) < 32 {
+			log.Fatalf("FATAL: JWT_SECRET must be at least 32 characters in production. Current length: %d", len(cfg.JWTSecret))
+		}
+	} else if cfg.JWTSecret == "" {
+		cfg.JWTSecret = "dev-only-insecure-jwt-secret-do-not-use-in-production"
+		log.Println("WARNING: JWT_SECRET not set — using insecure default for development only")
+	}
+
 	db, err := database.ConnectDatabase(cfg)
 	if err != nil {
 		log.Fatalf("database connection failed: %v", err)

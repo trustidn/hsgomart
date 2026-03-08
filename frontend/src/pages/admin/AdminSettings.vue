@@ -93,6 +93,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { getSettings, updateSettings, uploadSaasLogo } from '../../api/admin'
+import { baseURL } from '../../api/client'
 
 const loading = ref(true)
 const saving = ref(false)
@@ -111,10 +112,9 @@ const form = ref({
   whatsapp_number: '',
 })
 
-const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 const logoSrc = computed(() => {
   if (!form.value.logo_url) return ''
-  return form.value.logo_url.startsWith('http') ? form.value.logo_url : apiBase + form.value.logo_url
+  return form.value.logo_url.startsWith('http') ? form.value.logo_url : baseURL + form.value.logo_url
 })
 
 async function load() {

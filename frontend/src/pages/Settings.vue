@@ -104,6 +104,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { getTenantProfile, updateTenantProfile, uploadLogo, resetTenantData } from '../api/tenant'
+import { baseURL } from '../api/client'
 
 const loading = ref(true)
 const saving = ref(false)
@@ -120,7 +121,6 @@ const form = ref({
   description: '',
 })
 
-const baseURL = typeof window !== 'undefined' && window.location.port === '8080' ? '' : 'http://localhost:8080'
 const logoSrc = computed(() => currentLogo.value ? `${baseURL}${currentLogo.value}` : '')
 
 onMounted(async () => {

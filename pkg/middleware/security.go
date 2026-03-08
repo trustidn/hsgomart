@@ -8,7 +8,8 @@ func SecurityHeaders() gin.HandlerFunc {
 		c.Header("X-Frame-Options", "DENY")
 		c.Header("X-XSS-Protection", "1; mode=block")
 		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
-		if c.Request.TLS != nil {
+		c.Header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+		if c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https" {
 			c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 		}
 		c.Next()

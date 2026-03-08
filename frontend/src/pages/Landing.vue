@@ -8,7 +8,15 @@
           <div v-else class="w-9 h-9 rounded-xl bg-indigo-500 flex items-center justify-center text-white text-lg font-bold">{{ saas.platformName.charAt(0) }}</div>
           <span class="text-lg font-bold tracking-tight">{{ saas.platformName }}</span>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <button
+            @click="themeStore.toggle()"
+            class="p-2 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            :title="themeStore.dark ? 'Light mode' : 'Dark mode'"
+          >
+            <svg v-if="themeStore.dark" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" stroke-width="2"/><path stroke-linecap="round" stroke-width="2" d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+          </button>
           <template v-if="auth.isAuthenticated">
             <router-link :to="dashboardPath" class="px-5 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
               Dashboard
@@ -144,9 +152,11 @@
 import { computed, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useSaasStore } from '../stores/saas'
+import { useThemeStore } from '../stores/theme'
 
 const auth = useAuthStore()
 const saas = useSaasStore()
+const themeStore = useThemeStore()
 
 const dashboardPath = computed(() => auth.role === 'superadmin' ? '/admin/dashboard' : '/dashboard')
 

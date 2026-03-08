@@ -24,6 +24,7 @@ const routes = [
     path: '/t',
     component: () => import('../layouts/MainLayout.vue'),
     meta: { requiresAuth: true },
+    redirect: '/dashboard',
     children: [
       { path: '/dashboard', name: 'Dashboard', component: () => import('../pages/Dashboard.vue'), meta: { title: 'Dashboard', roles: ['owner', 'cashier'] } },
       { path: '/products', name: 'Products', component: () => import('../pages/Products.vue'), meta: { title: 'Products', roles: ['owner'] } },
