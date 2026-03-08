@@ -14,40 +14,50 @@
     <p v-if="loading" class="text-gray-600 dark:text-gray-400">Loading...</p>
     <p v-else-if="error" class="text-red-600 dark:text-red-400">{{ error }}</p>
 
-    <div v-else class="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-hidden">
-      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead class="bg-gray-50 dark:bg-gray-800">
-          <tr>
-            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Name</th>
-            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Email</th>
-            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Role</th>
-            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
-            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-          <tr v-for="u in users" :key="u.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
-            <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ u.name || '—' }}</td>
-            <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ u.email || '—' }}</td>
-            <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ u.role || '—' }}</td>
-            <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ u.status || '—' }}</td>
-            <td class="px-4 py-2 text-right">
-              <button type="button" class="text-sm text-slate-600 dark:text-slate-400 hover:underline mr-2" @click="openEditModal(u)">Edit</button>
-              <button
-                type="button"
-                class="text-sm text-red-600 dark:text-red-400 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="isCurrentUser(u.id)"
-                @click="confirmDelete(u)"
-              >
-                Delete
-              </button>
-            </td>
-          </tr>
-          <tr v-if="!users?.length">
-            <td colspan="5" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No users yet.</td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-else>
+      <div class="sm:hidden space-y-3">
+        <div v-for="u in users" :key="u.id" class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+          <p class="font-medium text-gray-900 dark:text-white">{{ u.name || '—' }}</p>
+          <p class="text-sm text-gray-600 dark:text-gray-400 truncate">{{ u.email || '—' }}</p>
+          <div class="flex items-center gap-2 mt-2">
+            <span class="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">{{ u.role || '—' }}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ u.status || '—' }}</span>
+          </div>
+          <div class="flex gap-2 mt-3">
+            <button type="button" class="text-sm text-slate-600 dark:text-slate-400 hover:underline" @click="openEditModal(u)">Edit</button>
+            <button type="button" class="text-sm text-red-600 dark:text-red-400 hover:underline disabled:opacity-50 disabled:cursor-not-allowed" :disabled="isCurrentUser(u.id)" @click="confirmDelete(u)">Delete</button>
+          </div>
+        </div>
+        <p v-if="!users?.length" class="py-8 text-sm text-gray-500 dark:text-gray-400 text-center">No users yet.</p>
+      </div>
+      <div class="hidden sm:block bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-800">
+            <tr>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Name</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Email</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Role</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <tr v-for="u in users" :key="u.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
+              <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ u.name || '—' }}</td>
+              <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ u.email || '—' }}</td>
+              <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ u.role || '—' }}</td>
+              <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ u.status || '—' }}</td>
+              <td class="px-4 py-2 text-right">
+                <button type="button" class="text-sm text-slate-600 dark:text-slate-400 hover:underline mr-2" @click="openEditModal(u)">Edit</button>
+                <button type="button" class="text-sm text-red-600 dark:text-red-400 hover:underline disabled:opacity-50 disabled:cursor-not-allowed" :disabled="isCurrentUser(u.id)" @click="confirmDelete(u)">Delete</button>
+              </td>
+            </tr>
+            <tr v-if="!users?.length">
+              <td colspan="5" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No users yet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Add / Edit user modal -->

@@ -15,38 +15,50 @@
 
       <p v-if="loading" class="text-gray-600 dark:text-gray-400">Loading...</p>
       <p v-else-if="error" class="text-red-600">{{ error }}</p>
-      <div v-else class="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead class="bg-gray-50 dark:bg-gray-800">
-            <tr>
-              <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date</th>
-                            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Nama Produk</th>
-
-              <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Supplier</th>
-              <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Invoice</th>
-              <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Keterangan</th>
-              <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Total</th>
-              <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Action</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-            <tr v-for="p in purchases" :key="p.id" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
-              <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ formatDate(p.created_at) }}</td>
-                            <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 max-w-[220px] truncate" :title="(p.product_names || []).join(', ')">{{ (p.product_names && p.product_names.length) ? p.product_names.join(', ') : '—' }}</td>
-
-              <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ p.supplier_name || '—' }}</td>
-              <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ p.invoice_number || '—' }}</td>
-              <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 max-w-[200px] truncate" :title="p.notes || ''">{{ p.notes || '—' }}</td>
-              <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 text-right">{{ formatPrice(p.total_amount) }}</td>
-              <td class="px-4 py-2 text-right">
-                <router-link :to="`/purchases/${p.id}`" class="text-sm text-slate-600 hover:underline">View</router-link>
-              </td>
-            </tr>
-            <tr v-if="!purchases?.length">
-              <td colspan="7" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No purchases yet. Create one above.</td>
-            </tr>
-          </tbody>
-        </table>
+      <div v-else>
+        <div class="sm:hidden space-y-3">
+          <div v-for="p in purchases" :key="p.id" class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <span class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(p.created_at) }}</span>
+              <span class="font-medium text-gray-900 dark:text-white">{{ formatPrice(p.total_amount) }}</span>
+            </div>
+            <p class="text-sm text-gray-800 dark:text-gray-200 truncate" :title="(p.product_names || []).join(', ')">{{ (p.product_names && p.product_names.length) ? p.product_names.join(', ') : '—' }}</p>
+            <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{{ p.supplier_name || '—' }} · {{ p.invoice_number || '—' }}</p>
+            <router-link :to="`/purchases/${p.id}`" class="mt-3 inline-block text-sm text-slate-600 dark:text-slate-400 font-medium">View →</router-link>
+          </div>
+          <p v-if="!purchases?.length" class="py-8 text-sm text-gray-500 dark:text-gray-400 text-center">No purchases yet. Create one above.</p>
+        </div>
+        <div class="hidden sm:block bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-800">
+              <tr>
+                <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date</th>
+                <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Nama Produk</th>
+                <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Supplier</th>
+                <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Invoice</th>
+                <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Keterangan</th>
+                <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Total</th>
+                <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Action</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+              <tr v-for="p in purchases" :key="p.id" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
+                <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ formatDate(p.created_at) }}</td>
+                <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 max-w-[220px] truncate" :title="(p.product_names || []).join(', ')">{{ (p.product_names && p.product_names.length) ? p.product_names.join(', ') : '—' }}</td>
+                <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ p.supplier_name || '—' }}</td>
+                <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ p.invoice_number || '—' }}</td>
+                <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 max-w-[200px] truncate" :title="p.notes || ''">{{ p.notes || '—' }}</td>
+                <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 text-right">{{ formatPrice(p.total_amount) }}</td>
+                <td class="px-4 py-2 text-right">
+                  <router-link :to="`/purchases/${p.id}`" class="text-sm text-slate-600 hover:underline">View</router-link>
+                </td>
+              </tr>
+              <tr v-if="!purchases?.length">
+                <td colspan="7" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No purchases yet. Create one above.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- Create Purchase modal -->
@@ -79,7 +91,8 @@
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Items</label>
               <button type="button" class="text-sm text-slate-600 hover:underline" @click="addItem">+ Add row</button>
             </div>
-            <table class="min-w-full border border-gray-200 dark:border-gray-700 rounded overflow-hidden mb-4">
+            <div class="overflow-x-auto mb-4">
+            <table class="min-w-full border border-gray-200 dark:border-gray-700 rounded overflow-hidden min-w-[400px]">
               <thead class="bg-gray-50 dark:bg-gray-800">
                 <tr>
                   <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Product</th>
@@ -110,6 +123,7 @@
                 </tr>
               </tbody>
             </table>
+            </div>
             <p v-if="form.items.length === 0" class="text-sm text-amber-600 mb-2">Add at least one item.</p>
             <div class="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-4">
               <p class="font-medium text-gray-800 dark:text-gray-200">Total purchase value: {{ formatPrice(totalPurchaseValue) }}</p>
@@ -149,28 +163,40 @@
             </template>
           </dl>
         </div>
-        <div class="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-hidden">
-          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead class="bg-gray-50 dark:bg-gray-800">
-              <tr>
-                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Product</th>
-                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Quantity</th>
-                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cost price</th>
-                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Subtotal</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-              <tr v-for="(item, i) in detail.items" :key="i">
-                <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ item.product_name || '—' }}</td>
-                <td class="px-4 py-2 text-sm text-right">{{ item.quantity }}</td>
-                <td class="px-4 py-2 text-sm text-right">{{ formatPrice(item.cost_price) }}</td>
-                <td class="px-4 py-2 text-sm text-right">{{ formatPrice(item.subtotal) }}</td>
-              </tr>
-              <tr v-if="!detail.items?.length">
-                <td colspan="4" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No items.</td>
-              </tr>
-            </tbody>
-          </table>
+        <div>
+          <div class="sm:hidden space-y-3">
+            <div v-for="(item, i) in detail.items" :key="i" class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+              <p class="font-medium text-gray-900 dark:text-white">{{ item.product_name || '—' }}</p>
+              <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mt-1">
+                <span>Qty: {{ item.quantity }} × {{ formatPrice(item.cost_price) }}</span>
+                <span class="font-medium text-gray-800 dark:text-gray-200">{{ formatPrice(item.subtotal) }}</span>
+              </div>
+            </div>
+            <p v-if="!detail.items?.length" class="py-6 text-sm text-gray-500 dark:text-gray-400 text-center">No items.</p>
+          </div>
+          <div class="hidden sm:block bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-800">
+                <tr>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Product</th>
+                  <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Quantity</th>
+                  <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cost price</th>
+                  <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                <tr v-for="(item, i) in detail.items" :key="i">
+                  <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ item.product_name || '—' }}</td>
+                  <td class="px-4 py-2 text-sm text-right">{{ item.quantity }}</td>
+                  <td class="px-4 py-2 text-sm text-right">{{ formatPrice(item.cost_price) }}</td>
+                  <td class="px-4 py-2 text-sm text-right">{{ formatPrice(item.subtotal) }}</td>
+                </tr>
+                <tr v-if="!detail.items?.length">
+                  <td colspan="4" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No items.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </template>
     </template>

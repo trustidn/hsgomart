@@ -11,40 +11,48 @@
     <div v-if="loading" class="text-gray-500 dark:text-gray-400 py-8 text-center">Loading...</div>
 
     <!-- Opname List -->
-    <div v-else class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-      <table class="w-full text-sm">
-        <thead class="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs uppercase">
-          <tr>
-            <th class="px-4 py-3 text-left">Tanggal</th>
-            <th class="px-4 py-3 text-center">Status</th>
-            <th class="px-4 py-3 text-center">Aksi</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-          <tr v-for="op in opnames" :key="op.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
-            <td class="px-4 py-3 text-gray-800 dark:text-gray-200">{{ formatDate(op.created_at) }}</td>
-            <td class="px-4 py-3 text-center">
-              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                :class="statusClass(op.status)">
-                {{ statusLabel(op.status) }}
-              </span>
-            </td>
-            <td class="px-4 py-3 text-center space-x-3">
-              <button @click="openDetail(op)" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">
-                {{ op.status === 'draft' ? 'Input Stok' : op.status === 'submitted' ? 'Review & Approve' : 'Lihat Detail' }}
-              </button>
-              <button v-if="op.status === 'draft'" @click="confirmDelete(op)" class="text-red-500 hover:text-red-700 text-xs font-medium">
-                Hapus
-              </button>
-            </td>
-          </tr>
-          <tr v-if="!opnames.length">
-            <td colspan="3" class="px-4 py-10 text-center text-gray-400 dark:text-gray-500">
-              Belum ada data stock opname. Klik "+ Opname Baru" untuk memulai.
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-else>
+      <div class="sm:hidden space-y-3">
+        <div v-for="op in opnames" :key="op.id" class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+          <div class="flex items-start justify-between gap-2 mb-2">
+            <span class="text-sm text-gray-800 dark:text-gray-200">{{ formatDate(op.created_at) }}</span>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium shrink-0" :class="statusClass(op.status)">{{ statusLabel(op.status) }}</span>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button @click="openDetail(op)" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 text-xs font-medium">
+              {{ op.status === 'draft' ? 'Input Stok' : op.status === 'submitted' ? 'Review & Approve' : 'Lihat Detail' }}
+            </button>
+            <button v-if="op.status === 'draft'" @click="confirmDelete(op)" class="text-red-500 hover:text-red-700 text-xs font-medium">Hapus</button>
+          </div>
+        </div>
+        <p v-if="!opnames.length" class="py-8 text-sm text-gray-400 dark:text-gray-500 text-center">Belum ada data stock opname. Klik "+ Opname Baru" untuk memulai.</p>
+      </div>
+      <div class="hidden sm:block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs uppercase">
+            <tr>
+              <th class="px-4 py-3 text-left">Tanggal</th>
+              <th class="px-4 py-3 text-center">Status</th>
+              <th class="px-4 py-3 text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+            <tr v-for="op in opnames" :key="op.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
+              <td class="px-4 py-3 text-gray-800 dark:text-gray-200">{{ formatDate(op.created_at) }}</td>
+              <td class="px-4 py-3 text-center">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" :class="statusClass(op.status)">{{ statusLabel(op.status) }}</span>
+              </td>
+              <td class="px-4 py-3 text-center space-x-3">
+                <button @click="openDetail(op)" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">{{ op.status === 'draft' ? 'Input Stok' : op.status === 'submitted' ? 'Review & Approve' : 'Lihat Detail' }}</button>
+                <button v-if="op.status === 'draft'" @click="confirmDelete(op)" class="text-red-500 hover:text-red-700 text-xs font-medium">Hapus</button>
+              </td>
+            </tr>
+            <tr v-if="!opnames.length">
+              <td colspan="3" class="px-4 py-10 text-center text-gray-400 dark:text-gray-500">Belum ada data stock opname. Klik "+ Opname Baru" untuk memulai.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Detail / Edit Modal -->
@@ -72,9 +80,26 @@
           </div>
 
           <!-- Table -->
-          <div class="flex-1 overflow-auto px-6 py-4">
+          <div class="flex-1 overflow-auto px-4 sm:px-6 py-4">
             <div v-if="loadingDetail" class="py-8 text-center text-gray-400 dark:text-gray-500">Memuat produk...</div>
-            <table v-else class="w-full text-sm">
+            <template v-else>
+            <div class="sm:hidden space-y-3">
+              <div v-for="item in filteredItems" :key="item.product_id" class="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                <p class="font-medium text-gray-800 dark:text-gray-200 mb-2">{{ item.product_name }}</p>
+                <div class="grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-400 mb-2">
+                  <span>Stok Sistem: {{ item.system_stock }}</span>
+                  <span>Stok Aktual: <input v-if="modal.opname.status === 'draft'" v-model.number="item.actual_stock" type="number" min="0" class="w-16 border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5 text-right bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" @input="updateDiff(item)" /><span v-else>{{ item.actual_stock }}</span></span>
+                  <span>Selisih: <span :class="item.difference < 0 ? 'text-red-600' : item.difference > 0 ? 'text-blue-600' : 'text-gray-400'">{{ item.difference > 0 ? '+' : '' }}{{ item.difference }}</span></span>
+                </div>
+                <div v-if="modal.opname.status === 'draft'">
+                  <input v-model="item.notes" type="text" placeholder="Catatan" class="w-full border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" />
+                </div>
+                <span v-else class="text-xs text-gray-500">{{ item.notes || '—' }}</span>
+              </div>
+              <p v-if="!filteredItems.length" class="py-6 text-sm text-gray-400 dark:text-gray-500 text-center">Tidak ada produk ditemukan</p>
+            </div>
+            <div class="hidden sm:block overflow-x-auto">
+            <table class="w-full text-sm min-w-[500px]">
               <thead class="bg-gray-50 dark:bg-gray-800 sticky top-0">
                 <tr>
                   <th class="px-3 py-2.5 text-left text-gray-600 dark:text-gray-400 text-xs uppercase">Produk</th>
@@ -113,6 +138,8 @@
               </tr>
               </tbody>
             </table>
+            </div>
+            </template>
           </div>
 
           <!-- Summary & Actions -->

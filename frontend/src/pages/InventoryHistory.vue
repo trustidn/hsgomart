@@ -4,7 +4,7 @@
 
     <!-- Filters -->
     <div class="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 p-4 mb-4">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 items-end">
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Product</label>
           <select v-model="filters.product_id" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
@@ -43,40 +43,55 @@
     <p v-if="loading" class="text-gray-600 dark:text-gray-400">Loading...</p>
     <p v-else-if="error" class="text-red-600 dark:text-red-400">{{ error }}</p>
 
-    <div v-else class="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-hidden divide-y divide-gray-200 dark:divide-gray-700">
-      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead class="bg-gray-50 dark:bg-gray-800">
-          <tr>
-            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date</th>
-            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Product</th>
-            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Type</th>
-            <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Quantity</th>
-            <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-help" title="Stock after this movement">
-              Stock After
-            </th>
-            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Reference</th>
-            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Reason</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-          <tr v-for="(m, i) in movements" :key="i" class="hover:bg-gray-50 dark:hover:bg-gray-800">
-            <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ formatDate(m.created_at) }}</td>
-            <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ m.product_name || '—' }}</td>
-            <td class="px-4 py-2">
-              <span :class="typeBadgeClass(m.type)" class="inline-flex px-2 py-0.5 rounded text-xs font-medium">{{ m.type || '—' }}</span>
-            </td>
-            <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 text-right font-medium">{{ formatQuantity(m.quantity) }}</td>
-            <td class="px-4 py-2 text-right" :title="'Stock after this movement'">
-              <span :class="(m.stock_after ?? 0) < 0 ? 'text-red-600 font-semibold' : 'text-gray-600 dark:text-gray-400'">{{ m.stock_after ?? '—' }}</span>
-            </td>
-            <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ m.reference || '—' }}</td>
-            <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ m.reason || '—' }}</td>
-          </tr>
-          <tr v-if="!movements?.length">
-            <td colspan="7" class="px-4 py-4 text-sm text-gray-500 text-center">No movements yet.</td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-else>
+      <div class="sm:hidden space-y-3">
+        <div v-for="(m, i) in movements" :key="i" class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+          <div class="flex items-start justify-between gap-2 mb-1">
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ formatDate(m.created_at) }}</span>
+            <span :class="typeBadgeClass(m.type)" class="inline-flex px-2 py-0.5 rounded text-xs font-medium shrink-0">{{ m.type || '—' }}</span>
+          </div>
+          <p class="font-medium text-gray-900 dark:text-white">{{ m.product_name || '—' }}</p>
+          <div class="flex flex-wrap gap-x-4 gap-y-0.5 text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <span>Qty: {{ formatQuantity(m.quantity) }}</span>
+            <span>Stock: {{ m.stock_after ?? '—' }}</span>
+            <span v-if="m.reference" class="truncate max-w-[120px]" :title="m.reference">{{ m.reference }}</span>
+          </div>
+        </div>
+        <p v-if="!movements?.length" class="py-8 text-sm text-gray-500 dark:text-gray-400 text-center">No movements yet.</p>
+      </div>
+      <div class="hidden sm:block bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-800">
+            <tr>
+              <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date</th>
+              <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Product</th>
+              <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Type</th>
+              <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Quantity</th>
+              <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase cursor-help" title="Stock after this movement">Stock After</th>
+              <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Reference</th>
+              <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Reason</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <tr v-for="(m, i) in movements" :key="i" class="hover:bg-gray-50 dark:hover:bg-gray-800">
+              <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ formatDate(m.created_at) }}</td>
+              <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ m.product_name || '—' }}</td>
+              <td class="px-4 py-2">
+                <span :class="typeBadgeClass(m.type)" class="inline-flex px-2 py-0.5 rounded text-xs font-medium">{{ m.type || '—' }}</span>
+              </td>
+              <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 text-right font-medium">{{ formatQuantity(m.quantity) }}</td>
+              <td class="px-4 py-2 text-right" :title="'Stock after this movement'">
+                <span :class="(m.stock_after ?? 0) < 0 ? 'text-red-600 font-semibold' : 'text-gray-600 dark:text-gray-400'">{{ m.stock_after ?? '—' }}</span>
+              </td>
+              <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ m.reference || '—' }}</td>
+              <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ m.reason || '—' }}</td>
+            </tr>
+            <tr v-if="!movements?.length">
+              <td colspan="7" class="px-4 py-4 text-sm text-gray-500 text-center">No movements yet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       <div v-if="total > 0" class="px-4 py-3 flex flex-wrap items-center justify-between gap-2 border-t border-gray-200 bg-gray-50 dark:bg-gray-800">
         <p class="text-sm text-gray-600 dark:text-gray-400">

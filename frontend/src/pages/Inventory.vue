@@ -5,41 +5,51 @@
     <p v-if="loading" class="text-gray-600 dark:text-gray-400">Loading inventory...</p>
     <p v-else-if="error" class="text-red-600 dark:text-red-400">{{ error }}</p>
 
-    <div v-else class="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-hidden divide-y divide-gray-200 dark:divide-gray-700">
-      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead class="bg-gray-50 dark:bg-gray-800">
-          <tr>
-            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Product Name</th>
-            <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Stock</th>
-            <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Inventory Value</th>
-            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
-            <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Action</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-          <tr v-for="(row, i) in inventory" :key="row.product_id || i" class="hover:bg-gray-50 dark:hover:bg-gray-800">
-            <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.product_name }}</td>
-            <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 text-right">{{ row.stock }}</td>
-            <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 text-right">{{ formatCurrency(inventoryValue(row)) }}</td>
-            <td class="px-4 py-2">
-              <span v-if="(row.stock ?? 0) < 10" class="text-red-600 dark:text-red-400 font-semibold">LOW STOCK</span>
-              <span v-else class="text-green-600 dark:text-green-400">OK</span>
-            </td>
-            <td class="px-4 py-2 text-right">
-              <button
-                type="button"
-                class="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium"
-                @click="openAdjustModal(row)"
-              >
-                Adjust
-              </button>
-            </td>
-          </tr>
-          <tr v-if="!inventory?.length">
-            <td colspan="5" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No inventory data.</td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-else>
+      <div class="sm:hidden space-y-3">
+        <div v-for="(row, i) in inventory" :key="row.product_id || i" class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+          <div class="flex items-start justify-between gap-2 mb-2">
+            <h3 class="font-medium text-gray-900 dark:text-white truncate flex-1">{{ row.product_name }}</h3>
+            <span :class="(row.stock ?? 0) < 10 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-green-600 dark:text-green-400'" class="text-sm shrink-0">{{ (row.stock ?? 0) < 10 ? 'LOW' : 'OK' }}</span>
+          </div>
+          <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
+            <span>Stok: {{ row.stock }}</span>
+            <span>{{ formatCurrency(inventoryValue(row)) }}</span>
+          </div>
+          <button type="button" class="w-full py-2 text-sm text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-gray-600 rounded-md font-medium" @click="openAdjustModal(row)">Adjust</button>
+        </div>
+        <p v-if="!inventory?.length" class="py-8 text-sm text-gray-500 dark:text-gray-400 text-center">No inventory data.</p>
+      </div>
+      <div class="hidden sm:block bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-800">
+            <tr>
+              <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Product Name</th>
+              <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Stock</th>
+              <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Inventory Value</th>
+              <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
+              <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <tr v-for="(row, i) in inventory" :key="row.product_id || i" class="hover:bg-gray-50 dark:hover:bg-gray-800">
+              <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.product_name }}</td>
+              <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 text-right">{{ row.stock }}</td>
+              <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 text-right">{{ formatCurrency(inventoryValue(row)) }}</td>
+              <td class="px-4 py-2">
+                <span v-if="(row.stock ?? 0) < 10" class="text-red-600 dark:text-red-400 font-semibold">LOW STOCK</span>
+                <span v-else class="text-green-600 dark:text-green-400">OK</span>
+              </td>
+              <td class="px-4 py-2 text-right">
+                <button type="button" class="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium" @click="openAdjustModal(row)">Adjust</button>
+              </td>
+            </tr>
+            <tr v-if="!inventory?.length">
+              <td colspan="5" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No inventory data.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Adjust Stock modal -->

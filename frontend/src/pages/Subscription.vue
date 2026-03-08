@@ -58,36 +58,53 @@
       <!-- Order History -->
       <div>
         <h2 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3">Order History</h2>
-        <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <div>
           <div v-if="!orders.length" class="p-6 text-center text-gray-400 dark:text-gray-400 text-sm">No orders yet.</div>
-          <table v-else class="w-full text-sm">
-            <thead class="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs uppercase">
-              <tr>
-                <th class="px-4 py-3 text-left">Invoice</th>
-                <th class="px-4 py-3 text-left">Plan</th>
-                <th class="px-4 py-3 text-right">Amount</th>
-                <th class="px-4 py-3 text-center">Status</th>
-                <th class="px-4 py-3 text-center">Action</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-              <tr v-for="o in orders" :key="o.id">
-                <td class="px-4 py-3 font-mono text-xs text-gray-800 dark:text-gray-200">{{ o.invoice_number }}</td>
-                <td class="px-4 py-3 text-gray-800 dark:text-gray-200">{{ planName(o.plan_id) }}</td>
-                <td class="px-4 py-3 text-right text-gray-800 dark:text-gray-200">Rp {{ Number(o.amount).toLocaleString('id-ID') }}</td>
-                <td class="px-4 py-3 text-center">
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                    :class="statusClass(o.status)">{{ statusLabel(o.status) }}</span>
-                </td>
-                <td class="px-4 py-3 text-center">
-                  <button v-if="o.status === 'pending_payment' || o.status === 'rejected'" @click="openUpload(o)"
-                    class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-xs font-medium">Upload Proof</button>
+          <div v-else>
+            <div class="sm:hidden space-y-3">
+              <div v-for="o in orders" :key="o.id" class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+                <p class="font-mono text-xs text-gray-600 dark:text-gray-400">{{ o.invoice_number }}</p>
+                <p class="font-medium text-gray-900 dark:text-white">{{ planName(o.plan_id) }}</p>
+                <div class="flex items-center justify-between mt-2">
+                  <span class="text-sm text-gray-800 dark:text-gray-200">Rp {{ Number(o.amount).toLocaleString('id-ID') }}</span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(o.status)">{{ statusLabel(o.status) }}</span>
+                </div>
+                <div class="mt-3">
+                  <button v-if="o.status === 'pending_payment' || o.status === 'rejected'" @click="openUpload(o)" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-xs font-medium">Upload Proof</button>
                   <span v-else-if="o.status === 'pending_review'" class="text-xs text-gray-400 dark:text-gray-400">Waiting review</span>
                   <span v-else-if="o.status === 'approved'" class="text-xs text-green-600">Approved</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </div>
+              </div>
+            </div>
+            <div class="hidden sm:block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs uppercase">
+                  <tr>
+                    <th class="px-4 py-3 text-left">Invoice</th>
+                    <th class="px-4 py-3 text-left">Plan</th>
+                    <th class="px-4 py-3 text-right">Amount</th>
+                    <th class="px-4 py-3 text-center">Status</th>
+                    <th class="px-4 py-3 text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                  <tr v-for="o in orders" :key="o.id">
+                    <td class="px-4 py-3 font-mono text-xs text-gray-800 dark:text-gray-200">{{ o.invoice_number }}</td>
+                    <td class="px-4 py-3 text-gray-800 dark:text-gray-200">{{ planName(o.plan_id) }}</td>
+                    <td class="px-4 py-3 text-right text-gray-800 dark:text-gray-200">Rp {{ Number(o.amount).toLocaleString('id-ID') }}</td>
+                    <td class="px-4 py-3 text-center">
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(o.status)">{{ statusLabel(o.status) }}</span>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                      <button v-if="o.status === 'pending_payment' || o.status === 'rejected'" @click="openUpload(o)" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-xs font-medium">Upload Proof</button>
+                      <span v-else-if="o.status === 'pending_review'" class="text-xs text-gray-400 dark:text-gray-400">Waiting review</span>
+                      <span v-else-if="o.status === 'approved'" class="text-xs text-green-600">Approved</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
 
