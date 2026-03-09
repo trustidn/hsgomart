@@ -12,38 +12,51 @@
     </div>
 
     <p v-if="loading" class="text-gray-600 dark:text-gray-400">Loading...</p>
-    <p v-else-if="error" class="text-red-600">{{ error }}</p>
+    <p v-else-if="error" class="text-red-600 dark:text-red-400">{{ error }}</p>
 
-    <div v-else class="bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-hidden">
-      <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead class="bg-gray-50 dark:bg-gray-800">
-          <tr>
-            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Category Name</th>
-            <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Jumlah Produk</th>
-            <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Action</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-          <tr v-for="c in categories" :key="catId(c)" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
-            <td class="px-4 py-2 text-sm text-gray-800 dark:text-white">{{ catName(c) }}</td>
-            <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 text-right">{{ productCount(catId(c)) }}</td>
-            <td class="px-4 py-2 text-right space-x-2">
-              <button type="button" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline" @click="goToProducts(c)">
-                Lihat
-              </button>
-              <button type="button" class="text-sm text-slate-600 hover:underline" @click="openEditModal(c)">
-                Edit
-              </button>
-              <button type="button" class="text-sm text-red-600 hover:underline" @click="confirmDelete(c)">
-                Delete
-              </button>
-            </td>
-          </tr>
-          <tr v-if="!categories?.length">
-            <td colspan="3" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No categories yet. Add one above.</td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-else>
+      <!-- Mobile: Card layout -->
+      <div class="sm:hidden space-y-3">
+        <div v-for="c in categories" :key="catId(c)" class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+          <div class="flex items-start justify-between gap-2 mb-2">
+            <h3 class="font-medium text-gray-900 dark:text-white truncate flex-1">{{ catName(c) }}</h3>
+            <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">{{ productCount(catId(c)) }} produk</span>
+          </div>
+          <div class="flex flex-wrap gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <button type="button" class="flex-1 py-1.5 text-sm text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 rounded-md" @click="goToProducts(c)">Lihat</button>
+            <button type="button" class="flex-1 py-1.5 text-sm text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-gray-600 rounded-md" @click="openEditModal(c)">Edit</button>
+            <button type="button" class="flex-1 py-1.5 text-sm text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-md" @click="confirmDelete(c)">Delete</button>
+          </div>
+        </div>
+        <p v-if="!categories?.length" class="py-8 text-sm text-gray-500 dark:text-gray-400 text-center">No categories yet. Add one above.</p>
+      </div>
+
+      <!-- Desktop: Table layout -->
+      <div class="hidden sm:block bg-white dark:bg-gray-900 rounded-lg shadow border border-gray-200 dark:border-gray-800 overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-800">
+            <tr>
+              <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Category Name</th>
+              <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Jumlah Produk</th>
+              <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <tr v-for="c in categories" :key="catId(c)" class="hover:bg-gray-50 dark:hover:bg-gray-800">
+              <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ catName(c) }}</td>
+              <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 text-right">{{ productCount(catId(c)) }}</td>
+              <td class="px-4 py-2 text-right space-x-2">
+                <button type="button" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline" @click="goToProducts(c)">Lihat</button>
+                <button type="button" class="text-sm text-slate-600 dark:text-slate-400 hover:underline" @click="openEditModal(c)">Edit</button>
+                <button type="button" class="text-sm text-red-600 dark:text-red-400 hover:underline" @click="confirmDelete(c)">Delete</button>
+              </td>
+            </tr>
+            <tr v-if="!categories?.length">
+              <td colspan="3" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No categories yet. Add one above.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Add Category modal -->
