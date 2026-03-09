@@ -98,7 +98,7 @@
               leave-from-class="opacity-100 translate-y-0"
               leave-to-class="opacity-0 -translate-y-1"
             >
-              <div v-if="showContactForm" class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
+              <div v-if="showContactForm" class="fixed sm:absolute left-0 right-0 sm:left-auto sm:right-0 top-14 sm:top-auto sm:mt-2 w-full sm:w-80 max-w-full sm:max-w-none rounded-b-xl sm:rounded-xl bg-white dark:bg-gray-900 shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
                 <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 font-medium text-sm text-gray-800 dark:text-gray-200">Hubungi Admin</div>
                 <div v-if="saasStore.whatsappNumber" class="p-4 space-y-3">
                   <textarea v-model="contactMessage" rows="3" placeholder="Tulis pesan atau pertanyaan Anda..."
