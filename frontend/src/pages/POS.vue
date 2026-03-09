@@ -270,7 +270,7 @@
       >
         <div
           v-if="toast.show"
-          class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium max-w-[90vw] sm:max-w-sm"
+          class="fixed left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium max-w-[90vw] sm:max-w-sm top-4 sm:top-auto sm:bottom-6"
           :class="toast.type === 'error' ? 'bg-red-600 text-white dark:bg-red-700' : 'bg-amber-500 text-white dark:bg-amber-600'"
         >
           {{ toast.message }}
@@ -466,12 +466,31 @@ watch(barcodeInput, (val) => {
   scanDebounceTimer = setTimeout(() => { scanDebounceTimer = null; lookupAndAddBarcode(barcode) }, SCAN_DEBOUNCE_MS)
 })
 
-function changeQuantity(productId, delta) {
-  const item = cartItems.value.find((i) => i.product_id === productId)
+async function changeQuantity(pid, delta) {
+  const item = cartItems.value.find((i) => i.product_id === pid)
   if (!item) return
-  item.quantity = Math.max(0, item.quantity + delta)
-  if (item.quantity <= 0) cartItems.value = cartItems.value.filter((i) => i.product_id !== productId)
-  else playBeep()
+  const newQty = item.quantity + delta
+  if (newQty <= 0) {
+    cartItems.value = cartItems.value.filter((i) => i.product_id !== pid)
+    return
+  }
+  if (delta > 0) {
+    try {
+      const res = await getProductStock(pid)
+      const stock = res?.stock ?? 0
+      if (newQty > stock) {
+        showToast('Stok tidak cukup', 'error')
+        playErrorBeep()
+        return
+      }
+    } catch {
+      showToast('Gagal cek stok', 'error')
+      playErrorBeep()
+      return
+    }
+  }
+  item.quantity = newQty
+  playBeep()
 }
 
 function removeFromCart(productId) { cartItems.value = cartItems.value.filter((i) => i.product_id !== productId) }
