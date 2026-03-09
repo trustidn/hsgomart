@@ -3,7 +3,7 @@
     <div class="text-center border-b border-dashed border-gray-400 dark:border-gray-600 pb-2 mb-2">
       <div class="font-bold text-base">{{ storeName }}</div>
       <div class="text-xs text-gray-600 dark:text-gray-400">{{ dateFormatted }}</div>
-      <div v-if="transactionId" class="text-xs text-gray-500 dark:text-gray-400 mt-1">Transaction: #{{ transactionId }}</div>
+      <div v-if="transactionId" class="text-xs text-gray-500 dark:text-gray-400 mt-1 break-all">Transaction: #{{ transactionId }}</div>
       <div v-if="cashier" class="text-sm mt-1">Cashier: {{ cashier }}</div>
     </div>
     <table class="w-full text-left border-b border-dashed border-gray-400 dark:border-gray-600 mb-2">

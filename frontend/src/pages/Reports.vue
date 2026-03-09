@@ -200,7 +200,7 @@
         <div class="sm:hidden divide-y divide-gray-200 dark:divide-gray-700">
           <div v-for="row in salesTransactions" :key="row.id" class="p-4">
             <p class="text-xs text-gray-500 dark:text-gray-400">{{ row.created_at }}</p>
-            <p class="font-medium text-gray-800 dark:text-gray-200 mt-0.5">#{{ row.id }}</p>
+            <p class="font-medium text-gray-800 dark:text-gray-200 mt-0.5 font-mono text-xs break-all max-w-full" :title="row.id">#{{ row.id }}</p>
             <p class="text-sm text-gray-600 dark:text-gray-400">{{ row.customer_name || '—' }} {{ row.customer_phone ? '· ' + row.customer_phone : '' }}</p>
             <div class="flex items-center justify-between mt-2">
               <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ formatPrice(row.total_amount) }}</span>
@@ -225,7 +225,7 @@
             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
               <tr v-for="row in salesTransactions" :key="row.id" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
                 <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.created_at }}</td>
-                <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ row.id }}</td>
+                <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 font-mono text-xs break-all max-w-[140px]" :title="row.id">{{ row.id }}</td>
                 <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ row.cashier || '—' }}</td>
                 <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.customer_name || '—' }}</td>
                 <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ row.customer_phone || '—' }}</td>
@@ -746,7 +746,7 @@ async function fetchAllTransactionsForExport() {
     limit: 0,
   })
   const rows = Array.isArray(resp?.rows) ? resp.rows : []
-  return rows.map((r) => [r.created_at, r.id, r.cashier || '—', formatPrice(r.total_amount)])
+  return rows.map((r) => [r.created_at, r.id, r.cashier || '—', r.customer_name || '—', r.customer_phone || '—', formatPrice(r.total_amount)])
 }
 
 async function loadProfit() {
@@ -860,46 +860,126 @@ function shareWhatsAppFromReport() {
   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
 }
 
-function exportCardExcel(headers, rows, slug) {
+async function exportCardExcel(headers, rows, slug) {
+  await tenantStore.load()
+  const p = tenantStore.profile
+  const storeName = p?.name || tenantStore.storeName()
+  const address = p?.address || '—'
+  const description = p?.description || '—'
+  const printDate = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  const fmt = (d) => (d ? d.split('-').reverse().join('/') : '—')
+  const periodFrom = fmt(dateRange.value.from)
+  const periodTo = fmt(dateRange.value.to)
+  const periodLabel = `Periode Laporan: ${periodFrom} - ${periodTo}`
+
   const data = Array.isArray(rows) ? rows : (rows?.value ?? [])
   const wb = XLSX.utils.book_new()
-  const ws = XLSX.utils.aoa_to_sheet([headers, ...data])
+  const headerRows = [
+    ['Toko / Store', storeName],
+    ['Alamat', address],
+    ['Deskripsi', description],
+    ['Tanggal Cetak', printDate],
+    [periodLabel, ''],
+    [],
+    headers,
+    ...data,
+  ]
+  const ws = XLSX.utils.aoa_to_sheet(headerRows)
+  ws['!cols'] = headers.map((_, i) => ({ wch: Math.min(Math.max(12, 8 + (data.reduce((m, r) => Math.max(m, String(r[i] ?? '').length), 0))), 50) }))
   XLSX.utils.book_append_sheet(wb, ws, slug)
   XLSX.writeFile(wb, `report-${slug}-${dateRangeLabel.value.replace(/\s/g, '-')}.xlsx`)
 }
 
-function exportCardPdf(title, headers, rows, slug) {
+async function exportCardPdf(title, headers, rows, slug, opts = {}) {
+  await tenantStore.load()
+  const p = tenantStore.profile
+  const storeName = p?.name || tenantStore.storeName()
+  const address = p?.address || '—'
+  const description = p?.description || '—'
+  const printDate = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  const fmt = (d) => (d ? d.split('-').reverse().join('/') : '—')
+  const periodFrom = fmt(dateRange.value.from)
+  const periodTo = fmt(dateRange.value.to)
+  const periodLabel = `Periode Laporan: ${periodFrom} - ${periodTo}`
+
   const data = Array.isArray(rows) ? rows : (rows?.value ?? [])
   const doc = new jsPDF({ orientation: 'landscape' })
+  const pageW = doc.internal.pageSize.getWidth()
+  const margin = 14
+  const contentW = pageW - margin * 2
+  let y = 12
+
+  doc.setFontSize(10)
+  doc.text(`Toko: ${storeName}`, margin, y)
+  y += 6
+  doc.text(`Alamat: ${address}`, margin, y)
+  y += 6
+  doc.text(`Deskripsi: ${description}`, margin, y)
+  y += 6
+  doc.text(`Tanggal Cetak: ${printDate}`, margin, y)
+  y += 6
+  doc.text(periodLabel, margin, y)
+  y += 8
+
   doc.setFontSize(14)
-  doc.text(`${title} (${dateRangeLabel.value})`, 14, 15)
+  doc.text(`${title} (${dateRangeLabel.value})`, margin, y)
+  y += 8
+
   doc.setFontSize(10)
   if (headers.length && data.length) {
-    const colWidth = 270 / headers.length
-    let y = 25
+    const colWidths = opts.colWidths || headers.map(() => contentW / headers.length)
+    const rightAlignCols = opts.rightAlignCols || []
+    const cellPadding = 2
+    const lineH = 5
+    const totalColW = colWidths.reduce((a, b) => a + b, 0)
+    const scale = contentW / totalColW
+    const scaledWidths = colWidths.map((w) => w * scale)
+
+    const wrapText = (text, w) => doc.splitTextToSize(String(text), Math.max(5, w - cellPadding * 2))
+
     doc.setFillColor(240, 240, 240)
-    doc.rect(14, y, 270, 8, 'F')
-    headers.forEach((h, i) => doc.text(String(h), 14 + i * colWidth + 2, y + 5.5))
+    doc.rect(margin, y, contentW, 8, 'F')
+    headers.forEach((h, i) => {
+      const xStart = margin + scaledWidths.slice(0, i).reduce((a, b) => a + b, 0)
+      const cw = scaledWidths[i]
+      doc.text(String(h), rightAlignCols.includes(i) ? xStart + cw - cellPadding : xStart + cellPadding, y + 5.5, { align: rightAlignCols.includes(i) ? 'right' : 'left' })
+    })
     y += 8
     data.slice(0, 25).forEach((row) => {
-      row.forEach((cell, i) => doc.text(String(cell), 14 + i * colWidth + 2, y + 5))
-      y += 7
+      const cellLines = row.map((cell, i) => wrapText(String(cell), scaledWidths[i]))
+      const maxLines = Math.max(1, ...cellLines.map((l) => l.length))
+      const rowHeight = maxLines * lineH + 2
+      headers.forEach((_, i) => {
+        const xStart = margin + scaledWidths.slice(0, i).reduce((a, b) => a + b, 0)
+        const cw = scaledWidths[i]
+        const maxCellW = Math.max(5, cw - cellPadding * 2)
+        const lines = cellLines[i] || ['']
+        const isRight = rightAlignCols.includes(i)
+        lines.forEach((line, li) => {
+          doc.text(line, isRight ? xStart + cw - cellPadding : xStart + cellPadding, y + 4 + li * lineH, { align: isRight ? 'right' : 'left', maxWidth: maxCellW })
+        })
+      })
+      y += rowHeight
     })
-    if (data.length > 25) doc.text(`... and ${data.length - 25} more rows`, 14, y + 5)
+    if (data.length > 25) doc.text(`... and ${data.length - 25} more rows`, margin, y + 5)
   } else {
-    doc.text('No data to export.', 14, 25)
+    doc.text('No data to export.', margin, y + 5)
   }
   doc.save(`report-${slug}-${dateRangeLabel.value.replace(/\s/g, '-')}.pdf`)
 }
 
 async function exportDetailTransaksiExcel() {
   const rows = await fetchAllTransactionsForExport()
-  exportCardExcel(salesTransactionsHeaders, rows, 'detail-transaksi')
+  await exportCardExcel(salesTransactionsHeaders, rows, 'detail-transaksi')
 }
 
 async function exportDetailTransaksiPdf() {
   const rows = await fetchAllTransactionsForExport()
-  exportCardPdf('Detail Transaksi', salesTransactionsHeaders, rows, 'detail-transaksi')
+  const colWidths = [38, 42, 35, 40, 30, 35]
+  await exportCardPdf('Detail Transaksi', salesTransactionsHeaders, rows, 'detail-transaksi', {
+    colWidths,
+    rightAlignCols: [5],
+  })
 }
 </script>
 

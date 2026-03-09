@@ -90,6 +90,7 @@
             <button @click="showContactForm = !showContactForm" class="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-green-600 dark:hover:text-green-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title="Hubungi Admin">
               <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
             </button>
+            <div v-if="showContactForm" class="fixed inset-0 z-40" @click="showContactForm = false" />
             <Transition
               enter-active-class="transition ease-out duration-150"
               enter-from-class="opacity-0 -translate-y-1"
@@ -98,8 +99,11 @@
               leave-from-class="opacity-100 translate-y-0"
               leave-to-class="opacity-0 -translate-y-1"
             >
-              <div v-if="showContactForm" class="fixed sm:absolute left-0 right-0 sm:left-auto sm:right-0 top-14 sm:top-auto sm:mt-2 w-full sm:w-80 max-w-full sm:max-w-none rounded-b-xl sm:rounded-xl bg-white dark:bg-gray-900 shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
-                <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 font-medium text-sm text-gray-800 dark:text-gray-200">Hubungi Admin</div>
+              <div v-if="showContactForm" class="fixed left-4 right-4 top-14 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:w-80 sm:mt-2 mt-2 z-50 rounded-xl bg-white dark:bg-gray-900 shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden" @click.stop>
+                  <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 font-medium text-sm text-gray-800 dark:text-gray-200 flex items-center justify-between">
+                    <span>Hubungi Admin</span>
+                    <button type="button" class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" @click="showContactForm = false" aria-label="Tutup">&times;</button>
+                  </div>
                 <div v-if="saasStore.whatsappNumber" class="p-4 space-y-3">
                   <textarea v-model="contactMessage" rows="3" placeholder="Tulis pesan atau pertanyaan Anda..."
                     class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 outline-none resize-none" />
@@ -122,6 +126,7 @@
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
               <span v-if="notifCount > 0" class="absolute top-0 right-0 bg-red-500 text-white text-[10px] min-w-[16px] h-4 rounded-full flex items-center justify-center px-1 font-medium">{{ notifCount > 9 ? '9+' : notifCount }}</span>
             </button>
+            <div v-if="showNotif" class="fixed inset-0 z-40" @click="showNotif = false" />
             <Transition
               enter-active-class="transition ease-out duration-150"
               enter-from-class="opacity-0 -translate-y-1"
@@ -130,8 +135,11 @@
               leave-from-class="opacity-100 translate-y-0"
               leave-to-class="opacity-0 -translate-y-1"
             >
-              <div v-if="showNotif" class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden">
-                <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 font-medium text-sm text-gray-800 dark:text-gray-200">Notifications</div>
+              <div v-if="showNotif" class="fixed left-4 right-4 top-14 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:w-80 sm:mt-2 mt-2 z-50 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden" @click.stop>
+                  <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 font-medium text-sm text-gray-800 dark:text-gray-200 flex items-center justify-between">
+                    <span>Notifications</span>
+                    <button type="button" class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" @click="showNotif = false" aria-label="Tutup">&times;</button>
+                  </div>
                 <div class="max-h-64 overflow-auto divide-y divide-gray-100 dark:divide-gray-800">
                   <div v-if="!notifications.length" class="px-4 py-6 text-sm text-gray-400 text-center">No alerts</div>
                   <button

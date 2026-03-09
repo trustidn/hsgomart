@@ -25,7 +25,10 @@
     </div>
 
     <p v-if="barcodeError" class="px-4 py-1.5 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-b border-red-100 dark:border-red-900/40">{{ barcodeError }}</p>
-    <p v-if="lowStockMessage" class="px-4 py-1.5 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-900/40">{{ lowStockMessage }}</p>
+    <div v-if="lowStockMessage" class="w-full flex items-center justify-center sm:justify-between gap-2 px-4 py-1.5 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-900/40" @click="lowStockMessage = ''">
+  <p class="flex-1 text-center sm:text-left">{{ lowStockMessage }}</p>
+  <button type="button" class="shrink-0 p-1 -mr-1 text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 sm:order-last" aria-label="Tutup" @click.stop="lowStockMessage = ''">&times;</button>
+</div>
 
     <!-- Main content -->
     <div class="flex-1 min-h-0 flex">
@@ -38,7 +41,7 @@
               class="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500" />
           </div>
         </div>
-        <div class="flex-1 overflow-auto p-3 bg-gray-50 dark:bg-gray-950">
+        <div class="flex-1 overflow-auto p-3 pb-44 lg:pb-3 bg-gray-50 dark:bg-gray-950">
           <p v-if="productsLoading" class="text-gray-400 dark:text-gray-600 text-sm py-8 text-center">Loading...</p>
           <p v-else-if="productsError" class="text-red-500 text-sm py-4 text-center">{{ productsError }}</p>
           <div v-else class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2">
@@ -120,28 +123,25 @@
       </div>
     </div>
 
-    <!-- Mobile bottom bar: always fixed at bottom -->
+    <!-- Mobile bottom bar: integrated cart + payment (bukan overlay) -->
     <Teleport to="body">
       <div v-if="cartItems.length" class="lg:hidden fixed inset-x-0 bottom-0 z-30 safe-bottom">
-        <!-- Cart list overlay (animated slide up/down) -->
-        <Transition
-          enter-active-class="transition-all duration-300 ease-out"
-          enter-from-class="translate-y-full opacity-0"
-          enter-to-class="translate-y-0 opacity-100"
-          leave-active-class="transition-all duration-200 ease-in"
-          leave-from-class="translate-y-0 opacity-100"
-          leave-to-class="translate-y-full opacity-0"
-        >
-          <div v-if="mobileCartExpanded" class="fixed inset-x-0 bottom-0 z-30" style="bottom: 0">
-            <!-- Backdrop -->
-            <div class="fixed inset-0 bg-black/50 -z-10" @click="mobileCartExpanded = false" />
-            <!-- Cart list panel, positioned above the fixed bottom bar -->
-            <div class="bg-indigo-50 dark:bg-gray-800 border-t border-indigo-200 dark:border-gray-700 rounded-t-2xl shadow-2xl max-h-[60vh] flex flex-col" style="margin-bottom: 140px">
-              <!-- Handle bar + header -->
-              <button type="button" class="flex justify-center pt-2.5 pb-1 w-full touch-none" @click="mobileCartExpanded = false">
+        <!-- Single panel: cart list (expandable) + payment buttons selalu terlihat -->
+        <div class="bg-indigo-50 dark:bg-gray-800 border-t border-indigo-200 dark:border-gray-700 rounded-t-2xl shadow-2xl flex flex-col max-h-[85vh]">
+          <!-- Cart list (expandable, bagian dari panel, bukan overlay) -->
+          <Transition
+            enter-active-class="transition-all duration-200 ease-out"
+            enter-from-class="max-h-0 opacity-0"
+            enter-to-class="max-h-[50vh] opacity-100"
+            leave-active-class="transition-all duration-150 ease-in"
+            leave-from-class="max-h-[50vh] opacity-100"
+            leave-to-class="max-h-0 opacity-0"
+          >
+            <div v-if="mobileCartExpanded" class="overflow-hidden shrink-0">
+              <button type="button" class="flex justify-center pt-2 pb-1 w-full touch-none" @click="mobileCartExpanded = false">
                 <span class="w-10 h-1 rounded-full bg-indigo-300 dark:bg-gray-500" />
               </button>
-              <div class="px-4 py-2 flex items-center justify-between border-b border-indigo-200/60 dark:border-gray-700 shrink-0">
+              <div class="px-4 py-2 flex items-center justify-between border-b border-indigo-200/60 dark:border-gray-700">
                 <div class="flex items-center gap-2">
                   <svg class="w-4 h-4 text-indigo-500 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
                   <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Keranjang</span>
@@ -149,8 +149,7 @@
                 </div>
                 <button type="button" class="text-[10px] text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 uppercase font-semibold tracking-wide" @click="confirmClearCart">Clear</button>
               </div>
-              <!-- Scrollable cart items -->
-              <div class="flex-1 overflow-auto overscroll-contain">
+              <div class="overflow-auto max-h-[45vh] overscroll-contain border-b border-indigo-200/40 dark:border-gray-700">
                 <div class="divide-y divide-indigo-100 dark:divide-gray-700">
                   <div v-for="item in cartItems" :key="item.product_id" class="px-4 py-3 bg-white/60 dark:bg-gray-800/80">
                     <div class="flex items-start justify-between gap-2">
@@ -175,11 +174,10 @@
                 </div>
               </div>
             </div>
-          </div>
-        </Transition>
+          </Transition>
 
-        <!-- Always-visible bottom bar: summary + payment buttons -->
-        <div class="bg-indigo-50 dark:bg-gray-800 border-t border-indigo-200 dark:border-gray-700 rounded-t-2xl shadow-2xl">
+          <!-- Summary + payment buttons (selalu terlihat, bisa klik meskipun cart terbuka) -->
+          <div class="shrink-0 bg-indigo-50 dark:bg-gray-800">
           <!-- Tap to expand cart list -->
           <button type="button" class="w-full px-4 py-2.5 flex items-center justify-between touch-none" @click="mobileCartExpanded = !mobileCartExpanded">
             <div class="flex items-center gap-2">
@@ -205,6 +203,7 @@
             </div>
           </div>
         </div>
+      </div>
       </div>
     </Teleport>
 
@@ -423,6 +422,7 @@ function changeQuantity(productId, delta) {
   if (!item) return
   item.quantity = Math.max(0, item.quantity + delta)
   if (item.quantity <= 0) cartItems.value = cartItems.value.filter((i) => i.product_id !== productId)
+  else playBeep()
 }
 
 function removeFromCart(productId) { cartItems.value = cartItems.value.filter((i) => i.product_id !== productId) }
