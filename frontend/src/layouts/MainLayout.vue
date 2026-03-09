@@ -179,6 +179,53 @@
         <RouterView />
       </main>
     </div>
+
+    <!-- Welcome popup for new tenants (first login) -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition ease-out duration-200"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition ease-in duration-150"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+      >
+        <div v-if="showWelcomePopup" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50">
+          <Transition
+            enter-active-class="transition ease-out duration-200"
+            enter-from-class="opacity-0 scale-95"
+            enter-to-class="opacity-100 scale-100"
+            leave-active-class="transition ease-in duration-150"
+            leave-from-class="opacity-100 scale-100"
+            leave-to-class="opacity-0 scale-95"
+          >
+            <div v-if="showWelcomePopup" class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-gray-200 dark:border-gray-700">
+              <div class="p-6">
+                <div class="w-14 h-14 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center mb-4">
+                  <svg class="w-7 h-7 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+                </div>
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Selamat datang!</h2>
+                <p class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed space-y-2">
+                  Terima kasih telah mencoba periode trial {{ saasStore.platformName }}.
+                </p>
+                <p class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mt-3">
+                  Saat ini tersedia <strong>data dummy</strong> untuk ujicoba fitur-fitur sistem. Anda dapat menjelajahi produk, transaksi POS, laporan, dan lainnya.
+                </p>
+                <p class="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mt-3">
+                  Untuk menghapus seluruh data dan menggunakan sistem dari awal sesuai bisnis Anda, buka halaman <strong>Settings</strong> dan gunakan opsi <strong>"Reset Semua Data"</strong>.
+                </p>
+              </div>
+              <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+                <router-link to="/settings" class="px-4 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300" @click="dismissWelcomePopup">Ke Settings</router-link>
+                <button type="button" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors" @click="dismissWelcomePopup">
+                  Mengerti
+                </button>
+              </div>
+            </div>
+          </Transition>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -206,6 +253,24 @@ const showContactForm = ref(false)
 const contactMessage = ref('')
 const notifications = ref([])
 const trialDaysLeft = ref(null)
+const showWelcomePopup = ref(false)
+
+const WELCOME_KEY = 'hsgomart_welcome_seen'
+
+function dismissWelcomePopup() {
+  const tid = auth.tenant_id ?? auth.user?.id ?? 'guest'
+  try { localStorage.setItem(`${WELCOME_KEY}_${tid}`, '1') } catch { /* ignore */ }
+  showWelcomePopup.value = false
+}
+
+function checkWelcomePopup() {
+  if (auth.role === 'superadmin') return
+  const tid = auth.tenant_id ?? auth.user?.id ?? 'guest'
+  try {
+    if (localStorage.getItem(`${WELCOME_KEY}_${tid}`)) return
+  } catch { /* ignore */ }
+  showWelcomePopup.value = true
+}
 
 function sendWhatsApp() {
   const msg = contactMessage.value.trim()
@@ -316,5 +381,7 @@ onMounted(async () => {
       }
     } catch { /* ignore */ }
   }
+
+  checkWelcomePopup()
 })
 </script>
