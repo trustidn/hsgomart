@@ -9,6 +9,9 @@
         </div>
         <button type="button" class="text-xs text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors" @click="shiftModalMode = 'close'">Close shift</button>
       </template>
+      <template v-else-if="isCashier && !currentShift">
+        <button type="button" class="px-3 py-1.5 text-xs font-medium bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors" @click="shiftModalMode = 'open'">Open Shift</button>
+      </template>
       <div class="flex-1" />
       <div class="relative max-w-xs w-full">
         <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -34,12 +37,16 @@
     <div class="flex-1 min-h-0 flex">
       <!-- LEFT: Product grid -->
       <div class="flex-1 flex flex-col min-w-0">
-        <div class="px-4 py-2.5 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0">
-          <div class="relative">
+        <div class="px-4 py-2.5 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0 flex flex-col sm:flex-row gap-2">
+          <div class="relative flex-1 min-w-0">
             <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             <input v-model="searchQuery" type="text" placeholder="Cari produk..."
               class="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500" />
           </div>
+          <select v-model="posCategoryFilter" class="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent min-w-[140px]">
+            <option value="">Semua Kategori</option>
+            <option v-for="c in posCategories" :key="posCatId(c)" :value="posCatId(c)">{{ posCatName(c) }}</option>
+          </select>
         </div>
         <div class="flex-1 overflow-auto p-3 pb-44 lg:pb-3 bg-gray-50 dark:bg-gray-950">
           <p v-if="productsLoading" class="text-gray-400 dark:text-gray-600 text-sm py-8 text-center">Loading...</p>
@@ -47,8 +54,8 @@
           <div v-else class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2">
             <button
               v-for="p in filteredProducts" :key="productId(p)" type="button"
-              class="group bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3 text-left hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-sm transition-all active:scale-[0.98]"
-              @click="addToCartWithStockCheck(p)"
+              :class="['group rounded-xl p-3 text-left transition-all active:scale-[0.98]', clickedProductId === productId(p) ? 'animate-pos-product-click ring-2 ring-indigo-400 dark:ring-indigo-500 bg-indigo-50 dark:bg-indigo-900/40 border border-indigo-200 dark:border-indigo-800' : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-sm']"
+              @click="onProductClick(p)"
             >
               <div class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{{ productName(p) }}</div>
               <div class="text-xs text-gray-400 dark:text-gray-600 truncate mt-0.5">{{ productSku(p) || '—' }}</div>
@@ -280,7 +287,7 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useTenantStore } from '../stores/tenant'
-import { getProducts, getProductByBarcode } from '../api/products'
+import { getProducts, getProductByBarcode, getCategories } from '../api/products'
 import { getProductStock, getLowStock } from '../api/inventory'
 import { checkout as checkoutApi } from '../api/pos'
 import { getCurrentShift } from '../api/shifts'
@@ -309,6 +316,9 @@ const SCAN_DEBOUNCE_MS = 200
 const MIN_BARCODE_LENGTH = 8
 
 const products = ref([])
+const posCategories = ref([])
+const posCategoryFilter = ref('')
+const clickedProductId = ref(null)
 const barcodeInput = ref('')
 const barcodeInputRef = ref(null)
 const barcodeError = ref('')
@@ -338,17 +348,35 @@ function formatPrice(value) {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value ?? 0)
 }
 
+function posCatId(c) { return c?.id ?? c?.ID ?? '' }
+function posCatName(c) { return c?.name ?? c?.Name ?? '' }
+
 function filterProducts() {
+  let list = [...(products.value || [])]
   const q = (searchQuery.value || '').trim().toLowerCase()
-  if (!q) { filteredProducts.value = [...products.value]; return }
-  filteredProducts.value = products.value.filter((p) => {
-    const name = (productName(p) || '').toLowerCase()
-    const sku = (productSku(p) || '').toLowerCase()
-    return name.includes(q) || sku.includes(q)
-  })
+  if (q) {
+    list = list.filter((p) => {
+      const name = (productName(p) || '').toLowerCase()
+      const sku = (productSku(p) || '').toLowerCase()
+      return name.includes(q) || sku.includes(q)
+    })
+  }
+  const catId = posCategoryFilter.value
+  if (catId) {
+    list = list.filter((p) => (p?.category_id ?? p?.CategoryID ?? '') === catId)
+  }
+  filteredProducts.value = list
 }
 
-watch(searchQuery, filterProducts)
+async function onProductClick(p) {
+  const ok = await addToCartWithStockCheck(p)
+  if (ok) {
+    clickedProductId.value = productId(p)
+    setTimeout(() => { clickedProductId.value = null }, 400)
+  }
+}
+
+watch([searchQuery, posCategoryFilter], filterProducts)
 
 const totalAmount = computed(() => cartItems.value.reduce((sum, item) => sum + item.price * item.quantity, 0))
 
@@ -503,23 +531,22 @@ watch(() => auth.role, async (role) => {
     const shift = (await getCurrentShift())?.shift ?? null
     currentShift.value = shift
     if (shift) shiftModalMode.value = null
-    else if (!shiftModalMode.value) shiftModalMode.value = 'open'
-  } catch { currentShift.value = null; if (!shiftModalMode.value) shiftModalMode.value = 'open' }
+  } catch { currentShift.value = null }
 }, { immediate: true })
 
 onMounted(async () => {
   window.addEventListener('keydown', handleKeyShortcuts)
   productsLoading.value = true; productsError.value = null
   try {
-    const [productsData, lowData] = await Promise.all([getProducts(), getLowStock().catch(() => [])])
+    const [productsData, lowData, catsData] = await Promise.all([getProducts(), getLowStock().catch(() => []), getCategories().catch(() => [])])
     products.value = Array.isArray(productsData) ? productsData : []
+    posCategories.value = Array.isArray(catsData) ? catsData : []
     filterProducts()
     lowStockList.value = Array.isArray(lowData) ? lowData : []
     if (isCashier.value) {
       const shift = (await getCurrentShift().catch(() => null))?.shift ?? null
       currentShift.value = shift
       if (shift) shiftModalMode.value = null
-      else if (!shiftModalMode.value) shiftModalMode.value = 'open'
     }
   } catch { productsError.value = 'Gagal memuat produk' }
   finally { productsLoading.value = false }
@@ -528,3 +555,14 @@ onMounted(async () => {
 
 onUnmounted(() => { window.removeEventListener('keydown', handleKeyShortcuts) })
 </script>
+
+<style scoped>
+@keyframes pos-product-click {
+  0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.6); }
+  50% { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+}
+.animate-pos-product-click {
+  animation: pos-product-click 0.4s ease-out;
+}
+</style>

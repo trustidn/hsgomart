@@ -19,13 +19,18 @@
         <thead class="bg-gray-50 dark:bg-gray-800">
           <tr>
             <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Category Name</th>
+            <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Jumlah Produk</th>
             <th scope="col" class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Action</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
           <tr v-for="c in categories" :key="catId(c)" class="hover:bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-800">
             <td class="px-4 py-2 text-sm text-gray-800 dark:text-white">{{ catName(c) }}</td>
+            <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 text-right">{{ productCount(catId(c)) }}</td>
             <td class="px-4 py-2 text-right space-x-2">
+              <button type="button" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline" @click="goToProducts(c)">
+                Lihat
+              </button>
               <button type="button" class="text-sm text-slate-600 hover:underline" @click="openEditModal(c)">
                 Edit
               </button>
@@ -35,7 +40,7 @@
             </td>
           </tr>
           <tr v-if="!categories?.length">
-            <td colspan="2" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No categories yet. Add one above.</td>
+            <td colspan="3" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No categories yet. Add one above.</td>
           </tr>
         </tbody>
       </table>
@@ -129,9 +134,12 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getCategories, createCategory, updateCategory, deleteCategory } from '../api/products'
+import { useRouter } from 'vue-router'
+import { getCategories, createCategory, updateCategory, deleteCategory, getProducts } from '../api/products'
 
+const router = useRouter()
 const categories = ref([])
+const products = ref([])
 const loading = ref(true)
 const error = ref(null)
 
@@ -160,13 +168,23 @@ async function loadData() {
   loading.value = true
   error.value = null
   try {
-    const data = await getCategories()
-    categories.value = Array.isArray(data) ? data : []
+    const [cats, prods] = await Promise.all([getCategories(), getProducts()])
+    categories.value = Array.isArray(cats) ? cats : []
+    products.value = Array.isArray(prods) ? prods : []
   } catch (err) {
     error.value = 'Failed to load categories.'
   } finally {
     loading.value = false
   }
+}
+
+function productCount(categoryId) {
+  if (!categoryId) return 0
+  return (products.value || []).filter((p) => (p?.category_id ?? p?.CategoryID ?? '') === categoryId).length
+}
+
+function goToProducts(cat) {
+  router.push({ path: '/products', query: { category: catId(cat) } })
 }
 
 onMounted(loadData)

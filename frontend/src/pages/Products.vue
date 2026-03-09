@@ -20,13 +20,32 @@
       </div>
     </div>
 
+    <!-- Search & Filter -->
+    <div class="flex flex-wrap gap-3 mb-4">
+      <div class="relative flex-1 min-w-[180px] max-w-sm">
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Cari produk..."
+          class="w-full pl-3 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-slate-500"
+        />
+      </div>
+      <select
+        v-model="categoryFilter"
+        class="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-slate-500"
+      >
+        <option value="">Semua Kategori</option>
+        <option v-for="c in categories" :key="categoryId(c)" :value="categoryId(c)">{{ categoryName(c) }}</option>
+      </select>
+    </div>
+
     <p v-if="loading" class="text-gray-600 dark:text-gray-400">Loading...</p>
     <p v-else-if="error" class="text-red-600 dark:text-red-400">{{ error }}</p>
 
     <div v-else>
       <!-- Mobile: Card layout -->
       <div class="sm:hidden space-y-3">
-        <div v-for="p in products" :key="p.id" class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+        <div v-for="p in filteredProducts" :key="p.id" class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <div class="flex items-start justify-between gap-2 mb-2">
             <h3 class="font-medium text-gray-900 dark:text-white truncate flex-1">{{ p.name }}</h3>
             <span class="text-xs px-2 py-0.5 rounded-full shrink-0"
@@ -44,7 +63,7 @@
             <button type="button" class="flex-1 py-1.5 text-sm text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-md" @click="confirmDeleteProduct(p)">Delete</button>
           </div>
         </div>
-        <p v-if="!products?.length" class="py-8 text-sm text-gray-500 dark:text-gray-400 text-center">No products yet. Add one above.</p>
+        <p v-if="!filteredProducts?.length" class="py-8 text-sm text-gray-500 dark:text-gray-400 text-center">Tidak ada produk sesuai filter.</p>
       </div>
 
       <!-- Desktop: Table layout -->
@@ -61,7 +80,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-            <tr v-for="p in products" :key="p.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
+            <tr v-for="p in filteredProducts" :key="p.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
               <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">{{ p.name }}</td>
               <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ p.sku }}</td>
               <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 text-right">{{ formatCurrency(p.sell_price) }}</td>
@@ -72,8 +91,8 @@
                 <button type="button" class="text-sm text-red-600 dark:text-red-400 hover:underline" @click="confirmDeleteProduct(p)">Delete</button>
               </td>
             </tr>
-            <tr v-if="!products?.length">
-              <td colspan="6" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">No products yet. Add one above.</td>
+            <tr v-if="!filteredProducts?.length">
+              <td colspan="6" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">Tidak ada produk sesuai filter.</td>
             </tr>
           </tbody>
         </table>
@@ -371,11 +390,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { getProducts, getProduct, createProduct, updateProduct, deleteProduct, getCategories, createCategory, addBarcode } from '../api/products'
 import { formatCurrency } from '../utils'
 
+const route = useRoute()
 const products = ref([])
+const searchQuery = ref('')
+const categoryFilter = ref('')
 const categories = ref([])
 const loading = ref(true)
 const error = ref(null)
@@ -422,6 +445,27 @@ async function loadData() {
     loading.value = false
   }
 }
+
+const filteredProducts = computed(() => {
+  let list = products.value || []
+  const q = (searchQuery.value || '').trim().toLowerCase()
+  if (q) {
+    list = list.filter((p) => {
+      const name = (p?.name ?? p?.Name ?? '').toLowerCase()
+      const sku = (p?.sku ?? p?.SKU ?? '').toLowerCase()
+      return name.includes(q) || sku.includes(q)
+    })
+  }
+  const catId = categoryFilter.value
+  if (catId) {
+    list = list.filter((p) => (p?.category_id ?? p?.CategoryID ?? '') === catId)
+  }
+  return list
+})
+
+watch(() => route.query.category, (val) => {
+  if (val != null && val !== '') categoryFilter.value = val
+}, { immediate: true })
 
 onMounted(loadData)
 
