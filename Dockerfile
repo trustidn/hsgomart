@@ -15,6 +15,7 @@ RUN go mod download
 COPY . .
 COPY --from=frontend /app/frontend/dist ./frontend/dist
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o hsmart-server ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o hsmart-seed ./cmd/seed
 
 # --- Stage 3: Minimal runtime ---
 FROM alpine:3.19
@@ -23,6 +24,7 @@ RUN apk add --no-cache ca-certificates tzdata curl \
 WORKDIR /app
 
 COPY --from=backend /app/hsmart-server .
+COPY --from=backend /app/hsmart-seed .
 COPY --from=backend /app/frontend/dist ./frontend/dist
 COPY migrations/ ./migrations/
 
