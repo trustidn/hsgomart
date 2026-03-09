@@ -27,12 +27,6 @@
       </div>
     </div>
 
-    <p v-if="barcodeError" class="px-4 py-1.5 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-b border-red-100 dark:border-red-900/40">{{ barcodeError }}</p>
-    <div v-if="lowStockMessage" class="w-full flex items-center justify-center sm:justify-between gap-2 px-4 py-1.5 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-900/40" @click="lowStockMessage = ''">
-  <p class="flex-1 text-center sm:text-left">{{ lowStockMessage }}</p>
-  <button type="button" class="shrink-0 p-1 -mr-1 text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 sm:order-last" aria-label="Tutup" @click.stop="lowStockMessage = ''">&times;</button>
-</div>
-
     <!-- Main content -->
     <div class="flex-1 min-h-0 flex">
       <!-- LEFT: Product grid -->
@@ -264,6 +258,26 @@
     <!-- Shift modal -->
     <ShiftModal v-if="shiftModalMode" :mode="shiftModalMode" @done="onShiftModalDone" @close="onShiftModalClose" />
 
+    <!-- Toast: stok habis / stok rendah (auto-hide) -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition ease-out duration-200"
+        enter-from-class="opacity-0 translate-y-2"
+        enter-to-class="opacity-100 translate-y-0"
+        leave-active-class="transition ease-in duration-150"
+        leave-from-class="opacity-100 translate-y-0"
+        leave-to-class="opacity-0 translate-y-2"
+      >
+        <div
+          v-if="toast.show"
+          class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium max-w-[90vw] sm:max-w-sm"
+          :class="toast.type === 'error' ? 'bg-red-600 text-white dark:bg-red-700' : 'bg-amber-500 text-white dark:bg-amber-600'"
+        >
+          {{ toast.message }}
+        </div>
+      </Transition>
+    </Teleport>
+
     <!-- Receipt modal -->
     <Teleport to="body">
       <div v-if="showReceiptModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="closeReceipt">
@@ -301,7 +315,17 @@ const isCashier = computed(() => auth.role === 'cashier')
 const currentShift = ref(null)
 const shiftModalMode = ref(null)
 const lowStockList = ref([])
-const lowStockMessage = ref('')
+const toast = ref({ show: false, message: '', type: 'error' })
+let toastTimer = null
+
+function showToast(message, type = 'error') {
+  if (toastTimer) clearTimeout(toastTimer)
+  toast.value = { show: true, message, type }
+  toastTimer = setTimeout(() => {
+    toast.value = { ...toast.value, show: false }
+    toastTimer = null
+  }, 3000)
+}
 const canCheckout = computed(() => !isCashier.value || !!currentShift.value)
 
 const paymentMethods = [
@@ -321,7 +345,6 @@ const posCategoryFilter = ref('')
 const clickedProductId = ref(null)
 const barcodeInput = ref('')
 const barcodeInputRef = ref(null)
-const barcodeError = ref('')
 const filteredProducts = ref([])
 const productsLoading = ref(true)
 const productsError = ref(null)
@@ -406,28 +429,26 @@ function addToCart(p) {
 
 async function addToCartWithStockCheck(p) {
   const id = productId(p)
-  barcodeError.value = ''; lowStockMessage.value = ''
   try {
     const res = await getProductStock(id)
     const stock = res?.stock ?? 0
-    if (stock <= 0) { barcodeError.value = 'Stok habis'; playErrorBeep(); return false }
+    if (stock <= 0) { showToast('Stok habis', 'error'); playErrorBeep(); return false }
     const existing = cartItems.value.find((i) => i.product_id === id)
-    if ((existing ? existing.quantity + 1 : 1) > stock) { barcodeError.value = 'Stok tidak cukup'; playErrorBeep(); return false }
+    if ((existing ? existing.quantity + 1 : 1) > stock) { showToast('Stok tidak cukup', 'error'); playErrorBeep(); return false }
     addToCart(p)
-    if (lowStockList.value.some((l) => l.product_id === id)) lowStockMessage.value = `⚠ Sisa stok: ${stock}`
+    if (lowStockList.value.some((l) => l.product_id === id)) showToast(`⚠ Sisa stok: ${stock}`, 'warning')
     return true
-  } catch (err) { barcodeError.value = err.response?.data?.error ?? 'Gagal cek stok'; playErrorBeep(); return false }
+  } catch (err) { showToast(err.response?.data?.error ?? 'Gagal cek stok', 'error'); playErrorBeep(); return false }
 }
 
 async function lookupAndAddBarcode(barcode) {
   const code = (barcode || '').trim()
   if (!code || code.length < MIN_BARCODE_LENGTH) return
-  barcodeError.value = ''
   try {
     const product = await getProductByBarcode(code)
     if (await addToCartWithStockCheck(product)) { barcodeInput.value = ''; nextTick(() => barcodeInputRef.value?.focus()) }
   } catch (err) {
-    barcodeError.value = err.response?.status === 404 ? 'Produk tidak ditemukan' : (err.response?.data?.error ?? 'Gagal mencari produk')
+    showToast(err.response?.status === 404 ? 'Produk tidak ditemukan' : (err.response?.data?.error ?? 'Gagal mencari produk'), 'error')
     playErrorBeep()
   }
 }
@@ -514,7 +535,7 @@ function closeReceipt() { showReceiptModal.value = false; receiptData.value = nu
 
 function confirmClearCart() {
   if (!cartItems.value.length) return
-  if (window.confirm('Kosongkan keranjang?')) { cartItems.value = []; barcodeError.value = '' }
+  if (window.confirm('Kosongkan keranjang?')) { cartItems.value = [] }
 }
 
 const shortcutMap = { F1: 'cash', F2: 'card', F3: 'qris', F4: 'ewallet', F5: 'transfer' }
