@@ -671,6 +671,171 @@ func (h *Handler) RejectOrder(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "order rejected"})
 }
 
+// ─── Superadmin User Management ─────────────────────────────────────────────
+
+type superadminRow struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	Status    string `json:"status"`
+	CreatedAt string `json:"created_at"`
+}
+
+func (h *Handler) ListSuperadmins(c *gin.Context) {
+	var list []struct {
+		ID        string
+		Name      string
+		Email     string
+		Status    string
+		CreatedAt time.Time
+	}
+	err := h.db.Table("users").
+		Select("id, name, email, status, created_at").
+		Where("role = ? AND deleted_at IS NULL", "superadmin").
+		Order("created_at ASC").
+		Find(&list).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list superadmins"})
+		return
+	}
+	rows := make([]superadminRow, 0, len(list))
+	for _, u := range list {
+		rows = append(rows, superadminRow{
+			ID:        u.ID,
+			Name:      u.Name,
+			Email:     u.Email,
+			Status:    u.Status,
+			CreatedAt: u.CreatedAt.Format("2006-01-02 15:04"),
+		})
+	}
+	c.JSON(http.StatusOK, rows)
+}
+
+type CreateSuperadminInput struct {
+	Name     string `json:"name" binding:"required"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=8"`
+}
+
+func (h *Handler) CreateSuperadmin(c *gin.Context) {
+	var in CreateSuperadminInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := utils.ValidatePasswordStrength(in.Password); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var existing int64
+	h.db.Table("users").Where("email = ?", in.Email).Count(&existing)
+	if existing > 0 {
+		c.JSON(http.StatusConflict, gin.H{"error": "email already registered"})
+		return
+	}
+
+	var res struct{ ID string }
+	err := h.db.Raw("SELECT id FROM tenants WHERE name = 'System Admin' LIMIT 1").Scan(&res).Error
+	if err != nil || res.ID == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "system admin tenant not found"})
+		return
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(in.Password), 10)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
+		return
+	}
+
+	err = h.db.Exec(`
+		INSERT INTO users (tenant_id, name, email, password_hash, role, status)
+		VALUES (?, ?, ?, ?, 'superadmin', 'active')
+	`, res.ID, in.Name, in.Email, string(hash)).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create superadmin"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "superadmin created"})
+}
+
+type UpdateSuperadminInput struct {
+	Name     *string `json:"name"`
+	Email    *string `json:"email"`
+	Password *string `json:"password"`
+}
+
+func (h *Handler) UpdateSuperadmin(c *gin.Context) {
+	id := c.Param("id")
+	var in UpdateSuperadminInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var u struct {
+		ID       string
+		Role     string
+		Email    string
+		TenantID string
+	}
+	err := h.db.Raw("SELECT id, role, email, tenant_id FROM users WHERE id = ? AND deleted_at IS NULL", id).Scan(&u).Error
+	if err != nil || u.ID == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+	if u.Role != "superadmin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "can only update superadmin users"})
+		return
+	}
+
+	updates := map[string]interface{}{}
+	if in.Name != nil {
+		updates["name"] = *in.Name
+	}
+	if in.Email != nil {
+		newEmail := *in.Email
+		var existing int64
+		h.db.Table("users").Where("email = ? AND id != ?", newEmail, id).Count(&existing)
+		if existing > 0 {
+			c.JSON(http.StatusConflict, gin.H{"error": "email already in use"})
+			return
+		}
+		updates["email"] = newEmail
+	}
+	if in.Password != nil {
+		if err := utils.ValidatePasswordStrength(*in.Password); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		hash, err := bcrypt.GenerateFromPassword([]byte(*in.Password), 10)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
+			return
+		}
+		updates["password_hash"] = string(hash)
+	}
+
+	if len(updates) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no fields to update"})
+		return
+	}
+
+	res := h.db.Table("users").Where("id = ? AND role = 'superadmin'", id).Updates(updates)
+	if res.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update"})
+		return
+	}
+	if res.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "updated"})
+}
+
 // ─── Revenue Report ─────────────────────────────────────────────────────────
 
 type revenueRow struct {

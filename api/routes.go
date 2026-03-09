@@ -196,5 +196,10 @@ func registerAdminRoutes(r *gin.Engine, h *HandlerRegistry, svc *ServiceRegistry
 		g.POST("/updates", h.Admin.CreateUpdate)
 		g.PUT("/updates/:id", h.Admin.EditUpdate)
 		g.DELETE("/updates/:id", h.Admin.DeleteUpdate)
+
+		// Superadmin User Management
+		g.GET("/users", h.Admin.ListSuperadmins)
+		g.POST("/users", h.Admin.CreateSuperadmin)
+		g.PUT("/users/:id", h.Admin.UpdateSuperadmin)
 	}
 }

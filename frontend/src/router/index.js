@@ -58,6 +58,7 @@ const routes = [
       { path: 'revenue', name: 'AdminRevenue', component: () => import('../pages/admin/AdminRevenue.vue'), meta: { roles: ['superadmin'] } },
       { path: 'documentation', name: 'AdminDocumentation', component: () => import('../pages/admin/AdminDocumentation.vue'), meta: { roles: ['superadmin'] } },
       { path: 'updates', name: 'AdminUpdates', component: () => import('../pages/admin/AdminUpdates.vue'), meta: { roles: ['superadmin'] } },
+      { path: 'users', name: 'AdminUsers', component: () => import('../pages/admin/AdminUsers.vue'), meta: { roles: ['superadmin'], title: 'Superadmin Users' } },
       { path: 'settings', name: 'AdminSettings', component: () => import('../pages/admin/AdminSettings.vue'), meta: { roles: ['superadmin'] } },
     ],
   },

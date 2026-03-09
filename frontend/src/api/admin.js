@@ -163,6 +163,22 @@ export async function deletePlatformUpdate(id) {
   return data
 }
 
+// Superadmin User Management
+export async function listSuperadmins() {
+  const { data } = await client.get('/admin/users')
+  return data
+}
+
+export async function createSuperadmin(payload) {
+  const { data } = await client.post('/admin/users', payload)
+  return data
+}
+
+export async function updateSuperadmin(id, payload) {
+  const { data } = await client.put(`/admin/users/${id}`, payload)
+  return data
+}
+
 // Public SaaS Info (no auth)
 export async function getSaasInfo() {
   const { data } = await client.get('/api/saas-info')
