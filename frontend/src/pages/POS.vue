@@ -1,5 +1,5 @@
 <template>
-  <div class="h-full flex flex-col -m-4 lg:-m-6">
+  <div class="h-full flex-1 min-h-0 flex flex-col -m-4 lg:-m-6">
     <!-- Compact top bar -->
     <div class="flex items-center gap-3 px-4 py-2.5 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shrink-0">
       <template v-if="isCashier && currentShift">
@@ -60,8 +60,8 @@
         </div>
       </div>
 
-      <!-- RIGHT: Cart panel -->
-      <div class="w-80 xl:w-96 shrink-0 flex flex-col bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 hidden lg:flex">
+      <!-- RIGHT: Cart panel (sticky footer: hanya list cart yang scroll, Total + metode pembayaran tetap di bawah) -->
+      <div class="w-80 xl:w-96 shrink-0 flex flex-col min-h-0 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800 hidden lg:flex">
         <!-- Cart header -->
         <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
           <div class="flex items-center gap-2">
@@ -72,8 +72,8 @@
           <button v-if="cartItems.length" @click="confirmClearCart" class="text-[10px] text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors uppercase tracking-wider font-medium">Clear</button>
         </div>
 
-        <!-- Cart items -->
-        <div class="flex-1 overflow-auto min-h-0">
+        <!-- Cart items (hanya ini yang scroll) -->
+        <div class="flex-1 overflow-auto min-h-0 pb-[152px]">
           <div v-if="!cartItems.length" class="flex flex-col items-center justify-center h-full text-gray-300 dark:text-gray-700">
             <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
             <span class="text-xs">Keranjang kosong</span>
@@ -102,8 +102,8 @@
           </div>
         </div>
 
-        <!-- Cart footer -->
-        <div class="border-t border-gray-200 dark:border-gray-800 p-4 shrink-0 space-y-3">
+        <!-- Cart footer: fixed di bawah layar, selalu terlihat -->
+        <div class="hidden lg:block fixed bottom-0 right-0 w-80 xl:w-96 border-t border-l border-gray-200 dark:border-gray-800 p-4 space-y-3 bg-white dark:bg-gray-900 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] dark:shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.3)]">
           <div class="flex justify-between items-center">
             <span class="text-sm text-gray-500 dark:text-gray-400">Total</span>
             <span class="text-xl font-bold text-gray-900 dark:text-white">{{ formatPrice(totalAmount) }}</span>

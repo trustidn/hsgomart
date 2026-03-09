@@ -57,7 +57,7 @@
     </aside>
 
     <!-- Main content -->
-    <div class="flex-1 flex flex-col min-w-0">
+    <div class="flex-1 flex flex-col min-w-0 min-h-0">
       <!-- Trial banner -->
       <div v-if="trialDaysLeft !== null && trialDaysLeft <= 7" class="bg-amber-500 text-white text-center text-sm py-2 px-4 font-medium">
         Trial Anda habis dalam {{ trialDaysLeft }} hari.
@@ -175,7 +175,7 @@
         </div>
       </header>
 
-      <main class="flex-1 p-4 lg:p-6 overflow-auto">
+      <main :class="['flex-1 p-4 lg:p-6 min-h-0', isPosRoute ? 'overflow-hidden flex flex-col' : 'overflow-auto']">
         <RouterView />
       </main>
     </div>
@@ -336,6 +336,9 @@ const pageTitle = computed(() => {
   if (typeof name === 'string') return name.charAt(0).toUpperCase() + name.slice(1)
   return 'Dashboard'
 })
+
+// POS perlu overflow-hidden agar Total + metode pembayaran tetap sticky di bawah (hanya list cart yang scroll)
+const isPosRoute = computed(() => route.path === '/pos')
 
 const userEmail = computed(() => auth.user?.email ?? 'User')
 const userInitials = computed(() => {
