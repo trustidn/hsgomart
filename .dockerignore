@@ -1,5 +1,8 @@
-frontend/node_modules
-frontend/dist
-*.env
 .git
-uploads
+.gitignore
+node_modules
+frontend/node_modules
+frontend/src
+frontend/.vite
+*.log
+.env
