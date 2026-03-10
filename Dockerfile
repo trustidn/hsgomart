@@ -1,10 +1,17 @@
 # --- Stage 1: Build frontend ---
 FROM node:20-alpine AS frontend
+
 WORKDIR /app/frontend
+
 COPY frontend/package*.json ./
-RUN npm install --include=dev
+
+RUN npm config set fetch-retry-maxtimeout 600000 \
+ && npm config set fetch-retries 5 \
+ && npm install --include=dev
+
 COPY frontend/ ./
-RUN npx vite build
+
+RUN npm run build
 
 # --- Stage 2: Build Go binary ---
 FROM golang:1.26-alpine AS backend
