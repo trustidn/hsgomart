@@ -1,5 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { isPageLoading } from '../composables/pageLoading'
+
+const MIN_SKELETON_MS = 280
 
 const routes = [
   {
@@ -69,7 +72,13 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to) => {
+let skeletonTimer = null
+
+router.beforeEach((to, from) => {
+  if (to.path !== from.path) {
+    isPageLoading.value = true
+  }
+
   const auth = useAuthStore()
   if (to.meta.public) {
     if ((to.name === 'Login' || to.name === 'Register') && auth.token) {
@@ -84,6 +93,14 @@ router.beforeEach((to) => {
     return { name: 'Dashboard' }
   }
   return true
+})
+
+router.afterEach(() => {
+  if (skeletonTimer) clearTimeout(skeletonTimer)
+  skeletonTimer = setTimeout(() => {
+    isPageLoading.value = false
+    skeletonTimer = null
+  }, MIN_SKELETON_MS)
 })
 
 export default router

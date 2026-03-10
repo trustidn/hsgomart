@@ -91,8 +91,13 @@
         </div>
       </header>
 
-      <main class="flex-1 p-4 lg:p-6 overflow-auto">
+      <main class="flex-1 p-4 lg:p-6 overflow-auto relative">
         <RouterView />
+        <Transition name="skeleton-fade">
+          <div v-if="isPageLoading" class="absolute inset-0 z-10 overflow-auto bg-gray-50 dark:bg-gray-950">
+            <PageSkeleton />
+          </div>
+        </Transition>
       </main>
     </div>
   </div>
@@ -102,6 +107,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import PageSkeleton from '../components/PageSkeleton.vue'
+import { isPageLoading } from '../composables/pageLoading'
 import { useSaasStore } from '../stores/saas'
 import { useThemeStore } from '../stores/theme'
 
@@ -152,3 +159,14 @@ onMounted(async () => {
   saas.applyBranding()
 })
 </script>
+
+<style scoped>
+.skeleton-fade-enter-active,
+.skeleton-fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+.skeleton-fade-enter-from,
+.skeleton-fade-leave-to {
+  opacity: 0;
+}
+</style>
