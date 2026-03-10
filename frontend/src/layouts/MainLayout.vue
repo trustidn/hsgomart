@@ -327,7 +327,7 @@ const menu = [
     { path: '/settings', label: 'Settings', icon: IconSettings, roles: ['owner'] },
   ]},
   { group: 'Help', items: [
-    { path: '/documentation', label: 'Dokumentasi', icon: IconBook, roles: ['owner', 'cashier'] },
+    { path: '/documentation', label: 'User Manual', icon: IconBook, roles: ['owner', 'cashier'] },
   ]},
 ]
 

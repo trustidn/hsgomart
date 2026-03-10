@@ -43,7 +43,7 @@ const routes = [
       { path: '/stock-opname', name: 'StockOpname', component: () => import('../pages/StockOpname.vue'), meta: { title: 'Stock Opname', roles: ['owner'] } },
       { path: '/subscription', name: 'Subscription', component: () => import('../pages/Subscription.vue'), meta: { title: 'Subscription', roles: ['owner'] } },
       { path: '/settings', name: 'Settings', component: () => import('../pages/Settings.vue'), meta: { title: 'Settings', roles: ['owner'] } },
-      { path: '/documentation', name: 'Documentation', component: () => import('../pages/Documentation.vue'), meta: { title: 'Dokumentasi', roles: ['owner', 'cashier'] } },
+      { path: '/documentation', name: 'Documentation', component: () => import('../pages/Documentation.vue'), meta: { title: 'User Manual', roles: ['owner', 'cashier'] } },
       { path: '/updates', name: 'Updates', component: () => import('../pages/Updates.vue'), meta: { title: 'Update Terbaru', roles: ['owner', 'cashier'] } },
     ],
   },

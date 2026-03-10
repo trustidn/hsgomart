@@ -1,7 +1,21 @@
 <template>
   <div>
-    <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Dokumentasi</h1>
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">User Manual</h1>
 
+    <!-- Embedded User Manual -->
+    <div class="mb-8 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+      <iframe
+        src="https://scribehow.com/embed/Mengatur_Inventory_Sales_dan_Reports_pada_HSGoMart__FWlAg1jTRtWis74lb7dWTA"
+        width="800"
+        height="679"
+        allow="fullscreen"
+        class="w-full max-w-full"
+        style="aspect-ratio: 1 / 1; border: 0; min-height: 480px"
+        title="User Manual - Mengatur Inventory, Sales dan Reports pada HSGoMart"
+      />
+    </div>
+
+    <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Artikel Dokumentasi</h2>
     <p v-if="loading" class="text-gray-500 dark:text-gray-400 py-8 text-center">Memuat dokumentasi...</p>
     <p v-else-if="!docs.length" class="text-gray-500 dark:text-gray-400 py-8 text-center">Belum ada dokumentasi.</p>
 
