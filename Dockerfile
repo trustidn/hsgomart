@@ -4,7 +4,7 @@ WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm install --include=dev
 COPY frontend/ ./
-RUN npm run build
+RUN npx vite build
 
 # --- Stage 2: Build Go binary ---
 FROM golang:1.26-alpine AS backend
